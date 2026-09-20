@@ -9,7 +9,7 @@ load_dotenv()
 MONGO_URI = os.getenv("MONGODB_URI")
 
 # Create PyMongo async client
-client = AsyncMongoClient(MONGO_URI)
+client = AsyncMongoClient(MONGO_URI, tz_aware=True)
 
 # Connect to main app database
 db = client.beli_db
