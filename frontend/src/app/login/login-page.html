@@ -35,12 +35,18 @@
       </div>
 
       <div class="account-actions">
-        <button type="submit">Log in</button>
+        <button type="submit" [disabled]="submitting">
+          {{ submitting ? 'Logging in...' : 'Log in' }}
+        </button>
       </div>
     </form>
 
     @if (submitted) {
-      <p role="status">Login will be connected to the backend in Stage 3.</p>
+      <p role="status">You are logged in.</p>
+    }
+
+    @if (errorMessage) {
+      <p class="form-error" role="alert">{{ errorMessage }}</p>
     }
 
     <p class="form-footer">Need an account? <a routerLink="/signup">Create one</a>.</p>
