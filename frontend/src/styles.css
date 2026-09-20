@@ -40,3 +40,29 @@ input {
   text-decoration: none;
   cursor: pointer;
 }
+
+.account-form,
+.form-field {
+  display: grid;
+  gap: 0.5rem;
+}
+
+.account-form {
+  gap: 1rem;
+  margin-top: 1.5rem;
+}
+
+.form-field input {
+  width: 100%;
+  padding: 0.625rem;
+  border: 1px solid #6b7280;
+}
+
+.form-error {
+  margin: 0;
+  color: #b42318;
+}
+
+.form-footer {
+  margin-top: 1.5rem;
+}

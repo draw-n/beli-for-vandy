@@ -1,0 +1,71 @@
+<main class="account-page" aria-labelledby="signup-heading">
+  <section class="account-panel">
+    <a routerLink="/account">Back</a>
+    <h1 id="signup-heading">Create account</h1>
+
+    <form class="account-form" [formGroup]="form" (ngSubmit)="onSubmit()" novalidate>
+      <div class="form-field">
+        <label for="signup-email">Email</label>
+        <input
+          id="signup-email"
+          type="email"
+          formControlName="email"
+          autocomplete="email"
+          [attr.aria-invalid]="form.controls.email.touched && form.controls.email.invalid"
+          aria-describedby="signup-email-error"
+        />
+        @if (form.controls.email.touched && form.controls.email.invalid) {
+          <p id="signup-email-error" class="form-error">Enter a valid email address.</p>
+        }
+      </div>
+
+      <div class="form-field">
+        <label for="signup-password">Password</label>
+        <input
+          id="signup-password"
+          type="password"
+          formControlName="password"
+          autocomplete="new-password"
+          [attr.aria-invalid]="form.controls.password.touched && form.controls.password.invalid"
+          aria-describedby="signup-password-error"
+        />
+        @if (form.controls.password.touched && form.controls.password.invalid) {
+          <p id="signup-password-error" class="form-error">
+            Use a password with at least 15 characters.
+          </p>
+        }
+      </div>
+
+      <div class="form-field">
+        <label for="signup-password-confirmation">Confirm password</label>
+        <input
+          id="signup-password-confirmation"
+          type="password"
+          formControlName="confirmPassword"
+          autocomplete="new-password"
+          [attr.aria-invalid]="
+            form.controls.confirmPassword.touched &&
+            (form.controls.confirmPassword.invalid || form.hasError('passwordMismatch'))
+          "
+          aria-describedby="signup-password-confirmation-error"
+        />
+        @if (
+          form.controls.confirmPassword.touched &&
+          (form.controls.confirmPassword.invalid || form.hasError('passwordMismatch'))
+        ) {
+          <p id="signup-password-confirmation-error" class="form-error">Passwords must match.</p>
+        }
+      </div>
+
+      <div class="account-actions">
+        <button type="submit">Create account</button>
+      </div>
+    </form>
+
+    @if (submitted) {
+      <p role="status">Account creation will be connected to the backend in Stage 3.</p>
+    }
+
+    <p class="form-footer">Already have an account? <a routerLink="/login">Log in</a>.</p>
+  </section>
+</main>
