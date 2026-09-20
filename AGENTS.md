@@ -15,3 +15,6 @@ Beli for Vanderbilt helps Vanderbilt students, faculty, and staff discover dinin
 - Keep MongoDB access isolated in the backend database layer and use asynchronous operations.
 - Keep secrets and environment-specific configuration in ignored `.env` files; document only safe placeholders in `.env.example`.
 - If a new architectural pattern is introduced, explicitly document it in this section.
+
+## Style guide
+- Keep custom CSS rules minimal, until a style guide is implemented here.
