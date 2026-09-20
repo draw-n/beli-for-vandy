@@ -1,31 +1,33 @@
-import os
+from contextlib import asynccontextmanager
+
 from fastapi import FastAPI
-from dotenv import load_dotenv
 import uvicorn
-from database import client
 
-# Load environment variables from .env file
-load_dotenv()
+from auth.repository import AccountRepository
+from auth.router import router as auth_router
+from database import client, db
+from settings import get_settings
 
-PORT = int(os.getenv("PORT", 8000))  # Default to 8000 if not set
-HOST = os.getenv("HOST", "0.0.0.0")  # '0.0.0.0' or 'localhost'
 
-app = FastAPI(title="Beli for Vanderbilt API")
-
-@app.on_event("startup")
-async def startup_db_client():
+@asynccontextmanager
+async def lifespan(_: FastAPI):
+    await client.admin.command("ping")
+    await AccountRepository(db).ensure_indexes()
     try:
-        # Ping the MongoDB cluster to verify connectivity
-        await client.admin.command('ping')
-        print("\n------------------------------------------------")
-        print("Successfully connected to MongoDB Atlas!")
-        print("------------------------------------------------\n")
-    except Exception as e:
-        print(f"\nFailed to connect to MongoDB: {e}\n")
+        yield
+    finally:
+        await client.close()
+
+
+app = FastAPI(title="Beli for Vanderbilt API", lifespan=lifespan)
+app.include_router(auth_router)
+
 
 @app.get("/")
 async def root():
     return {"message": "Beli for Vanderbilt API is up and running!"}
 
+
 if __name__ == "__main__":
-    uvicorn.run("main:app", host=HOST, port=PORT, reload=True)
+    settings = get_settings()
+    uvicorn.run("main:app", host=settings.host, port=settings.port, reload=True)

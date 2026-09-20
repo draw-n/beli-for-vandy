@@ -5,6 +5,7 @@ from pwdlib import PasswordHash
 
 
 password_hash = PasswordHash.recommended()
+DUMMY_PASSWORD_HASH = password_hash.hash(secrets.token_urlsafe(32))
 
 
 def hash_password(password: str) -> str:
