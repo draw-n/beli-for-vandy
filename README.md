@@ -20,3 +20,5 @@ Have you ever felt like you wasted a meal swipe at a Vanderbilt dining hall? Wou
 - TypeScript: great for ensuring we stick to consistent types, so there’s no unexpected field behavior
 - Vercel: We will be deploying the project in Vercel since it provides a free hosting service for servers as long as they remain hobbyist projects (low traffic)
 - (MongoDB) Atlas: database since it is also free with hobbyist projects
+
+## Installation
