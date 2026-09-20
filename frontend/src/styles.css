@@ -1,1 +1,42 @@
-/* You can add global styles to this file, and also import other style files */
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  color: #1f2937;
+  font-family: Arial, sans-serif;
+}
+
+button,
+input {
+  font: inherit;
+}
+
+.account-page {
+  min-height: 100dvh;
+  display: grid;
+  place-items: center;
+  padding: 1rem;
+}
+
+.account-panel {
+  width: min(100%, 28rem);
+}
+
+.account-actions {
+  display: grid;
+  gap: 0.75rem;
+  margin-top: 1.5rem;
+}
+
+.account-actions a,
+.account-actions button {
+  padding: 0.75rem;
+  border: 1px solid currentColor;
+  color: inherit;
+  background: transparent;
+  text-align: center;
+  text-decoration: none;
+  cursor: pointer;
+}
