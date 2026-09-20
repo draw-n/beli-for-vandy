@@ -1,4 +1,6 @@
 fastapi[standard]
+pydantic-settings
 pymongo
+pwdlib[argon2]
 python-dotenv
 uvicorn
