@@ -27,7 +27,7 @@ export class SignupPage {
   protected readonly form = this.formBuilder.nonNullable.group(
     {
       email: ['', [Validators.required, Validators.email]],
-      password: ['', [Validators.required, Validators.minLength(15)]],
+      password: ['', [Validators.required, Validators.minLength(3)]],
       confirmPassword: ['', Validators.required],
     },
     { validators: passwordsMatch },

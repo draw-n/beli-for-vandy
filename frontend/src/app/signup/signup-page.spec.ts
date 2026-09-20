@@ -32,4 +32,25 @@ describe('SignupPage', () => {
 
     expect(fixture.nativeElement.textContent).toContain('Passwords must match.');
   });
+
+  it('requires at least three password characters', () => {
+    const fixture = TestBed.createComponent(SignupPage);
+    fixture.detectChanges();
+
+    const inputs = fixture.nativeElement.querySelectorAll('input') as NodeListOf<HTMLInputElement>;
+    const values = ['person@example.com', 'ab', 'ab'];
+
+    inputs.forEach((input, index) => {
+      input.value = values[index];
+      input.dispatchEvent(new Event('input'));
+    });
+
+    const form = fixture.nativeElement.querySelector('form') as HTMLFormElement;
+    form.dispatchEvent(new Event('submit'));
+    fixture.detectChanges();
+
+    expect(fixture.nativeElement.textContent).toContain(
+      'Use a password with at least 3 characters.',
+    );
+  });
 });
