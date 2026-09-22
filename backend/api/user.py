@@ -12,7 +12,7 @@ from models.user import User, UserCreate, UserLogin, UserResponse
 from settings import Settings, get_settings
 
 
-router = APIRouter(prefix="/auth", tags=["auth"])
+router = APIRouter(prefix="/auth", tags=["Authentication"])
 
 
 def get_user_controller(
@@ -46,7 +46,18 @@ def user_response(user: User) -> UserResponse:
     )
 
 
-@router.post("/signup", response_model=UserResponse, status_code=status.HTTP_201_CREATED)
+@router.post(
+    "/signup",
+    response_model=UserResponse,
+    status_code=status.HTTP_201_CREATED,
+    summary="Create an account",
+    description="Create a user account with an email address and password.",
+    responses={
+        status.HTTP_409_CONFLICT: {
+            "description": "An account already uses the supplied email address."
+        },
+    },
+)
 async def signup(
     payload: UserCreate,
     controller: Annotated[UserController, Depends(get_user_controller)],
@@ -62,7 +73,17 @@ async def signup(
     return user_response(user)
 
 
-@router.post("/login", response_model=UserResponse)
+@router.post(
+    "/login",
+    response_model=UserResponse,
+    summary="Log in",
+    description="Authenticate a user and set an opaque session token in an HttpOnly cookie.",
+    responses={
+        status.HTTP_401_UNAUTHORIZED: {
+            "description": "The supplied email or password is incorrect."
+        },
+    },
+)
 async def login(
     payload: UserLogin,
     response: Response,
@@ -89,7 +110,17 @@ async def login(
     return user_response(session.user)
 
 
-@router.get("/me", response_model=UserResponse)
+@router.get(
+    "/me",
+    response_model=UserResponse,
+    summary="Get the current user",
+    description="Return the user associated with the session cookie.",
+    responses={
+        status.HTTP_401_UNAUTHORIZED: {
+            "description": "The session cookie is missing, invalid, or expired."
+        },
+    },
+)
 async def get_me(
     user: Annotated[User, Depends(get_current_user)],
 ) -> UserResponse:

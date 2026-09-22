@@ -20,11 +20,16 @@ async def lifespan(_: FastAPI):
         await client.close()
 
 
-app = FastAPI(title="Beli for Vanderbilt API", lifespan=lifespan)
+app = FastAPI(
+    title="Beli for Vanderbilt API",
+    description="API for Vanderbilt dining discovery, ratings, reviews, and friends.",
+    version="0.1.0",
+    lifespan=lifespan,
+)
 app.include_router(user_router)
 
 
-@app.get("/")
+@app.get("/", tags=["System"], summary="Check API health")
 async def root():
     return {"message": "Beli for Vanderbilt API is up and running!"}
 
