@@ -1,0 +1,114 @@
+<div class="detail-page" *ngIf="hall; else notFound">
+  <!-- Cover photo with title overlaid -->
+  <div class="cover">
+    <img [src]="hall.image" [alt]="hall.name" />
+    <div class="cover-fade"></div>
+
+    <a class="back-link" routerLink="/">← Back</a>
+
+    <div class="cover-title">
+      <span class="rank-tag" *ngIf="hall.rank">#{{ hall.rank }} nearby</span>
+      <h1>{{ hall.name }}</h1>
+      <p class="meta">{{ hall.location }}</p>
+    </div>
+  </div>
+
+  <div class="content">
+    <!-- Tags -->
+    <div class="tag-row">
+      <span class="tag" *ngFor="let tag of hall.tags">{{ tag }}</span>
+    </div>
+
+    <!-- Ratings -->
+    <section class="score-summary">
+      <div class="score-card">
+        <span class="score-value">{{ hall.rating.toFixed(1) }}</span>
+        <span class="score-label">Overall</span>
+      </div>
+
+      <div class="score-divider"></div>
+
+      <div class="score-card">
+        <span class="score-value friend">{{ hall.friendRating.toFixed(1) }}</span>
+        <span class="score-label">Friends</span>
+      </div>
+
+      <div class="score-divider"></div>
+
+      <div class="score-card">
+        <span class="score-value count">{{ hall.ratingCount }}</span>
+        <span class="score-label">Ratings</span>
+      </div>
+    </section>
+
+    <!-- Rate/review button -->
+    <button class="rank-button">★ Rate & review</button>
+
+    <!-- Photos, scroll left/right -->
+    <section class="section">
+      <h2>Photos</h2>
+
+      <div class="photo-row">
+        <div class="photo-item" *ngFor="let photo of hall.photos">
+          <img [src]="photo" [alt]="hall.name" />
+        </div>
+      </div>
+    </section>
+
+    <!-- Reviews -->
+    <!-- Reviews -->
+    <section class="section reviews-section">
+      <div class="section-heading-row">
+        <h2>Reviews</h2>
+        <span class="review-total">
+          {{ hall.reviews.length }}
+        </span>
+      </div>
+
+      <div class="review-list" *ngIf="hall.reviews.length; else noReviews">
+        <article class="review" *ngFor="let review of hall.reviews">
+          <!-- Top row -->
+          <div class="review-header">
+            <!-- Avatar -->
+            <div class="review-avatar">
+              {{ review.user.charAt(0) }}
+            </div>
+
+            <!-- User info -->
+            <div class="review-user">
+              <strong>
+                {{ review.user }}
+              </strong>
+
+              <span *ngIf="review.favoriteDish"> Favorite: {{ review.favoriteDish }} </span>
+            </div>
+
+            <!-- Score -->
+            <div class="review-score">
+              {{ review.rating.toFixed(1) }}
+            </div>
+          </div>
+
+          <!-- Review text -->
+          <p class="review-comment">
+            {{ review.text }}
+          </p>
+        </article>
+      </div>
+
+      <ng-template #noReviews>
+        <div class="empty-reviews">
+          <p>No reviews yet.</p>
+          <span>Be the first to rate this spot.</span>
+        </div>
+      </ng-template>
+    </section>
+  </div>
+</div>
+
+<ng-template #notFound>
+  <div class="not-found">
+    <h2>Dining hall not found</h2>
+    <a routerLink="/">← Back to all dining halls</a>
+  </div>
+</ng-template>

@@ -1,0 +1,65 @@
+<div class="page">
+  <!-- Header -->
+  <header class="hero">
+    <p class="eyebrow">VANDERBILT DINING</p>
+
+    <h1>Find your next meal.</h1>
+
+    <p class="subtitle">Explore dining spots across Vanderbilt and find your next favorite.</p>
+
+    <!-- Search -->
+    <div class="search-container">
+      <span class="search-icon">⌕</span>
+
+      <input
+        type="text"
+        [(ngModel)]="searchTerm"
+        placeholder="Search dining halls..."
+        aria-label="Search dining halls"
+      />
+    </div>
+  </header>
+
+  <!-- Dining Hall List -->
+  <main>
+    <div class="section-heading">
+      <div>
+        <h2>Dining spots</h2>
+        <p>{{ filteredDiningHalls.length }} places</p>
+      </div>
+    </div>
+
+    <div class="dining-grid">
+      <article
+        class="dining-card"
+        *ngFor="let hall of filteredDiningHalls"
+        [routerLink]="['/dining-halls', hall.id]"
+      >
+        <!-- Dining Hall Image -->
+        <div class="image-wrapper">
+          <img [src]="hall.image" [alt]="hall.name" />
+
+          <button class="favorite-button" aria-label="Favorite dining hall">♡</button>
+        </div>
+
+        <!-- Dining Hall Information -->
+        <div class="card-content">
+          <div class="card-header">
+            <h3>{{ hall.name }}</h3>
+
+            <div class="rating">
+              <span>★</span>
+              <strong>{{ hall.rating }}</strong>
+            </div>
+          </div>
+        </div>
+      </article>
+    </div>
+
+    <!-- Displayed if search has no results -->
+    <div class="empty-state" *ngIf="filteredDiningHalls.length === 0">
+      <h3>No dining spots found</h3>
+      <p>Try searching for something else.</p>
+    </div>
+  </main>
+</div>
