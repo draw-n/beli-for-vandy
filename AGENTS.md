@@ -13,7 +13,7 @@ Beli for Vanderbilt helps Vanderbilt students, faculty, and staff discover dinin
 
 - Preserve the frontend/backend separation described above.
 - Keep MongoDB access isolated in the backend database layer and use asynchronous operations.
-- Structure backend features into router, service, and repository layers: routers handle HTTP, services hold business logic, and repositories own persistence.
+- Structure the backend into model, controller, and route layers: models define application data, controllers coordinate application logic and persistence, and routes handle HTTP concerns.
 - Use native email/password authentication with opaque server-managed sessions; expose session tokens only through `HttpOnly` cookies and persist only their hashes.
 - Keep secrets and environment-specific configuration in ignored `.env` files; document only safe placeholders in `.env.example`.
 - If a new architectural pattern is introduced, explicitly document it in this section.

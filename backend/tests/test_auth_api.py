@@ -4,52 +4,52 @@ from datetime import datetime, timezone
 from fastapi import FastAPI
 from fastapi.testclient import TestClient
 
-from auth.dependencies import get_auth_service
-from auth.repository import Account, AccountAlreadyExistsError
-from auth.router import router
-from auth.service import AuthService
+from controllers.security import hash_password, verify_password
+from controllers.user import (
+    AuthenticatedSession,
+    InvalidCredentialsError,
+    UserAlreadyExistsError,
+)
+from models.user import User
+from routes.user import get_user_controller, router
 from settings import Settings, get_settings
 
 
-class FakeAccountRepository:
+class FakeUserController:
     def __init__(self) -> None:
-        self.accounts_by_email: dict[str, Account] = {}
-        self.accounts_by_id: dict[str, Account] = {}
-        self.account_ids_by_session_hash: dict[str, str] = {}
+        self.users_by_email: dict[str, User] = {}
+        self.users_by_session: dict[str, User] = {}
 
-    async def create_account(self, email: str, password_hash: str) -> Account:
-        if email in self.accounts_by_email:
-            raise AccountAlreadyExistsError
+    async def create_user(self, email: str, password: str) -> User:
+        email = email.strip().lower()
+        if email in self.users_by_email:
+            raise UserAlreadyExistsError
 
-        account = Account(
-            id=str(len(self.accounts_by_id) + 1),
+        user = User(
+            id=str(len(self.users_by_email) + 1),
             email=email,
-            password_hash=password_hash,
+            password_hash=hash_password(password),
             created_at=datetime.now(timezone.utc),
         )
-        self.accounts_by_email[email] = account
-        self.accounts_by_id[account.id] = account
-        return account
+        self.users_by_email[email] = user
+        return user
 
-    async def find_account_by_email(self, email: str) -> Account | None:
-        return self.accounts_by_email.get(email)
+    async def login(self, email: str, password: str) -> AuthenticatedSession:
+        user = self.users_by_email.get(email.strip().lower())
+        if user is None or not verify_password(password, user.password_hash):
+            raise InvalidCredentialsError
 
-    async def create_session(
-        self,
-        account_id: str,
-        token_hash: str,
-        expires_at: datetime,
-    ) -> None:
-        self.account_ids_by_session_hash[token_hash] = account_id
+        token = f"session-{user.id}"
+        self.users_by_session[token] = user
+        return AuthenticatedSession(user=user, token=token)
 
-    async def find_account_by_session_hash(self, token_hash: str) -> Account | None:
-        account_id = self.account_ids_by_session_hash.get(token_hash)
-        return self.accounts_by_id.get(account_id) if account_id else None
+    async def get_user_for_session(self, token: str) -> User | None:
+        return self.users_by_session.get(token)
 
 
 class AuthApiTestCase(unittest.TestCase):
     def setUp(self) -> None:
-        self.repository = FakeAccountRepository()
+        self.controller = FakeUserController()
         self.settings = Settings(
             _env_file=None,
             mongodb_uri="mongodb://localhost:27017",
@@ -57,11 +57,9 @@ class AuthApiTestCase(unittest.TestCase):
             session_ttl_hours=1,
             session_cookie_secure=False,
         )
-        self.service = AuthService(self.repository, self.settings.session_ttl_seconds)
-
         app = FastAPI()
         app.include_router(router)
-        app.dependency_overrides[get_auth_service] = lambda: self.service
+        app.dependency_overrides[get_user_controller] = lambda: self.controller
         app.dependency_overrides[get_settings] = lambda: self.settings
         self.client = TestClient(app)
 
@@ -75,7 +73,7 @@ class AuthApiTestCase(unittest.TestCase):
         self.assertEqual(response.json()["email"], "person@example.com")
         self.assertNotIn("password", response.json())
         self.assertNotEqual(
-            self.repository.accounts_by_email["person@example.com"].password_hash,
+            self.controller.users_by_email["person@example.com"].password_hash,
             "abc",
         )
 

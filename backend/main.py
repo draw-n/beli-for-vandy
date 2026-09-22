@@ -3,16 +3,17 @@ from contextlib import asynccontextmanager
 from fastapi import FastAPI
 import uvicorn
 
-from auth.repository import AccountRepository
-from auth.router import router as auth_router
+from controllers.user import UserController
 from database import client, db
+from routes.user import router as user_router
 from settings import get_settings
 
 
 @asynccontextmanager
 async def lifespan(_: FastAPI):
     await client.admin.command("ping")
-    await AccountRepository(db).ensure_indexes()
+    settings = get_settings()
+    await UserController(db, settings.session_ttl_seconds).ensure_indexes()
     try:
         yield
     finally:
@@ -20,7 +21,7 @@ async def lifespan(_: FastAPI):
 
 
 app = FastAPI(title="Beli for Vanderbilt API", lifespan=lifespan)
-app.include_router(auth_router)
+app.include_router(user_router)
 
 
 @app.get("/")
