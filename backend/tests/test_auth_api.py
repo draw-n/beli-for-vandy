@@ -4,8 +4,8 @@ from datetime import datetime, timezone
 from fastapi import FastAPI
 from fastapi.testclient import TestClient
 
+from api.user import get_user_controller, router
 from models.user import User
-from routes.user import get_user_controller, router
 
 
 class FakeUserController:

@@ -3,9 +3,9 @@ from contextlib import asynccontextmanager
 from fastapi import FastAPI
 import uvicorn
 
+from api.user import router as user_router
 from controllers.user import UserController
 from database import client, db
-from routes.user import router as user_router
 from settings import get_settings
 
 
