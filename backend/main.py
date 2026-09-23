@@ -4,6 +4,8 @@ from dotenv import load_dotenv
 import uvicorn
 from database import client
 
+from routes.review import router as review_router
+
 # Load environment variables from .env file
 load_dotenv()
 
@@ -22,6 +24,9 @@ async def startup_db_client():
         print("------------------------------------------------\n")
     except Exception as e:
         print(f"\nFailed to connect to MongoDB: {e}\n")
+
+
+app.include_router(review_router)
 
 @app.get("/")
 async def root():
