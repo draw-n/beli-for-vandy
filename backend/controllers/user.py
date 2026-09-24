@@ -1,18 +1,14 @@
-from dataclasses import dataclass
-from datetime import datetime, timedelta, timezone
+from datetime import datetime, timezone
 from typing import Any
 
 from bson import ObjectId
 from fastapi.concurrency import run_in_threadpool
-from pymongo import ASCENDING
 from pymongo.asynchronous.database import AsyncDatabase
 from pymongo.errors import DuplicateKeyError
 
 from controllers.security import (
     DUMMY_PASSWORD_HASH,
-    generate_session_token,
     hash_password,
-    hash_session_token,
     verify_password,
 )
 from models.user import User
@@ -26,25 +22,12 @@ class InvalidCredentialsError(Exception):
     pass
 
 
-@dataclass(frozen=True, slots=True)
-class AuthenticatedSession:
-    user: User
-    token: str
-
-
 class UserController:
-    def __init__(self, database: AsyncDatabase, session_ttl_seconds: int) -> None:
+    def __init__(self, database: AsyncDatabase) -> None:
         self._users = database.get_collection("accounts")
-        self._sessions = database.get_collection("auth_sessions")
-        self._session_ttl_seconds = session_ttl_seconds
 
     async def ensure_indexes(self) -> None:
         await self._users.create_index("email", unique=True)
-        await self._sessions.create_index("token_hash", unique=True)
-        await self._sessions.create_index(
-            [("expires_at", ASCENDING)],
-            expireAfterSeconds=0,
-        )
 
     async def create_user(self, email: str, password: str) -> User:
         normalized_email = self._normalize_email(email)
@@ -68,7 +51,7 @@ class UserController:
             created_at=created_at,
         )
 
-    async def login(self, email: str, password: str) -> AuthenticatedSession:
+    async def delete_user(self, email: str, password: str) -> None:
         normalized_email = self._normalize_email(email)
         user = self._to_user(await self._users.find_one({"email": normalized_email}))
         encoded_password = user.password_hash if user is not None else DUMMY_PASSWORD_HASH
@@ -81,24 +64,9 @@ class UserController:
         if user is None or not password_is_valid:
             raise InvalidCredentialsError
 
-        token = generate_session_token()
-        expires_at = datetime.now(timezone.utc) + timedelta(seconds=self._session_ttl_seconds)
-        await self._sessions.insert_one(
-            {
-                "account_id": ObjectId(user.id),
-                "token_hash": hash_session_token(token),
-                "created_at": datetime.now(timezone.utc),
-                "expires_at": expires_at,
-            }
-        )
-        return AuthenticatedSession(user=user, token=token)
-
-    async def get_user_for_session(self, token: str) -> User | None:
-        session = await self._sessions.find_one({"token_hash": hash_session_token(token)})
-        if session is None or session["expires_at"] <= datetime.now(timezone.utc):
-            return None
-
-        return self._to_user(await self._users.find_one({"_id": session["account_id"]}))
+        result = await self._users.delete_one({"_id": ObjectId(user.id)})
+        if result.deleted_count != 1:
+            raise InvalidCredentialsError
 
     @staticmethod
     def _normalize_email(email: str) -> str:

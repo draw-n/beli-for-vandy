@@ -17,7 +17,7 @@ class UserCreate(BaseModel):
     password: str = Field(min_length=3)
 
 
-class UserLogin(BaseModel):
+class UserDelete(BaseModel):
     email: EmailStr
     password: str = Field(min_length=1)
 

@@ -1,6 +1,6 @@
 from typing import Annotated
 
-from fastapi import APIRouter, Depends, HTTPException, Request, Response, status
+from fastapi import APIRouter, Depends, HTTPException, status
 
 from controllers.user import (
     InvalidCredentialsError,
@@ -8,34 +8,14 @@ from controllers.user import (
     UserController,
 )
 from database import db
-from models.user import User, UserCreate, UserLogin, UserResponse
-from settings import Settings, get_settings
+from models.user import User, UserCreate, UserDelete, UserResponse
 
 
-router = APIRouter(prefix="/auth", tags=["Authentication"])
+router = APIRouter(prefix="/accounts", tags=["Accounts"])
 
 
-def get_user_controller(
-    settings: Annotated[Settings, Depends(get_settings)],
-) -> UserController:
-    return UserController(db, settings.session_ttl_seconds)
-
-
-async def get_current_user(
-    request: Request,
-    controller: Annotated[UserController, Depends(get_user_controller)],
-    settings: Annotated[Settings, Depends(get_settings)],
-) -> User:
-    token = request.cookies.get(settings.session_cookie_name)
-    user = await controller.get_user_for_session(token) if token else None
-
-    if user is None:
-        raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Not authenticated",
-        )
-
-    return user
+def get_user_controller() -> UserController:
+    return UserController(db)
 
 
 def user_response(user: User) -> UserResponse:
@@ -47,7 +27,7 @@ def user_response(user: User) -> UserResponse:
 
 
 @router.post(
-    "/signup",
+    "",
     response_model=UserResponse,
     status_code=status.HTTP_201_CREATED,
     summary="Create an account",
@@ -58,7 +38,7 @@ def user_response(user: User) -> UserResponse:
         },
     },
 )
-async def signup(
+async def create_account(
     payload: UserCreate,
     controller: Annotated[UserController, Depends(get_user_controller)],
 ) -> UserResponse:
@@ -73,55 +53,25 @@ async def signup(
     return user_response(user)
 
 
-@router.post(
-    "/login",
-    response_model=UserResponse,
-    summary="Log in",
-    description="Authenticate a user and set an opaque session token in an HttpOnly cookie.",
+@router.delete(
+    "",
+    status_code=status.HTTP_204_NO_CONTENT,
+    summary="Delete an account",
+    description="Permanently delete an account after verifying its email address and password.",
     responses={
         status.HTTP_401_UNAUTHORIZED: {
-            "description": "The supplied email or password is incorrect."
+            "description": "The supplied account credentials are incorrect."
         },
     },
 )
-async def login(
-    payload: UserLogin,
-    response: Response,
+async def delete_account(
+    payload: UserDelete,
     controller: Annotated[UserController, Depends(get_user_controller)],
-    settings: Annotated[Settings, Depends(get_settings)],
-) -> UserResponse:
+) -> None:
     try:
-        session = await controller.login(str(payload.email), payload.password)
+        await controller.delete_user(str(payload.email), payload.password)
     except InvalidCredentialsError as error:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Invalid email or password",
         ) from error
-
-    response.set_cookie(
-        key=settings.session_cookie_name,
-        value=session.token,
-        max_age=settings.session_ttl_seconds,
-        httponly=True,
-        secure=settings.session_cookie_secure,
-        samesite="lax",
-        path="/",
-    )
-    return user_response(session.user)
-
-
-@router.get(
-    "/me",
-    response_model=UserResponse,
-    summary="Get the current user",
-    description="Return the user associated with the session cookie.",
-    responses={
-        status.HTTP_401_UNAUTHORIZED: {
-            "description": "The session cookie is missing, invalid, or expired."
-        },
-    },
-)
-async def get_me(
-    user: Annotated[User, Depends(get_current_user)],
-) -> UserResponse:
-    return user_response(user)

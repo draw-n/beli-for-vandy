@@ -12,8 +12,7 @@ from settings import get_settings
 @asynccontextmanager
 async def lifespan(_: FastAPI):
     await client.admin.command("ping")
-    settings = get_settings()
-    await UserController(db, settings.session_ttl_seconds).ensure_indexes()
+    await UserController(db).ensure_indexes()
     try:
         yield
     finally:
