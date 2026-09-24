@@ -1,114 +1,185 @@
 <div class="detail-page" *ngIf="hall; else notFound">
-  <!-- Cover photo with title overlaid -->
-  <div class="cover">
-    <img [src]="hall.image" [alt]="hall.name" />
-    <div class="cover-fade"></div>
+  <!-- Back -->
+  <a mat-button routerLink="/" class="back-button">
+    <mat-icon>arrow_back</mat-icon>
+    All dining spots
+  </a>
 
-    <a class="back-link" routerLink="/">← Back</a>
+  <!-- Main photo -->
+  <img *ngIf="hall.image" class="cover-image" [src]="hall.image" [alt]="hall.name" />
 
-    <div class="cover-title">
-      <span class="rank-tag" *ngIf="hall.rank">#{{ hall.rank }} nearby</span>
-      <h1>{{ hall.name }}</h1>
-      <p class="meta">{{ hall.location }}</p>
-    </div>
-  </div>
+  <!-- Hall information -->
+  <section class="hall-header">
+    <h1>{{ hall.name }}</h1>
 
-  <div class="content">
-    <!-- Tags -->
-    <div class="tag-row">
-      <span class="tag" *ngFor="let tag of hall.tags">{{ tag }}</span>
-    </div>
+    <p class="location">
+      <mat-icon>location_on</mat-icon>
+      {{ hall.location }}
+    </p>
 
-    <!-- Ratings -->
-    <section class="score-summary">
-      <div class="score-card">
-        <span class="score-value">{{ hall.rating.toFixed(1) }}</span>
-        <span class="score-label">Overall</span>
-      </div>
+    <mat-chip-set>
+      <mat-chip *ngFor="let tag of hall.tags">
+        {{ tag }}
+      </mat-chip>
+    </mat-chip-set>
+  </section>
 
-      <div class="score-divider"></div>
+  <!-- Ratings -->
+  <mat-card appearance="outlined" class="rating-card">
+    <mat-card-content>
+      <div class="rating-summary">
+        <!-- Overall -->
+        <div class="score">
+          <div class="score-value">
+            <mat-icon>star</mat-icon>
 
-      <div class="score-card">
-        <span class="score-value friend">{{ hall.friendRating.toFixed(1) }}</span>
-        <span class="score-label">Friends</span>
-      </div>
+            <strong>
+              {{ hall.reviewCount > 0 ? (hall.averageRating | number: '1.1-1') : '—' }}
+            </strong>
+          </div>
 
-      <div class="score-divider"></div>
+          <span>Overall</span>
+        </div>
 
-      <div class="score-card">
-        <span class="score-value count">{{ hall.ratingCount }}</span>
-        <span class="score-label">Ratings</span>
-      </div>
-    </section>
+        <mat-divider vertical></mat-divider>
 
-    <!-- Rate/review button -->
-    <button class="rank-button">★ Rate & review</button>
+        <!-- Friends -->
+        <div class="score">
+          <div class="score-value">
+            <mat-icon>group</mat-icon>
 
-    <!-- Photos, scroll left/right -->
-    <section class="section">
-      <h2>Photos</h2>
+            <strong>
+              {{ hall.friendRating !== null ? (hall.friendRating | number: '1.1-1') : '—' }}
+            </strong>
+          </div>
 
-      <div class="photo-row">
-        <div class="photo-item" *ngFor="let photo of hall.photos">
-          <img [src]="photo" [alt]="hall.name" />
+          <span>Friends</span>
+        </div>
+
+        <mat-divider vertical></mat-divider>
+
+        <!-- Review count -->
+        <div class="score">
+          <div class="score-value">
+            <mat-icon>rate_review</mat-icon>
+
+            <strong>
+              {{ hall.reviewCount }}
+            </strong>
+          </div>
+
+          <span>Reviews</span>
         </div>
       </div>
-    </section>
+    </mat-card-content>
+  </mat-card>
 
-    <!-- Reviews -->
-    <!-- Reviews -->
-    <section class="section reviews-section">
-      <div class="section-heading-row">
-        <h2>Reviews</h2>
-        <span class="review-total">
-          {{ hall.reviews.length }}
-        </span>
-      </div>
+  <!-- Rate/review -->
+  <button mat-flat-button class="review-button" (click)="openReviewDialog()">
+    <mat-icon>star</mat-icon>
+    Rate & review
+  </button>
 
-      <div class="review-list" *ngIf="hall.reviews.length; else noReviews">
-        <article class="review" *ngFor="let review of hall.reviews">
-          <!-- Top row -->
-          <div class="review-header">
-            <!-- Avatar -->
-            <div class="review-avatar">
-              {{ review.user.charAt(0) }}
-            </div>
+  <!-- Hours -->
+  <section class="section">
+    <h2>Hours</h2>
 
-            <!-- User info -->
-            <div class="review-user">
+    <mat-card appearance="outlined">
+      <mat-card-content class="hours-card">
+        <div class="hours-row" *ngFor="let hours of hall.hours">
+          <span class="hours-day">
+            {{ hours.day }}
+          </span>
+
+          <span class="hours-time"> {{ hours.openTime }} – {{ hours.closeTime }} </span>
+        </div>
+
+        <div class="no-hours" *ngIf="hall.hours.length === 0">Hours unavailable</div>
+      </mat-card-content>
+    </mat-card>
+  </section>
+
+  <!-- Photos -->
+  <section class="section" *ngIf="hall.photos?.length">
+    <h2>Photos</h2>
+
+    <div class="photo-row">
+      <img *ngFor="let photo of hall.photos" [src]="photo" [alt]="hall.name" />
+    </div>
+  </section>
+
+  <!-- Reviews -->
+  <section class="section">
+    <div class="section-heading">
+      <h2>Reviews</h2>
+
+      <span>
+        {{ hall.reviewCount }}
+      </span>
+    </div>
+
+    <mat-divider></mat-divider>
+
+    <div class="reviews" *ngIf="hall.reviews.length > 0; else noReviews">
+      <div class="review" *ngFor="let review of hall.reviews">
+        <div class="review-header">
+          <div class="review-user">
+            <mat-icon> account_circle </mat-icon>
+
+            <div>
               <strong>
-                {{ review.user }}
+                {{ review.userId }}
               </strong>
 
-              <span *ngIf="review.favoriteDish"> Favorite: {{ review.favoriteDish }} </span>
-            </div>
-
-            <!-- Score -->
-            <div class="review-score">
-              {{ review.rating.toFixed(1) }}
+              <span>
+                {{ review.mealType }}
+                ·
+                {{ review.createdAt | date: 'mediumDate' }}
+              </span>
             </div>
           </div>
 
-          <!-- Review text -->
-          <p class="review-comment">
-            {{ review.text }}
-          </p>
-        </article>
-      </div>
+          <div class="review-rating">
+            <mat-icon>star</mat-icon>
 
-      <ng-template #noReviews>
-        <div class="empty-reviews">
-          <p>No reviews yet.</p>
-          <span>Be the first to rate this spot.</span>
+            <strong>
+              {{ review.rating | number: '1.1-1' }}
+            </strong>
+          </div>
         </div>
-      </ng-template>
-    </section>
-  </div>
+
+        <p>
+          {{ review.reviewText }}
+        </p>
+
+        <mat-divider></mat-divider>
+      </div>
+    </div>
+
+    <ng-template #noReviews>
+      <div class="empty-reviews">
+        <mat-icon> rate_review </mat-icon>
+
+        <h3>No reviews yet</h3>
+
+        <p>Be the first to review this dining spot.</p>
+      </div>
+    </ng-template>
+  </section>
 </div>
 
+<!-- Not found -->
 <ng-template #notFound>
   <div class="not-found">
+    <mat-icon> restaurant </mat-icon>
+
     <h2>Dining hall not found</h2>
-    <a routerLink="/">← Back to all dining halls</a>
+
+    <p>We couldn't find that dining spot.</p>
+
+    <a mat-button routerLink="/">
+      <mat-icon>arrow_back</mat-icon>
+      Back to dining spots
+    </a>
   </div>
 </ng-template>

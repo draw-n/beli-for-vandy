@@ -1,28 +1,22 @@
 <div class="page">
-  <!-- Header -->
-  <header class="hero">
+  <header>
     <p class="eyebrow">VANDERBILT DINING</p>
 
     <h1>Find your next meal.</h1>
 
-    <p class="subtitle">Explore dining spots across Vanderbilt and find your next favorite.</p>
+    <p class="subtitle">Explore dining spots across Vanderbilt and see what students think.</p>
 
-    <!-- Search -->
-    <div class="search-container">
-      <span class="search-icon">⌕</span>
+    <mat-form-field appearance="outline" class="search">
+      <mat-label>Search dining halls</mat-label>
 
-      <input
-        type="text"
-        [(ngModel)]="searchTerm"
-        placeholder="Search dining halls..."
-        aria-label="Search dining halls"
-      />
-    </div>
+      <mat-icon matPrefix>search</mat-icon>
+
+      <input matInput type="text" [(ngModel)]="searchTerm" placeholder="Name, location, or tag" />
+    </mat-form-field>
   </header>
 
-  <!-- Dining Hall List -->
   <main>
-    <div class="section-heading">
+    <div class="section-header">
       <div>
         <h2>Dining spots</h2>
         <p>{{ filteredDiningHalls.length }} places</p>
@@ -30,36 +24,75 @@
     </div>
 
     <div class="dining-grid">
-      <article
-        class="dining-card"
+      <mat-card
         *ngFor="let hall of filteredDiningHalls"
-        [routerLink]="['/dining-halls', hall.id]"
+        class="dining-card"
+        appearance="outlined"
+        [routerLink]="['/dining-halls', hall.uuid]"
       >
-        <!-- Dining Hall Image -->
-        <div class="image-wrapper">
-          <img [src]="hall.image" [alt]="hall.name" />
+        <img *ngIf="hall.image" mat-card-image [src]="hall.image" [alt]="hall.name" />
 
-          <button class="favorite-button" aria-label="Favorite dining hall">♡</button>
-        </div>
+        <mat-card-header>
+          <mat-card-title>
+            {{ hall.name }}
+          </mat-card-title>
 
-        <!-- Dining Hall Information -->
-        <div class="card-content">
-          <div class="card-header">
-            <h3>{{ hall.name }}</h3>
+          <mat-card-subtitle>
+            <mat-icon>location_on</mat-icon>
+            {{ hall.location }}
+          </mat-card-subtitle>
+        </mat-card-header>
 
-            <div class="rating">
-              <span>★</span>
-              <strong>{{ hall.rating }}</strong>
-            </div>
+        <mat-card-content>
+          <mat-chip-set>
+            <mat-chip *ngFor="let tag of hall.tags">
+              {{ tag }}
+            </mat-chip>
+          </mat-chip-set>
+
+          <!-- Today's hours -->
+          <div class="hours-preview" *ngIf="getTodayHours(hall) as todayHours">
+            <mat-icon>schedule</mat-icon>
+
+            <span>
+              Today:
+              {{ todayHours.openTime }}
+              –
+              {{ todayHours.closeTime }}
+            </span>
           </div>
-        </div>
-      </article>
+
+          <div class="hours-preview" *ngIf="!getTodayHours(hall)">
+            <mat-icon>schedule</mat-icon>
+            <span>Closed today</span>
+          </div>
+
+          <div class="rating-row">
+            <div class="rating">
+              <mat-icon>star</mat-icon>
+
+              <strong>
+                {{ hall.reviewCount > 0 ? (hall.averageRating | number: '1.1-1') : '—' }}
+              </strong>
+
+              <span>/ 10</span>
+            </div>
+
+            <span class="review-count">
+              {{ hall.reviewCount }}
+              {{ hall.reviewCount === 1 ? 'review' : 'reviews' }}
+            </span>
+          </div>
+        </mat-card-content>
+      </mat-card>
     </div>
 
-    <!-- Displayed if search has no results -->
     <div class="empty-state" *ngIf="filteredDiningHalls.length === 0">
-      <h3>No dining spots found</h3>
-      <p>Try searching for something else.</p>
+      <mat-icon>search_off</mat-icon>
+
+      <h2>No dining spots found</h2>
+
+      <p>Try searching for another name, location, or tag.</p>
     </div>
   </main>
 </div>
