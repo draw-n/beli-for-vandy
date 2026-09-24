@@ -6,6 +6,7 @@ Beli for Vanderbilt helps Vanderbilt students, faculty, and staff discover dinin
 
 ## Development workflow
 
+- Document any new/modified APIs
 - Before pushing any commits, verify that you are working on a branch rather than the default branch.
 - Add and commit every notable feature included in a plan.
 
