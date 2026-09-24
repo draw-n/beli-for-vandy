@@ -6,6 +6,7 @@ from typing import Any
 from bson import ObjectId
 
 from controllers.user import InvalidCredentialsError, UserController
+from models.user import UserCreate, UserType
 
 
 class FakeCollection:
@@ -38,10 +39,12 @@ class FakeCollection:
 
 class FakeDatabase:
     def __init__(self) -> None:
-        self.accounts = FakeCollection()
+        self.users = FakeCollection()
+        self.requested_collection_name: str | None = None
 
-    def get_collection(self, _: str) -> FakeCollection:
-        return self.accounts
+    def get_collection(self, name: str) -> FakeCollection:
+        self.requested_collection_name = name
+        return self.users
 
 
 class UserControllerTestCase(unittest.IsolatedAsyncioTestCase):
@@ -49,23 +52,58 @@ class UserControllerTestCase(unittest.IsolatedAsyncioTestCase):
         self.database = FakeDatabase()
         self.controller = UserController(self.database)  # type: ignore[arg-type]
 
-    async def test_created_account_can_be_deleted_with_its_password(self) -> None:
-        user = await self.controller.create_user(" Person@Example.com ", "abc")
+    @staticmethod
+    def user_payload(password: str = "abc") -> UserCreate:
+        return UserCreate(
+            username="commodore",
+            first_name="Cornelius",
+            last_name="Vanderbilt",
+            email="Person@Example.com",
+            password=password,
+            year_graduation=2027,
+            type=UserType.STUDENT,
+            home_city="Nashville",
+        )
 
+    async def test_created_account_can_be_deleted_with_its_password(self) -> None:
+        user = await self.controller.create_user(self.user_payload())
+
+        self.assertEqual(self.database.requested_collection_name, "users")
         self.assertEqual(user.email, "person@example.com")
         self.assertNotEqual(user.password_hash, "abc")
+        self.assertEqual(user.username, "commodore")
+        self.assertEqual(user.type, UserType.STUDENT)
+        self.assertEqual(user.year_graduation, 2027)
+        stored_user = self.database.users.documents[0]
+        self.assertEqual(
+            set(stored_user),
+            {
+                "_id",
+                "username",
+                "first_name",
+                "last_name",
+                "email",
+                "password_hash",
+                "uuid",
+                "year_graduation",
+                "type",
+                "created_at",
+                "home_city",
+            },
+        )
+        self.assertEqual(stored_user["type"], "student")
 
         await self.controller.delete_user("PERSON@example.com", "abc")
 
-        self.assertEqual(self.database.accounts.documents, [])
+        self.assertEqual(self.database.users.documents, [])
 
     async def test_incorrect_password_does_not_delete_account(self) -> None:
-        await self.controller.create_user("person@example.com", "abc")
+        await self.controller.create_user(self.user_payload())
 
         with self.assertRaises(InvalidCredentialsError):
             await self.controller.delete_user("person@example.com", "wrong")
 
-        self.assertEqual(len(self.database.accounts.documents), 1)
+        self.assertEqual(len(self.database.users.documents), 1)
 
 
 if __name__ == "__main__":

@@ -20,9 +20,15 @@ def get_user_controller() -> UserController:
 
 def user_response(user: User) -> UserResponse:
     return UserResponse(
-        id=user.id,
+        username=user.username,
+        first_name=user.first_name,
+        last_name=user.last_name,
         email=user.email,
+        uuid=user.uuid,
+        year_graduation=user.year_graduation,
+        type=user.type,
         created_at=user.created_at,
+        home_city=user.home_city,
     )
 
 
@@ -31,10 +37,10 @@ def user_response(user: User) -> UserResponse:
     response_model=UserResponse,
     status_code=status.HTTP_201_CREATED,
     summary="Create an account",
-    description="Create a user account with an email address and password.",
+    description="Create a user profile with server-generated UUID and creation time.",
     responses={
         status.HTTP_409_CONFLICT: {
-            "description": "An account already uses the supplied email address."
+            "description": "An account already uses the supplied username or email address."
         },
     },
 )
@@ -43,11 +49,11 @@ async def create_account(
     controller: Annotated[UserController, Depends(get_user_controller)],
 ) -> UserResponse:
     try:
-        user = await controller.create_user(str(payload.email), payload.password)
+        user = await controller.create_user(payload)
     except UserAlreadyExistsError as error:
         raise HTTPException(
             status_code=status.HTTP_409_CONFLICT,
-            detail="An account with that email already exists",
+            detail="An account with that username or email already exists",
         ) from error
 
     return user_response(user)
