@@ -17,4 +17,4 @@ db = client.beli_db
 users_collection = db.get_collection("users")
 locations_collection = db.get_collection("locations")
 reviews_collection = db.get_collection("reviews")
-friendships_collection = db.get_collection("friendships")
+follows_collection = db.get_collection("follows")
