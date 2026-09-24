@@ -14,7 +14,7 @@ class LocationCreate(LocationBase):
     pass
 
 
-class LocationUpdate(LocationBase):
+class LocationUpdate(BaseModel):
     name: Optional[str] = None
     address: Optional[str] = None
     tags: Optional[list[str]] = None

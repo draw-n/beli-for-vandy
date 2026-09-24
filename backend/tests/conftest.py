@@ -23,12 +23,26 @@ def mock_db():
 
 @pytest_asyncio.fixture
 async def client(mock_db, monkeypatch):
-    mock_collection = mock_db["reviews"]
+    mock_reviews_collection = mock_db["reviews"]
+    mock_follows_collection = mock_db["follows"]
+    mock_locations_collection = mock_db["locations"]
 
     monkeypatch.setattr(
         database,
         "reviews_collection",
-        mock_collection
+        mock_reviews_collection
+    )
+
+    monkeypatch.setattr(
+        database,
+        "follows_collection",
+        mock_follows_collection
+    )
+
+    monkeypatch.setattr(
+        database,
+        "locations_collection",
+        mock_locations_collection
     )
 
     transport = ASGITransport(app=app)
@@ -39,4 +53,6 @@ async def client(mock_db, monkeypatch):
     ) as client:
         yield client
 
-    await mock_collection.drop()
+    await mock_reviews_collection.drop()
+    await mock_follows_collection.drop()
+

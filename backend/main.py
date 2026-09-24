@@ -5,6 +5,8 @@ import uvicorn
 from database import client
 
 from routes.review import router as review_router
+from routes.location import router as location_router
+from routes.follow import router as follow_router
 
 # Load environment variables from .env file
 load_dotenv()
@@ -27,6 +29,8 @@ async def startup_db_client():
 
 
 app.include_router(review_router)
+app.include_router(location_router)
+app.include_router(follow_router)
 
 @app.get("/")
 async def root():
