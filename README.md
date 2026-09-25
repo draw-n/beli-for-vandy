@@ -26,14 +26,13 @@ Have you ever felt like you wasted a meal swipe at a Vanderbilt dining hall? Wou
 ```text
 beli-for-vandy/
 ├── backend/                          # Python FastAPI service
-│   ├── auth/                         # Authentication-related modules
 │   ├── controllers/                  # Business logic
-│   │   ├── security.py               # Password and session security helpers
-│   │   └── user.py                   # User and authentication operations
+│   │   ├── security.py               # Password hashing helpers
+│   │   └── user.py                   # User account operations
 │   ├── models/                       # Pydantic app + database models
 │   │   └── user.py                   # User-related data models
 │   ├── routes/                       # FastAPI HTTP endpoints
-│   │   └── user.py                   # User and authentication routes
+│   │   └── user.py                   # User account routes
 │   ├── tests/
 │   ├── database.py                   # Asynchronous MongoDB connection
 │   └── main.py                       # FastAPI application entry point
@@ -41,15 +40,11 @@ beli-for-vandy/
 │   ├── public/                       # Static assets
 │   ├── src/                          # Frontend source code
 │   │   ├── app/                      # Angular components and configuration
-│   │   │   ├── account/              # Account-management interface
 │   │   │   ├── api/                  # HTTP clients for the FastAPI backend
-│   │   │   ├── auth/                 # Client-side authentication logic
-│   │   │   ├── login/                # Login interface
 │   │   │   ├── placeholder/          # Reusable placeholder page
 │   │   │   │   ├── placeholder.component.css
 │   │   │   │   ├── placeholder.component.html
 │   │   │   │   └── placeholder.component.ts
-│   │   │   ├── signup/               # Account-registration interface
 │   │   │   └── types/                # Shared TypeScript types + interfaces
 │   │   └── index.html                 # Browser document shell
 │   └── tests/                        # Frontend automated tests

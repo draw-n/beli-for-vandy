@@ -11,7 +11,7 @@ from controllers.security import (
     hash_password,
     verify_password,
 )
-from models.user import User, UserCreate, UserType
+from models.user import StoredUser, UserCreate
 
 
 class UserAlreadyExistsError(Exception):
@@ -31,7 +31,7 @@ class UserController:
         await self._users.create_index("username", unique=True)
         await self._users.create_index("uuid", unique=True)
 
-    async def create_user(self, payload: UserCreate) -> User:
+    async def create_user(self, payload: UserCreate) -> StoredUser:
         normalized_email = self._normalize_email(str(payload.email))
         password_hash = await run_in_threadpool(hash_password, payload.password)
         created_at = datetime.now(timezone.utc)
@@ -53,18 +53,7 @@ class UserController:
         except DuplicateKeyError as error:
             raise UserAlreadyExistsError from error
 
-        return User(
-            username=document["username"],
-            first_name=document["first_name"],
-            last_name=document["last_name"],
-            email=document["email"],
-            password_hash=document["password_hash"],
-            uuid=document["uuid"],
-            year_graduation=document["year_graduation"],
-            type=payload.type,
-            created_at=document["created_at"],
-            home_city=document["home_city"],
-        )
+        return StoredUser.model_validate(document)
 
     async def delete_user(self, email: str, password: str) -> None:
         normalized_email = self._normalize_email(email)
@@ -88,19 +77,8 @@ class UserController:
         return email.strip().lower()
 
     @staticmethod
-    def _to_user(document: dict[str, Any] | None) -> User | None:
+    def _to_user(document: dict[str, Any] | None) -> StoredUser | None:
         if document is None:
             return None
 
-        return User(
-            username=document["username"],
-            first_name=document["first_name"],
-            last_name=document["last_name"],
-            email=document["email"],
-            password_hash=document["password_hash"],
-            uuid=document["uuid"],
-            year_graduation=document.get("year_graduation"),
-            type=UserType(document["type"]),
-            created_at=document["created_at"],
-            home_city=document["home_city"],
-        )
+        return StoredUser.model_validate(document)

@@ -4,17 +4,17 @@ from datetime import datetime, timezone
 from fastapi import FastAPI
 from fastapi.testclient import TestClient
 
-from api.user import get_user_controller, router
+from routes.user import get_user_controller, router
 from controllers.user import InvalidCredentialsError
-from models.user import User, UserCreate, UserType
+from models.user import StoredUser, UserCreate, UserType
 
 
 class FakeUserController:
     def __init__(self) -> None:
         self.deleted_credentials: tuple[str, str] | None = None
 
-    async def create_user(self, payload: UserCreate) -> User:
-        return User(
+    async def create_user(self, payload: UserCreate) -> StoredUser:
+        return StoredUser(
             username=payload.username,
             first_name=payload.first_name,
             last_name=payload.last_name,
@@ -117,6 +117,16 @@ class AccountApiTestCase(unittest.TestCase):
 
         self.assertEqual(response.status_code, 401)
         self.assertEqual(response.json(), {"detail": "Invalid email or password"})
+
+    def test_account_deletion_validates_its_request_fields(self) -> None:
+        response = self.client.request(
+            "DELETE",
+            "/accounts",
+            json={"email": "not-an-email", "password": ""},
+        )
+
+        self.assertEqual(response.status_code, 422)
+        self.assertIsNone(self.controller.deleted_credentials)
 
     def test_login_and_session_endpoints_are_not_available(self) -> None:
         self.assertEqual(self.client.post("/auth/login", json={}).status_code, 404)

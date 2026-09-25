@@ -1,6 +1,7 @@
 from typing import Annotated
 
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Body, Depends, HTTPException, status
+from pydantic import EmailStr
 
 from controllers.user import (
     InvalidCredentialsError,
@@ -8,7 +9,7 @@ from controllers.user import (
     UserController,
 )
 from database import db
-from models.user import User, UserCreate, UserDelete, UserResponse
+from models.user import StoredUser, UserCreate, UserResponse
 
 
 router = APIRouter(prefix="/accounts", tags=["Accounts"])
@@ -18,18 +19,8 @@ def get_user_controller() -> UserController:
     return UserController(db)
 
 
-def user_response(user: User) -> UserResponse:
-    return UserResponse(
-        username=user.username,
-        first_name=user.first_name,
-        last_name=user.last_name,
-        email=user.email,
-        uuid=user.uuid,
-        year_graduation=user.year_graduation,
-        type=user.type,
-        created_at=user.created_at,
-        home_city=user.home_city,
-    )
+def user_response(user: StoredUser) -> UserResponse:
+    return UserResponse.model_validate(user, from_attributes=True)
 
 
 @router.post(
@@ -71,11 +62,12 @@ async def create_account(
     },
 )
 async def delete_account(
-    payload: UserDelete,
+    email: Annotated[EmailStr, Body()],
+    password: Annotated[str, Body(min_length=1)],
     controller: Annotated[UserController, Depends(get_user_controller)],
 ) -> None:
     try:
-        await controller.delete_user(str(payload.email), payload.password)
+        await controller.delete_user(str(email), password)
     except InvalidCredentialsError as error:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,

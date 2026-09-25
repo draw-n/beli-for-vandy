@@ -1,4 +1,3 @@
-from dataclasses import dataclass
 from datetime import datetime
 from enum import Enum
 from typing import Annotated
@@ -14,43 +13,37 @@ class UserType(str, Enum):
     STUDENT = "student"
 
 
-@dataclass(frozen=True, slots=True)
-class User:
-    username: str
-    first_name: str
-    last_name: str
-    email: str
-    password_hash: str
-    uuid: str
-    year_graduation: int | None
-    type: UserType
-    created_at: datetime
-    home_city: str
-
-
-class UserCreate(BaseModel):
+class UserBase(BaseModel):
     username: NonEmptyString
     first_name: NonEmptyString
     last_name: NonEmptyString
     email: EmailStr
-    password: str = Field(min_length=3)
     year_graduation: int | None = None
     type: UserType
     home_city: NonEmptyString
 
 
-class UserDelete(BaseModel):
-    email: EmailStr
-    password: str = Field(min_length=1)
-
-
-class UserResponse(BaseModel):
-    username: str
-    first_name: str
-    last_name: str
-    email: EmailStr
+class StoredUser(UserBase):
+    password_hash: str
     uuid: str
-    year_graduation: int | None
-    type: UserType
     created_at: datetime
-    home_city: str
+
+
+class UserCreate(UserBase):
+    password: str = Field(min_length=3)
+
+
+class UserUpdate(BaseModel):
+    username: NonEmptyString | None = None
+    first_name: NonEmptyString | None = None
+    last_name: NonEmptyString | None = None
+    email: EmailStr | None = None
+    password: str | None = Field(default=None, min_length=3)
+    year_graduation: int | None = None
+    type: UserType | None = None
+    home_city: NonEmptyString | None = None
+
+
+class UserResponse(UserBase):
+    uuid: str
+    created_at: datetime

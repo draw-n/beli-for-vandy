@@ -105,6 +105,5 @@ class UserControllerTestCase(unittest.IsolatedAsyncioTestCase):
 
         self.assertEqual(len(self.database.users.documents), 1)
 
-
 if __name__ == "__main__":
     unittest.main()
