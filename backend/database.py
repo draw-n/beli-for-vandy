@@ -15,6 +15,6 @@ db = client.beli_db
 
 # Collection definitions based on your project user stories
 users_collection = db.get_collection("users")
-dining_halls_collection = db.get_collection("dining_halls")
+locations_collection = db.get_collection("locations")
 reviews_collection = db.get_collection("reviews")
-friendships_collection = db.get_collection("friendships")
+follows_collection = db.get_collection("follows")
