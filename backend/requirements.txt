@@ -1,4 +1,10 @@
 fastapi[standard]
+pydantic-settings
+motor
+pwdlib[argon2]
+python-dotenv
+uvicorn
+fastapi[standard]
 python-dotenv
 uvicorn
 motor

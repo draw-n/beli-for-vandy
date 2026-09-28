@@ -1,40 +1,54 @@
-import os
+from contextlib import asynccontextmanager
+
 from fastapi import FastAPI
-from dotenv import load_dotenv
+from fastapi.middleware.cors import CORSMiddleware
 import uvicorn
-from database import client
 
 from routes.review import router as review_router
 from routes.location import router as location_router
 from routes.follow import router as follow_router
 
-# Load environment variables from .env file
-load_dotenv()
+from routes.user import router as user_router
+from controllers.user import UserController
+from database import client, db
+from settings import get_settings
 
-PORT = int(os.getenv("PORT", 8000))  # Default to 8000 if not set
-HOST = os.getenv("HOST", "0.0.0.0")  # '0.0.0.0' or 'localhost'
 
-app = FastAPI(title="Beli for Vanderbilt API")
-
-@app.on_event("startup")
-async def startup_db_client():
+@asynccontextmanager
+async def lifespan(_: FastAPI):
+    await client.admin.command("ping")
+    await UserController(db).ensure_indexes()
     try:
-        # Ping the MongoDB cluster to verify connectivity
-        await client.admin.command('ping')
-        print("\n------------------------------------------------")
-        print("Successfully connected to MongoDB Atlas!")
-        print("------------------------------------------------\n")
-    except Exception as e:
-        print(f"\nFailed to connect to MongoDB: {e}\n")
+        yield
+    finally:
+        client.close()
 
+
+app = FastAPI(
+    title="Beli for Vanderbilt API",
+    description="API for Vanderbilt dining discovery, ratings, reviews, and friends.",
+    version="0.1.0",
+    lifespan=lifespan,
+)
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["http://localhost:4200"],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
+app.include_router(user_router)
 
 app.include_router(review_router)
 app.include_router(location_router)
 app.include_router(follow_router)
 
-@app.get("/")
+
+@app.get("/", tags=["System"], summary="Check API health")
 async def root():
     return {"message": "Beli for Vanderbilt API is up and running!"}
 
+
 if __name__ == "__main__":
-    uvicorn.run("main:app", host=HOST, port=PORT, reload=True)
+    settings = get_settings()
+    uvicorn.run("main:app", host=settings.host, port=settings.port, reload=True)
