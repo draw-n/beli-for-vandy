@@ -2,7 +2,7 @@
 
 ## Purpose and architecture
 
-Beli for Vanderbilt helps Vanderbilt students, faculty, and staff discover dining halls and meals through friends' ratings and reviews. The frontend is an Angular and TypeScript application that provides the user interface. The backend is a Python FastAPI service backed by MongoDB Atlas, with asynchronous database access through PyMongo Async. Keep presentation logic in Angular, API and business logic in FastAPI, and persistence concerns in the backend database layer.
+Beli for Vanderbilt helps Vanderbilt students, faculty, and staff discover dining halls and meals through friends' ratings and reviews. The frontend is an Angular and TypeScript application that provides the user interface. The backend is a Python FastAPI service backed by MongoDB Atlas, with asynchronous database access through Motor. Keep presentation logic in Angular, API and business logic in FastAPI, and persistence concerns in the backend database layer.
 
 ## Development workflow
 

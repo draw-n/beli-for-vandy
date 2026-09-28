@@ -1,15 +1,15 @@
 import os
 
 from dotenv import load_dotenv
-from pymongo import AsyncMongoClient
+from motor.motor_asyncio import AsyncIOMotorClient
 
 # Load environment variables from .env
 load_dotenv()
 
 MONGO_URI = os.getenv("MONGODB_URI")
 
-# Create PyMongo async client
-client = AsyncMongoClient(MONGO_URI, tz_aware=True)
+# Create Motor async client
+client = AsyncIOMotorClient(MONGO_URI, tz_aware=True)
 
 # Connect to main app database
 db = client.beli_db

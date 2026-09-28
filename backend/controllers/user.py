@@ -3,7 +3,7 @@ from typing import Any
 from uuid import uuid4
 
 from fastapi.concurrency import run_in_threadpool
-from pymongo.asynchronous.database import AsyncDatabase
+from motor.motor_asyncio import AsyncIOMotorDatabase
 from pymongo.errors import DuplicateKeyError
 
 from controllers.security import (
@@ -23,7 +23,7 @@ class InvalidCredentialsError(Exception):
 
 
 class UserController:
-    def __init__(self, database: AsyncDatabase) -> None:
+    def __init__(self, database: AsyncIOMotorDatabase) -> None:
         self._users = database.get_collection("users")
 
     async def ensure_indexes(self) -> None:

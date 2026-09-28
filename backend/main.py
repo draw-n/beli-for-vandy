@@ -17,7 +17,7 @@ async def lifespan(_: FastAPI):
     try:
         yield
     finally:
-        await client.close()
+        client.close()
 
 
 app = FastAPI(

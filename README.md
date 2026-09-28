@@ -16,6 +16,7 @@ Have you ever felt like you wasted a meal swipe at a Vanderbilt dining hall? Wou
 - MongoDB: uses a JSON format which is highly compatible with HTTP requests/responses
 - Python: all of us have considerable experience with writing Python
 - FastAPI
+- Motor: asynchronous MongoDB access for the FastAPI backend; PyMongo is installed as a Motor dependency and supplies shared exceptions.
 - Angular.js: This is a framework none of the members have tried previously
 - TypeScript: great for ensuring we stick to consistent types, so there’s no unexpected field behavior
 - Vercel: We will be deploying the project in Vercel since it provides a free hosting service for servers as long as they remain hobbyist projects (low traffic)
