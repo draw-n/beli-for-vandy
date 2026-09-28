@@ -4,3 +4,11 @@ motor
 pwdlib[argon2]
 python-dotenv
 uvicorn
+fastapi[standard]
+python-dotenv
+uvicorn
+motor
+pytest 
+pytest-asyncio 
+httpx 
+mongomock-motor

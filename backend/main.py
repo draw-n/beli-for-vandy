@@ -3,6 +3,14 @@ from contextlib import asynccontextmanager
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 import uvicorn
+from database import client
+
+from routes.review import router as review_router
+from routes.location import router as location_router
+from routes.follow import router as follow_router
+
+# Load environment variables from .env file
+load_dotenv()
 
 from routes.user import router as user_router
 from controllers.user import UserController
@@ -35,8 +43,22 @@ app.add_middleware(
 )
 app.include_router(user_router)
 
+        # Ping the MongoDB cluster to verify connectivity
+        await client.admin.command('ping')
+        print("\n------------------------------------------------")
+        print("Successfully connected to MongoDB Atlas!")
+        print("------------------------------------------------\n")
+    except Exception as e:
+        print(f"\nFailed to connect to MongoDB: {e}\n")
+
+
+app.include_router(review_router)
+app.include_router(location_router)
+app.include_router(follow_router)
 
 @app.get("/", tags=["System"], summary="Check API health")
+
+
 async def root():
     return {"message": "Beli for Vanderbilt API is up and running!"}
 
