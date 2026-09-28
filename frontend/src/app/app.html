@@ -1,1 +1,93 @@
-<router-outlet />
+<main>
+  <h1>Beli for Vanderbilt</h1>
+  <p>Create an account or permanently delete an existing account.</p>
+
+  <section>
+    <h2>Create account</h2>
+    <form #createForm="ngForm" (ngSubmit)="createAccount()">
+      <label>
+        Username
+        <input name="username" [(ngModel)]="createRequest.username" required />
+      </label>
+
+      <label>
+        First name
+        <input name="firstName" [(ngModel)]="createRequest.first_name" required />
+      </label>
+
+      <label>
+        Last name
+        <input name="lastName" [(ngModel)]="createRequest.last_name" required />
+      </label>
+
+      <label>
+        Email
+        <input name="email" type="email" [(ngModel)]="createRequest.email" required email />
+      </label>
+
+      <label>
+        Password
+        <input
+          name="password"
+          type="password"
+          [(ngModel)]="createRequest.password"
+          required
+          minlength="3"
+        />
+      </label>
+
+      <label>
+        Account type
+        <select name="type" [(ngModel)]="createRequest.type" required>
+          <option value="student">Student</option>
+          <option value="faculty">Faculty</option>
+        </select>
+      </label>
+
+      <label>
+        Graduation year (optional)
+        <input name="graduationYear" type="number" [(ngModel)]="createRequest.year_graduation" />
+      </label>
+
+      <label>
+        Home city
+        <input name="homeCity" [(ngModel)]="createRequest.home_city" required />
+      </label>
+
+      <button type="submit" [disabled]="createForm.invalid || creating">
+        {{ creating ? 'Creating…' : 'Create account' }}
+      </button>
+      @if (createMessage) {
+        <p role="status">{{ createMessage }}</p>
+      }
+    </form>
+  </section>
+
+  <section>
+    <h2>Delete account</h2>
+    <p>This permanently deletes the account after the password is verified.</p>
+    <form #deleteForm="ngForm" (ngSubmit)="deleteAccount()">
+      <label>
+        Email
+        <input name="deleteEmail" type="email" [(ngModel)]="deleteRequest.email" required email />
+      </label>
+
+      <label>
+        Password
+        <input
+          name="deletePassword"
+          type="password"
+          [(ngModel)]="deleteRequest.password"
+          required
+        />
+      </label>
+
+      <button type="submit" [disabled]="deleteForm.invalid || deleting">
+        {{ deleting ? 'Deleting…' : 'Delete account' }}
+      </button>
+      @if (deleteMessage) {
+        <p role="status">{{ deleteMessage }}</p>
+      }
+    </form>
+  </section>
+</main>
