@@ -1,0 +1,299 @@
+:host {
+  display: block;
+}
+
+.detail-page {
+  max-width: 900px;
+  margin: 0 auto;
+  padding: 24px 24px 64px;
+}
+
+/* Back */
+
+.back-button {
+  margin-bottom: 16px;
+}
+
+/* Cover */
+
+.cover-image {
+  display: block;
+  width: 100%;
+  max-height: 420px;
+  object-fit: cover;
+  border-radius: 12px;
+}
+
+/* Hall header */
+
+.hall-header {
+  margin: 24px 0;
+}
+
+.hall-header h1 {
+  margin: 0 0 8px;
+}
+
+.location {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  margin: 0 0 16px;
+}
+
+.location mat-icon {
+  width: 20px;
+  height: 20px;
+  font-size: 20px;
+}
+
+/* Rating summary */
+
+.rating-card {
+  margin: 24px 0 16px;
+}
+
+.rating-summary {
+  display: flex;
+  align-items: stretch;
+  justify-content: space-around;
+}
+
+.rating-summary mat-divider {
+  height: 56px;
+}
+
+.score {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+}
+
+.score-value {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+}
+
+.score-value mat-icon {
+  width: 22px;
+  height: 22px;
+  font-size: 22px;
+}
+
+.score-value strong {
+  font-size: 24px;
+}
+
+.score > span {
+  font-size: 13px;
+}
+
+/* Rate button */
+
+.review-button {
+  width: 100%;
+}
+
+/* Sections */
+
+.section {
+  margin-top: 40px;
+}
+
+.section > h2 {
+  margin: 0 0 12px;
+}
+
+.section-heading {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 12px;
+}
+
+.section-heading h2 {
+  margin: 0;
+}
+
+/* Hours */
+
+.hours-card {
+  padding-top: 8px;
+  padding-bottom: 8px;
+}
+
+.hours-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 24px;
+  padding: 10px 0;
+}
+
+.hours-day {
+  font-weight: 500;
+}
+
+.hours-time {
+  text-align: right;
+}
+
+.no-hours {
+  padding: 16px 0;
+  text-align: center;
+}
+
+/* Photos */
+
+.photo-row {
+  display: flex;
+  gap: 12px;
+  overflow-x: auto;
+  padding-bottom: 8px;
+}
+
+.photo-row img {
+  width: 240px;
+  height: 160px;
+  flex-shrink: 0;
+  object-fit: cover;
+  border-radius: 8px;
+}
+
+/* Reviews */
+
+.reviews {
+  margin-top: 8px;
+}
+
+.review {
+  padding-top: 20px;
+}
+
+.review-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+}
+
+.review-user {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.review-user > mat-icon {
+  width: 40px;
+  height: 40px;
+  font-size: 40px;
+}
+
+.review-user div {
+  display: flex;
+  flex-direction: column;
+}
+
+.review-user span {
+  font-size: 13px;
+}
+
+.review-rating {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.review-rating mat-icon {
+  width: 20px;
+  height: 20px;
+  font-size: 20px;
+}
+
+.review p {
+  margin: 16px 0 20px;
+  line-height: 1.5;
+}
+
+/* Empty reviews */
+
+.empty-reviews {
+  padding: 48px 16px;
+  text-align: center;
+}
+
+.empty-reviews > mat-icon {
+  width: 48px;
+  height: 48px;
+  font-size: 48px;
+}
+
+.empty-reviews h3 {
+  margin: 12px 0 4px;
+}
+
+.empty-reviews p {
+  margin: 0;
+}
+
+/* Not found */
+
+.not-found {
+  padding: 80px 24px;
+  text-align: center;
+}
+
+.not-found > mat-icon {
+  width: 48px;
+  height: 48px;
+  font-size: 48px;
+}
+
+.not-found h2 {
+  margin: 12px 0 4px;
+}
+
+.not-found p {
+  margin: 0 0 16px;
+}
+
+/* Mobile */
+
+@media (max-width: 600px) {
+  .detail-page {
+    padding: 16px 16px 48px;
+  }
+
+  .cover-image {
+    max-height: 280px;
+  }
+
+  .score-value strong {
+    font-size: 20px;
+  }
+
+  .score-value mat-icon {
+    display: none;
+  }
+
+  .score > span {
+    font-size: 12px;
+  }
+
+  .hours-row {
+    gap: 12px;
+  }
+
+  .hours-time {
+    font-size: 14px;
+  }
+
+  .photo-row img {
+    width: 200px;
+    height: 140px;
+  }
+}
