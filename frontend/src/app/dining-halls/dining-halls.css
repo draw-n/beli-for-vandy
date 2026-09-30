@@ -14,8 +14,17 @@ header {
   margin-bottom: 32px;
 }
 
+/* NEW: Flexbox container for row alignment */
+.header-top {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  width: 100%;
+  margin-bottom: 8px; /* Smooth transition to the H1 element */
+}
+
 .eyebrow {
-  margin: 0 0 8px;
+  margin: 0; /* Reset margins to align cleanly with the button text */
   font-size: 12px;
   font-weight: 600;
   letter-spacing: 0.12em;
@@ -157,9 +166,4 @@ mat-card-content {
   .dining-grid {
     grid-template-columns: 1fr;
   }
-}
-
-/* Logout button */
-.toolbar-spacer {
-  flex: 1 1 auto;
 }
