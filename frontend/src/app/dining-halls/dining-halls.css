@@ -158,3 +158,8 @@ mat-card-content {
     grid-template-columns: 1fr;
   }
 }
+
+/* Logout button */
+.toolbar-spacer {
+  flex: 1 1 auto;
+}
