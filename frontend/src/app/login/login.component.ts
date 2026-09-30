@@ -1,5 +1,6 @@
-import { Component } from '@angular/core';
+import { Component, inject } from '@angular/core';
 import { FormsModule } from '@angular/forms';
+import { Router } from '@angular/router';
 import { MatButtonModule } from '@angular/material/button';
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatIconModule } from '@angular/material/icon';
@@ -19,15 +20,19 @@ import { MatInputModule } from '@angular/material/input';
   ]
 })
 export class LoginComponent {
+  private readonly router = inject(Router);
+
   username = '';
   password = '';
 
   onSubmit(): void {
-    if (!this.username || !this.password) {
+    if (!this.username.trim() || !this.password) {
       return;
     }
 
-    // Backend authentication will be added later.
-    console.log('Login submitted');
+    // Temporary frontend-only authentication.
+    document.cookie = 'mockAuth=true; path=/; SameSite=Lax';
+
+    this.router.navigate(['/dining-halls']);
   }
 }

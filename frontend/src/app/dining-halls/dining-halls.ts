@@ -1,13 +1,15 @@
-import { Component } from '@angular/core';
+import { Component, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
-import { RouterLink } from '@angular/router';
+import { RouterLink, Router } from '@angular/router';
 
 import { MatCardModule } from '@angular/material/card';
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatInputModule } from '@angular/material/input';
 import { MatIconModule } from '@angular/material/icon';
 import { MatChipsModule } from '@angular/material/chips';
+import { MatButtonModule } from '@angular/material/button';
+import { MatToolbarModule } from '@angular/material/toolbar';
 
 interface DiningHours {
   day: string;
@@ -38,6 +40,8 @@ interface DiningHall {
     MatInputModule,
     MatIconModule,
     MatChipsModule,
+    MatButtonModule,
+    MatToolbarModule
   ],
   templateUrl: './dining-halls.html',
   styleUrl: './dining-halls.css',
@@ -303,5 +307,14 @@ export class DiningHalls {
     }).format(new Date());
 
     return hall.hours.find((hours) => hours.day === today);
+  }
+
+  private readonly router = inject(Router);
+
+  logout(): void {
+    document.cookie =
+      'mockAuth=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;';
+
+    this.router.navigate(['/login']);
   }
 }
