@@ -2,9 +2,14 @@
   <header>
     <div class="header-top">
       <p class="eyebrow">VANDERBILT DINING</p>
-      <button mat-button type="button" (click)="logout()">
-        <mat-icon>logout</mat-icon> Logout
-      </button>
+      <div class="header-actions">
+        <button mat-button type="button" [routerLink]="['/profile']">
+          <mat-icon>account_circle</mat-icon> Profile
+        </button>
+        <button mat-button type="button" (click)="logout()">
+          <mat-icon>logout</mat-icon> Logout
+        </button>
+      </div>
     </div>
 
     <h1>Find your next meal.</h1>

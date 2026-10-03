@@ -2,102 +2,52 @@
   <header>
     <div class="header-top">
       <p class="eyebrow">PROFILE</p>
-      <button mat-button type="button" (click)="logout()">
-        <mat-icon>logout</mat-icon> Logout
-      </button>
-    </div>
-
-    <h1></h1>
-
-    <p class="subtitle">Explore dining spots across Vanderbilt and see what students think.</p>
-
-    <mat-form-field appearance="outline" class="search">
-      <mat-label>Search dining halls</mat-label>
-
-      <mat-icon matPrefix>search</mat-icon>
-
-      <input matInput type="text" [(ngModel)]="searchTerm" placeholder="Name, location, or tag" />
-    </mat-form-field>
-  </header>
-
-  <main>
-    <div class="section-header">
-      <div>
-        <h2>Dining spots</h2>
-        <p>{{ filteredDiningHalls.length }} places</p>
+      <div class="header-actions">
+        <button mat-button type="button" [routerLink]="['/locations']">
+          <mat-icon>restaurant</mat-icon> Dining spots
+        </button>
       </div>
     </div>
 
-    <div class="dining-grid">
-      <mat-card
-        *ngFor="let hall of filteredDiningHalls"
-        class="dining-card"
-        appearance="outlined"
-        [routerLink]="['/locations', hall.uuid]"
-      >
-        <img *ngIf="hall.image" mat-card-image [src]="hall.image" [alt]="hall.name" />
+    <h1>{{ account ? account.first_name + ' ' + account.last_name : 'Your profile' }}</h1>
+    <p class="subtitle">Your Beli for Vandy account details.</p>
+  </header>
 
-        <mat-card-header>
-          <mat-card-title>
-            {{ hall.name }}
-          </mat-card-title>
+  <main>
+    <mat-card class="profile-card" appearance="outlined" *ngIf="account; else noAccount">
+      <mat-card-header>
+        <div mat-card-avatar class="profile-avatar">
+          {{ account.first_name.charAt(0) }}{{ account.last_name.charAt(0) }}
+        </div>
+        <mat-card-title>{{ account.username }}</mat-card-title>
+        <mat-card-subtitle>{{ account.type | titlecase }}</mat-card-subtitle>
+      </mat-card-header>
 
-          <mat-card-subtitle>
-            <mat-icon>location_on</mat-icon>
-            {{ hall.location }}
-          </mat-card-subtitle>
-        </mat-card-header>
-
-        <mat-card-content>
-          <mat-chip-set>
-            <mat-chip *ngFor="let tag of hall.tags">
-              {{ tag }}
-            </mat-chip>
-          </mat-chip-set>
-
-          <!-- Today's hours -->
-          <div class="hours-preview" *ngIf="getTodayHours(hall) as todayHours">
-            <mat-icon>schedule</mat-icon>
-
-            <span>
-              Today:
-              {{ todayHours.openTime }}
-              –
-              {{ todayHours.closeTime }}
-            </span>
+      <mat-card-content>
+        <dl class="profile-details">
+          <div>
+            <dt>Email</dt>
+            <dd>{{ account.email }}</dd>
           </div>
-
-          <div class="hours-preview" *ngIf="!getTodayHours(hall)">
-            <mat-icon>schedule</mat-icon>
-            <span>Closed today</span>
+          <div>
+            <dt>Home city</dt>
+            <dd>{{ account.home_city }}</dd>
           </div>
-
-          <div class="rating-row">
-            <div class="rating">
-              <mat-icon>star</mat-icon>
-
-              <strong>
-                {{ hall.reviewCount > 0 ? (hall.averageRating | number: '1.1-1') : '—' }}
-              </strong>
-
-              <span>/ 10</span>
-            </div>
-
-            <span class="review-count">
-              {{ hall.reviewCount }}
-              {{ hall.reviewCount === 1 ? 'review' : 'reviews' }}
-            </span>
+          <div *ngIf="account.year_graduation">
+            <dt>Graduation year</dt>
+            <dd>{{ account.year_graduation }}</dd>
           </div>
-        </mat-card-content>
-      </mat-card>
-    </div>
+        </dl>
+      </mat-card-content>
+    </mat-card>
 
-    <div class="empty-state" *ngIf="filteredDiningHalls.length === 0">
-      <mat-icon>search_off</mat-icon>
-
-      <h2>No dining spots found</h2>
-
-      <p>Try searching for another name, location, or tag.</p>
-    </div>
+    <ng-template #noAccount>
+      <div class="empty-state">
+        <mat-icon>account_circle</mat-icon>
+        <h2>Profile unavailable</h2>
+        <p>Log in again to view your account details.</p>
+        <a mat-flat-button routerLink="/login">Log in</a>
+      </div>
+    </ng-template>
   </main>
 </div>
