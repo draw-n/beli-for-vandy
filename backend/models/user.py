@@ -33,6 +33,11 @@ class UserCreate(UserBase):
     password: str = Field(min_length=3)
 
 
+class UserLogin(BaseModel):
+    username: NonEmptyString
+    password: str = Field(min_length=1)
+
+
 class UserUpdate(BaseModel):
     username: NonEmptyString | None = None
     first_name: NonEmptyString | None = None

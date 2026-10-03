@@ -10,9 +10,9 @@ import { MatInputModule } from '@angular/material/input';
 import { MatSelectModule } from '@angular/material/select';
 import { MatIconModule } from '@angular/material/icon';
 
-interface RateReviewDialogData {
-  diningHallId: string;
-  diningHallName: string;
+interface ReviewDialogData {
+  locationId: string;
+  locationName: string;
 }
 
 export interface ReviewFormResult {
@@ -28,7 +28,7 @@ interface PhotoPreview {
 }
 
 @Component({
-  selector: 'app-rate-review-dialog',
+  selector: 'app-review-dialog',
   standalone: true,
   imports: [
     CommonModule,
@@ -40,10 +40,10 @@ interface PhotoPreview {
     MatSelectModule,
     MatIconModule,
   ],
-  templateUrl: './rate-review-dialog.html',
-  styleUrl: './rate-review-dialog.css',
+  templateUrl: './review-dialog.html',
+  styleUrl: './review-dialog.css',
 })
-export class RateReviewDialog {
+export class ReviewDialog {
   rating: number | null = null;
   reviewText = '';
   mealType = '';
@@ -53,9 +53,9 @@ export class RateReviewDialog {
   mealTypes = ['Breakfast', 'Lunch', 'Dinner', 'Snack'];
 
   constructor(
-    private dialogRef: MatDialogRef<RateReviewDialog>,
+    private dialogRef: MatDialogRef<ReviewDialog>,
     @Inject(MAT_DIALOG_DATA)
-    public data: RateReviewDialogData,
+    public data: ReviewDialogData,
   ) {}
 
   onPhotosSelected(event: Event): void {

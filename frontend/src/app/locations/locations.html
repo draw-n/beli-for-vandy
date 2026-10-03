@@ -1,0 +1,112 @@
+<div class="page">
+  <header>
+    <div class="header-top">
+      <p class="eyebrow">VANDERBILT DINING</p>
+      <button mat-button type="button" (click)="logout()">
+        <mat-icon>logout</mat-icon> Logout
+      </button>
+    </div>
+
+    <h1>Find your next meal.</h1>
+
+    <p class="subtitle">Explore dining spots across Vanderbilt and see what students think.</p>
+
+    <mat-form-field appearance="outline" class="search">
+      <mat-label>Search locations</mat-label>
+
+      <mat-icon matPrefix>search</mat-icon>
+
+      <input matInput type="text" [(ngModel)]="searchTerm" placeholder="Name, location, or tag" />
+    </mat-form-field>
+  </header>
+
+  <main>
+    <div class="section-header">
+      <div>
+        <h2>Dining spots</h2>
+        <p>{{ filteredDiningHalls.length }} places</p>
+      </div>
+    </div>
+
+    <div class="dining-grid">
+      <mat-card
+        *ngFor="let hall of filteredDiningHalls"
+        class="dining-card"
+        appearance="outlined"
+        [routerLink]="['/locations', hall.uuid]"
+      >
+        <img
+          *ngIf="hall.image; else imagePlaceholder"
+          mat-card-image
+          [src]="hall.image"
+          [alt]="hall.name"
+        />
+
+        <ng-template #imagePlaceholder>
+          <div class="image-placeholder" aria-label="Image coming soon">Image coming soon</div>
+        </ng-template>
+
+        <mat-card-header>
+          <mat-card-title>
+            {{ hall.name }}
+          </mat-card-title>
+
+          <mat-card-subtitle>
+            <mat-icon>location_on</mat-icon>
+            {{ hall.location }}
+          </mat-card-subtitle>
+        </mat-card-header>
+
+        <mat-card-content>
+          <mat-chip-set>
+            <mat-chip *ngFor="let tag of hall.tags">
+              {{ tag }}
+            </mat-chip>
+          </mat-chip-set>
+
+          <!-- Today's hours -->
+          <div class="hours-preview" *ngIf="getTodayHours(hall) as todayHours">
+            <mat-icon>schedule</mat-icon>
+
+            <span>
+              Today:
+              {{ todayHours.openTime }}
+              –
+              {{ todayHours.closeTime }}
+            </span>
+          </div>
+
+          <div class="hours-preview" *ngIf="!getTodayHours(hall)">
+            <mat-icon>schedule</mat-icon>
+            <span>Closed today</span>
+          </div>
+
+          <div class="rating-row">
+            <div class="rating">
+              <mat-icon>star</mat-icon>
+
+              <strong>
+                {{ hall.reviewCount > 0 ? (hall.averageRating | number: '1.1-1') : '—' }}
+              </strong>
+
+              <span>/ 10</span>
+            </div>
+
+            <span class="review-count">
+              {{ hall.reviewCount }}
+              {{ hall.reviewCount === 1 ? 'review' : 'reviews' }}
+            </span>
+          </div>
+        </mat-card-content>
+      </mat-card>
+    </div>
+
+    <div class="empty-state" *ngIf="filteredDiningHalls.length === 0">
+      <mat-icon>search_off</mat-icon>
+
+      <h2>No dining spots found</h2>
+
+      <p>Try searching for another name, location, or tag.</p>
+    </div>
+  </main>
+</div>

@@ -16,10 +16,11 @@ async def create_review(review: ReviewCreate):
     return review_data
 
 
-async def get_reviews():
+async def get_reviews(location_id: str | None = None):
     reviews = []
 
-    cursor = database.reviews_collection.find()
+    query = {"location_id": location_id} if location_id else {}
+    cursor = database.reviews_collection.find(query)
 
     async for review in cursor:
         review.pop("_id", None)

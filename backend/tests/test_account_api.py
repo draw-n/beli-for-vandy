@@ -32,6 +32,23 @@ class FakeUserController:
             raise InvalidCredentialsError
         self.deleted_credentials = (email, password)
 
+    async def authenticate_user(self, username: str, password: str) -> StoredUser:
+        if username != "commodore" or password != "abc":
+            raise InvalidCredentialsError
+
+        return StoredUser(
+            username="commodore",
+            first_name="Cornelius",
+            last_name="Vanderbilt",
+            email="person@example.com",
+            password_hash="unused",
+            uuid="d08f600f-d60e-49b1-b762-f05f42935796",
+            year_graduation=2027,
+            type=UserType.STUDENT,
+            created_at=datetime.now(timezone.utc),
+            home_city="Nashville",
+        )
+
 
 class AccountApiTestCase(unittest.TestCase):
     def setUp(self) -> None:
@@ -128,9 +145,24 @@ class AccountApiTestCase(unittest.TestCase):
         self.assertEqual(response.status_code, 422)
         self.assertIsNone(self.controller.deleted_credentials)
 
-    def test_login_and_session_endpoints_are_not_available(self) -> None:
-        self.assertEqual(self.client.post("/auth/login", json={}).status_code, 404)
-        self.assertEqual(self.client.get("/auth/me").status_code, 404)
+    def test_user_can_log_in_with_valid_credentials(self) -> None:
+        response = self.client.post(
+            "/accounts/login",
+            json={"username": "commodore", "password": "abc"},
+        )
+
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.json()["username"], "commodore")
+        self.assertNotIn("password_hash", response.json())
+
+    def test_login_rejects_invalid_credentials(self) -> None:
+        response = self.client.post(
+            "/accounts/login",
+            json={"username": "commodore", "password": "wrong"},
+        )
+
+        self.assertEqual(response.status_code, 401)
+        self.assertEqual(response.json(), {"detail": "Invalid username or password"})
 
 
 if __name__ == "__main__":

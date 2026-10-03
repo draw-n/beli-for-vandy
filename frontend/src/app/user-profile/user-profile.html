@@ -1,13 +1,13 @@
 <div class="page">
   <header>
     <div class="header-top">
-      <p class="eyebrow">VANDERBILT DINING</p>
+      <p class="eyebrow">PROFILE</p>
       <button mat-button type="button" (click)="logout()">
         <mat-icon>logout</mat-icon> Logout
       </button>
     </div>
 
-    <h1>Find your next meal.</h1>
+    <h1></h1>
 
     <p class="subtitle">Explore dining spots across Vanderbilt and see what students think.</p>
 
@@ -33,7 +33,7 @@
         *ngFor="let hall of filteredDiningHalls"
         class="dining-card"
         appearance="outlined"
-        [routerLink]="['/dining-halls', hall.uuid]"
+        [routerLink]="['/locations', hall.uuid]"
       >
         <img *ngIf="hall.image" mat-card-image [src]="hall.image" [alt]="hall.name" />
 

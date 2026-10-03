@@ -1,6 +1,6 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 
-import { RateReviewDialog } from './rate-review-dialog';
+import { RateReviewDialog } from './review-dialog';
 
 describe('RateReviewDialog', () => {
   let component: RateReviewDialog;

@@ -3,7 +3,7 @@ import { Component, inject } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 
 import { AccountApi } from '../api/account.api';
-import { AccountCreateRequest, AccountDeleteRequest } from '../types/account';
+import { AccountCreateRequest, AccountDeleteRequest } from '../types/auth';
 
 @Component({
   selector: 'app-account',

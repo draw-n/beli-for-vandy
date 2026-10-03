@@ -105,5 +105,22 @@ class UserControllerTestCase(unittest.IsolatedAsyncioTestCase):
 
         self.assertEqual(len(self.database.users.documents), 1)
 
+    async def test_created_account_can_be_authenticated(self) -> None:
+        await self.controller.create_user(self.user_payload())
+
+        user = await self.controller.authenticate_user("commodore", "abc")
+
+        self.assertEqual(user.username, "commodore")
+        self.assertEqual(user.email, "person@example.com")
+
+    async def test_authentication_rejects_invalid_credentials(self) -> None:
+        await self.controller.create_user(self.user_payload())
+
+        with self.assertRaises(InvalidCredentialsError):
+            await self.controller.authenticate_user("commodore", "wrong")
+
+        with self.assertRaises(InvalidCredentialsError):
+            await self.controller.authenticate_user("unknown", "abc")
+
 if __name__ == "__main__":
     unittest.main()

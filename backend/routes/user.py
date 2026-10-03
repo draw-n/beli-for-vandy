@@ -9,7 +9,7 @@ from controllers.user import (
     UserController,
 )
 from database import db
-from models.user import StoredUser, UserCreate, UserResponse
+from models.user import StoredUser, UserCreate, UserLogin, UserResponse
 
 
 router = APIRouter(prefix="/accounts", tags=["Accounts"])
@@ -45,6 +45,32 @@ async def create_account(
         raise HTTPException(
             status_code=status.HTTP_409_CONFLICT,
             detail="An account with that username or email already exists",
+        ) from error
+
+    return user_response(user)
+
+
+@router.post(
+    "/login",
+    response_model=UserResponse,
+    summary="Log in to an account",
+    description="Verify a username and password against a stored account.",
+    responses={
+        status.HTTP_401_UNAUTHORIZED: {
+            "description": "The supplied account credentials are incorrect."
+        },
+    },
+)
+async def login(
+    payload: UserLogin,
+    controller: Annotated[UserController, Depends(get_user_controller)],
+) -> UserResponse:
+    try:
+        user = await controller.authenticate_user(payload.username, payload.password)
+    except InvalidCredentialsError as error:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Invalid username or password",
         ) from error
 
     return user_response(user)

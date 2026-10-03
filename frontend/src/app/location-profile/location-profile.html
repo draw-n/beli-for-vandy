@@ -1,6 +1,6 @@
 <div class="detail-page" *ngIf="hall; else notFound">
   <!-- Back -->
-  <a mat-button routerLink="/dining-halls" class="back-button">
+  <a mat-button routerLink="/locations" class="back-button">
     <mat-icon>arrow_back</mat-icon>
     All dining spots
   </a>
@@ -100,7 +100,7 @@
   </section>
 
   <!-- Photos -->
-  <section class="section" *ngIf="hall.photos?.length">
+  <section class="section" *ngIf="hall.photos.length">
     <h2>Photos</h2>
 
     <div class="photo-row">
@@ -173,11 +173,11 @@
   <div class="not-found">
     <mat-icon> restaurant </mat-icon>
 
-    <h2>Dining hall not found</h2>
+    <h2>Location not found</h2>
 
     <p>We couldn't find that dining spot.</p>
 
-    <a mat-button routerLink="/dining-halls">
+    <a mat-button routerLink="/locations">
       <mat-icon>arrow_back</mat-icon>
       Back to dining spots
     </a>
