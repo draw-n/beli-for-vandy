@@ -120,11 +120,16 @@
 
     <mat-divider></mat-divider>
 
+    @if (reviewError()) {
+      <p role="alert">{{ reviewError() }}</p>
+    }
     <div class="reviews" *ngIf="hall.reviews.length > 0; else noReviews">
       <app-review-item
         *ngFor="let review of hall.reviews"
         [review]="review"
         [canEdit]="isOwnReview(review)"
+        [busy]="deletingId() !== null"
+        (deleteRequested)="deleteReview($event)"
         (editRequested)="openReviewDialog($event)"
       />
     </div>

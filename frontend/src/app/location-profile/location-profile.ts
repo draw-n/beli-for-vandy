@@ -1,6 +1,7 @@
+import { ReviewApi } from '../api/review.api';
 import type { Review, ReviewResponse } from '../types/review';
 import { HttpClient } from '@angular/common/http';
-import { ChangeDetectorRef, Component, inject } from '@angular/core';
+import { ChangeDetectorRef, Component, inject, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { ActivatedRoute, RouterLink } from '@angular/router';
 
@@ -33,6 +34,9 @@ import { ReviewDialog } from '../components/review-dialog/review-dialog';
 })
 export class LocationProfile {
   hall?: LocationDetails;
+  readonly deletingId = signal<string | null>(null);
+  readonly reviewError = signal('');
+  private readonly reviewApi = inject(ReviewApi);
   private readonly http = inject(HttpClient);
   private readonly changeDetector = inject(ChangeDetectorRef);
 
@@ -110,6 +114,35 @@ export class LocationProfile {
     } catch {
       return false;
     }
+  }
+
+  deleteReview(review: Review): void {
+    if (!this.hall || !this.isOwnReview(review) || this.deletingId()) {
+      return;
+    }
+    this.deletingId.set(review.uuid);
+    this.reviewError.set('');
+    this.reviewApi.delete(review.uuid).subscribe({
+      next: () => {
+        this.deletingId.set(null);
+        if (this.hall) {
+          const reviews = this.hall.reviews.filter(item => item.uuid !== review.uuid);
+          this.hall = {
+            ...this.hall,
+            reviews,
+            reviewCount: reviews.length,
+            averageRating: reviews.length
+              ? reviews.reduce((total, item) => total + item.rating, 0) / reviews.length
+              : 0,
+          };
+          this.changeDetector.markForCheck();
+        }
+      },
+      error: () => {
+        this.deletingId.set(null);
+        this.reviewError.set('Could not delete your review. Please try again.');
+      },
+    });
   }
 
   openReviewDialog(review?: Review): void {

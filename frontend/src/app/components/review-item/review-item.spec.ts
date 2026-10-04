@@ -18,17 +18,19 @@ describe('Reusable review item', () => {
     expect(fixture.nativeElement.querySelector('[aria-label="Options for your review"]')).toBeNull();
   });
 
-  it('emits the selected review through the edit menu', async () => {
+  it.each(['Edit', 'Delete'])('emits the selected review through the %s menu option', async (action) => {
     const fixture = TestBed.createComponent(ReviewItem);
     fixture.componentRef.setInput('review', review);
     fixture.componentRef.setInput('canEdit', true);
     const edit = vi.fn();
-    fixture.componentInstance.editRequested.subscribe(edit);
+    (action === 'Edit' ? fixture.componentInstance.editRequested : fixture.componentInstance.deleteRequested).subscribe(edit);
     fixture.detectChanges();
     fixture.nativeElement.querySelector('[aria-label="Options for your review"]').click();
     fixture.detectChanges();
     await fixture.whenStable();
-    (document.querySelector('[role="menuitem"]') as HTMLButtonElement).click();
+    const items = Array.from(document.querySelectorAll<HTMLButtonElement>('[role="menuitem"]'));
+    expect(items.length).toBe(2);
+    items.find(item => item.querySelector('span')?.textContent?.trim() === action)!.click();
     expect(edit).toHaveBeenCalledWith(review);
   });
 });

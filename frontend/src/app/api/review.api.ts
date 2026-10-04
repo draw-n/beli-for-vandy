@@ -19,6 +19,10 @@ export type ReviewUpdateRequest = Pick<ReviewCreateRequest, 'rating' | 'note' | 
 export class ReviewApi {
   private readonly http = inject(HttpClient);
 
+  delete(id: string) {
+    return this.http.delete<{ message: string }>(`http://localhost:8000/reviews/${encodeURIComponent(id)}`);
+  }
+
   update(id: string, request: ReviewUpdateRequest) {
     return this.http.put<ReviewResponse>(`http://localhost:8000/reviews/${encodeURIComponent(id)}`, request);
   }

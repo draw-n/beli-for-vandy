@@ -92,3 +92,9 @@ encapsulated, so the same item can be used in a future profile review list.
   (editRequested)="openReviewDialog($event)"
 />
 ```
+
+The review menu offers **Edit** (pencil) and **Delete** (trash). `deleteRequested`
+emits the selected review; the dining hall page calls `DELETE /reviews/{review_id}`.
+The review is removed from the displayed list only after the API succeeds, and the
+count and average are recalculated. Failed deletions preserve the review and show
+an error for retry. The `busy` input disables menu actions while deletion is pending.

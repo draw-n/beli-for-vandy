@@ -16,5 +16,7 @@ import type { Review } from '../../types/review';
 export class ReviewItem {
   @Input({ required: true }) review!: Review;
   @Input() canEdit = false;
+  @Input() busy = false;
+  @Output() deleteRequested = new EventEmitter<Review>();
   @Output() editRequested = new EventEmitter<Review>();
 }
