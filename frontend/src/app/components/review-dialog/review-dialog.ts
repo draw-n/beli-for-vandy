@@ -15,6 +15,7 @@ import { ReviewApi } from '../../api/review.api';
 interface ReviewDialogData {
   locationId: string;
   locationName: string;
+  review?: Review;
 }
 
 @Component({
@@ -47,7 +48,13 @@ export class ReviewDialog {
     private dialogRef: MatDialogRef<ReviewDialog>,
     @Inject(MAT_DIALOG_DATA)
     public data: ReviewDialogData,
-  ) {}
+  ) {
+    if (data.review) {
+      this.rating = data.review.rating;
+      this.reviewText = data.review.reviewText;
+      this.mealType = data.review.mealType;
+    }
+  }
 
   get validRating(): boolean {
     return this.rating !== null && Number.isInteger(this.rating) && this.rating >= 1 && this.rating <= 10;
@@ -69,20 +76,31 @@ export class ReviewDialog {
       return;
     }
 
+    if (this.data.review && this.data.review.userId !== userId) {
+      this.errorMessage.set('You can only edit your own reviews.');
+      return;
+    }
+
     const now = new Date().toISOString();
     this.saving.set(true);
     this.errorMessage.set('');
     this.dialogRef.disableClose = true;
-    this.reviewApi.create({
-      user_id: userId,
-      location_id: this.data.locationId,
+    const fields = {
       rating: this.rating,
       note: this.reviewText.trim(),
       meal_type: this.mealType,
-      created_at: now,
       updated_at: now,
-      photo_ids: [],
-    }).subscribe({
+    };
+    const request = this.data.review
+      ? this.reviewApi.update(this.data.review.uuid, fields)
+      : this.reviewApi.create({
+          ...fields,
+          user_id: userId,
+          location_id: this.data.locationId,
+          created_at: now,
+          photo_ids: [],
+        });
+    request.subscribe({
       next: (review) => this.dialogRef.close(review),
       error: () => {
         this.saving.set(false);

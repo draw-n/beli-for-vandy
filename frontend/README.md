@@ -68,3 +68,10 @@ strings at submission. `photo_ids` is empty while photo uploads are unavailable.
 The dialog stays open on errors, prevents duplicate submissions while saving, and
 refreshes the location's reviews, count, and average rating after a successful save.
 This connects creation to the existing read flow; editing/deleting reviews has no UI yet.
+
+Reviews matching the signed-in account show a vertical three-dot menu with **Edit review**.
+Editing reuses the form and calls `PUT /reviews/{review_id}` with `rating`, `note`,
+`meal_type`, and `updated_at`; author, location, creation time, and photo IDs are preserved.
+The list and average refresh after saving. Ownership is checked in the UI only;
+the existing backend does not authenticate review updates. The profile still displays
+account details only, without a review list.

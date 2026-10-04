@@ -8,6 +8,7 @@ import { MatCardModule } from '@angular/material/card';
 import { MatChipsModule } from '@angular/material/chips';
 import { MatDividerModule } from '@angular/material/divider';
 import { MatIconModule } from '@angular/material/icon';
+import { MatMenuModule } from '@angular/material/menu';
 import { MatDialog, MatDialogModule } from '@angular/material/dialog';
 
 import { ReviewDialog } from '../components/review-dialog/review-dialog';
@@ -24,6 +25,7 @@ import { ReviewDialog } from '../components/review-dialog/review-dialog';
     MatDividerModule,
     MatIconModule,
     MatDialogModule,
+    MatMenuModule,
   ],
   templateUrl: './location-profile.html',
   styleUrl: './location-profile.css',
@@ -101,8 +103,16 @@ export class LocationProfile {
       });
   }
 
-  openReviewDialog(): void {
-    if (!this.hall) {
+  isOwnReview(review: Review): boolean {
+    try {
+      return review.userId === JSON.parse(sessionStorage.getItem('currentAccount') ?? 'null')?.uuid;
+    } catch {
+      return false;
+    }
+  }
+
+  openReviewDialog(review?: Review): void {
+    if (!this.hall || (review && !this.isOwnReview(review))) {
       return;
     }
 
@@ -112,6 +122,7 @@ export class LocationProfile {
       data: {
         locationId: this.hall.uuid,
         locationName: this.hall.name,
+        review,
       },
     });
 

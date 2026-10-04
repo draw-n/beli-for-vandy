@@ -12,9 +12,15 @@ export interface ReviewCreateRequest {
   photo_ids: string[];
 }
 
+export type ReviewUpdateRequest = Pick<ReviewCreateRequest, 'rating' | 'note' | 'meal_type' | 'updated_at'>;
+
 @Injectable({ providedIn: 'root' })
 export class ReviewApi {
   private readonly http = inject(HttpClient);
+
+  update(id: string, request: ReviewUpdateRequest) {
+    return this.http.put<ReviewResponse>(`http://localhost:8000/reviews/${encodeURIComponent(id)}`, request);
+  }
 
   create(request: ReviewCreateRequest) {
     return this.http.post<ReviewResponse>('http://localhost:8000/reviews/', request);

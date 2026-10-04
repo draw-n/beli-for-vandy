@@ -1,4 +1,4 @@
-<h2 mat-dialog-title>Rate {{ data.locationName }}</h2>
+<h2 mat-dialog-title>{{ data.review ? 'Edit your review of' : 'Rate' }} {{ data.locationName }}</h2>
 
 <mat-dialog-content>
   <div class="form">
@@ -58,6 +58,6 @@
     (click)="submitReview()"
     [disabled]="saving() || !validRating || !mealType"
   >
-    {{ saving() ? 'Saving…' : 'Submit review' }}
+    {{ saving() ? 'Saving…' : data.review ? 'Save changes' : 'Submit review' }}
   </button>
 </mat-dialog-actions>

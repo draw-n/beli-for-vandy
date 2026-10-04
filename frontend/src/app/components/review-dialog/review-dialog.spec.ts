@@ -73,4 +73,40 @@ describe('ReviewDialog submission', () => {
     expect(component.errorMessage()).toContain('Please log in');
     http.expectNone('http://localhost:8000/reviews/');
   });
+  it('prefills an existing review and updates only editable fields', () => {
+    const data = TestBed.inject(MAT_DIALOG_DATA);
+    data.review = {
+      uuid: 'review-1', userId: 'user-1', locationId: 'location-1',
+      rating: 7, reviewText: 'Original note', mealType: 'Dinner',
+      createdAt: new Date('2026-01-01'), updatedAt: new Date('2026-01-01'),
+      photoIds: ['existing-photo'],
+    };
+    const editor = TestBed.createComponent(ReviewDialog).componentInstance;
+    expect(editor.rating).toBe(7);
+    expect(editor.reviewText).toBe('Original note');
+    expect(editor.mealType).toBe('Dinner');
+    editor.rating = 8;
+    editor.reviewText = ' Updated note ';
+    editor.submitReview();
+    const request = http.expectOne('http://localhost:8000/reviews/review-1');
+    expect(request.request.method).toBe('PUT');
+    expect(request.request.body).toEqual({
+      rating: 8, note: 'Updated note', meal_type: 'Dinner', updated_at: expect.any(String),
+    });
+    request.flush({ uuid: 'review-1' });
+    expect(dialog.close).toHaveBeenCalledWith({ uuid: 'review-1' });
+  });
+
+  it('rejects editing another account’s review without a request', () => {
+    component.data.review = {
+      uuid: 'other-review', userId: 'other-user', locationId: 'location-1',
+      rating: 7, reviewText: '', mealType: 'Lunch',
+      createdAt: new Date(), updatedAt: new Date(),
+    };
+    component.submitReview();
+    http.expectNone(() => true);
+    expect(component.errorMessage()).toBe('You can only edit your own reviews.');
+    expect(dialog.close).not.toHaveBeenCalled();
+  });
+
 });
