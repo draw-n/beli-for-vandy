@@ -1,4 +1,4 @@
-import { Component, Inject } from '@angular/core';
+import { Component, Inject, inject, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 
@@ -10,21 +10,11 @@ import { MatInputModule } from '@angular/material/input';
 import { MatSelectModule } from '@angular/material/select';
 import { MatIconModule } from '@angular/material/icon';
 
+import { ReviewApi } from '../../api/review.api';
+
 interface ReviewDialogData {
   locationId: string;
   locationName: string;
-}
-
-export interface ReviewFormResult {
-  rating: number;
-  reviewText: string;
-  mealType: string;
-  photos: File[];
-}
-
-interface PhotoPreview {
-  file: File;
-  url: string;
 }
 
 @Component({
@@ -44,11 +34,12 @@ interface PhotoPreview {
   styleUrl: './review-dialog.css',
 })
 export class ReviewDialog {
+  private readonly reviewApi = inject(ReviewApi);
+  readonly saving = signal(false);
+  readonly errorMessage = signal('');
   rating: number | null = null;
   reviewText = '';
   mealType = '';
-
-  photoPreviews: PhotoPreview[] = [];
 
   mealTypes = ['Breakfast', 'Lunch', 'Dinner', 'Snack'];
 
@@ -58,51 +49,46 @@ export class ReviewDialog {
     public data: ReviewDialogData,
   ) {}
 
-  onPhotosSelected(event: Event): void {
-    const input = event.target as HTMLInputElement;
-
-    if (!input.files) {
-      return;
-    }
-
-    const files = Array.from(input.files);
-
-    for (const file of files) {
-      // Only allow images
-      if (!file.type.startsWith('image/')) {
-        continue;
-      }
-
-      const preview: PhotoPreview = {
-        file,
-        url: URL.createObjectURL(file),
-      };
-
-      this.photoPreviews.push(preview);
-    }
-
-    // Allows the same file to be selected again after removing it
-    input.value = '';
-  }
-
-  removePhoto(index: number): void {
-    URL.revokeObjectURL(this.photoPreviews[index].url);
-
-    this.photoPreviews.splice(index, 1);
+  get validRating(): boolean {
+    return this.rating !== null && Number.isInteger(this.rating) && this.rating >= 1 && this.rating <= 10;
   }
 
   submitReview(): void {
-    if (this.rating === null || this.rating < 1 || this.rating > 10 || !this.mealType) {
+    if (this.saving() || this.rating === null || this.rating < 1 || this.rating > 10 || !Number.isInteger(this.rating) || !this.mealType) {
       return;
     }
 
-    const result: ReviewFormResult = {
-      rating: this.rating,
-      reviewText: this.reviewText.trim(),
-      mealType: this.mealType,
-      photos: this.photoPreviews.map((preview) => preview.file),
-    };
+    let userId: string | undefined;
+    try {
+      userId = JSON.parse(sessionStorage.getItem('currentAccount') ?? 'null')?.uuid;
+    } catch {
+      // Missing or malformed account data requires signing in again.
+    }
+    if (!userId) {
+      this.errorMessage.set('Please log in before submitting a review.');
+      return;
+    }
 
-    this.dialogRef.close(result);
+    const now = new Date().toISOString();
+    this.saving.set(true);
+    this.errorMessage.set('');
+    this.dialogRef.disableClose = true;
+    this.reviewApi.create({
+      user_id: userId,
+      location_id: this.data.locationId,
+      rating: this.rating,
+      note: this.reviewText.trim(),
+      meal_type: this.mealType,
+      created_at: now,
+      updated_at: now,
+      photo_ids: [],
+    }).subscribe({
+      next: (review) => this.dialogRef.close(review),
+      error: () => {
+        this.saving.set(false);
+        this.dialogRef.disableClose = false;
+        this.errorMessage.set('Could not save your review. Please try again.');
+      },
+    });
   }
 }

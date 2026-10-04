@@ -57,3 +57,14 @@ Angular CLI does not come with an end-to-end testing framework by default. You c
 ## Additional Resources
 
 For more information on using the Angular CLI, including detailed command references, visit the [Angular CLI Overview and Command Reference](https://angular.dev/tools/cli) page.
+
+## Review form integration
+
+The location review dialog submits to `POST http://localhost:8000/reviews/`.
+It uses the signed-in `currentAccount.uuid` for `user_id` and the current location UUID
+for `location_id`. Rating is a whole number from 1–10; review text maps to `note`,
+and the selected meal maps to `meal_type`. Both timestamps are generated as ISO
+strings at submission. `photo_ids` is empty while photo uploads are unavailable.
+The dialog stays open on errors, prevents duplicate submissions while saving, and
+refreshes the location's reviews, count, and average rating after a successful save.
+This connects creation to the existing read flow; editing/deleting reviews has no UI yet.

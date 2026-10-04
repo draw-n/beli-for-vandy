@@ -10,7 +10,7 @@ import { MatDividerModule } from '@angular/material/divider';
 import { MatIconModule } from '@angular/material/icon';
 import { MatDialog, MatDialogModule } from '@angular/material/dialog';
 
-import { ReviewDialog, ReviewFormResult } from '../components/review-dialog/review-dialog';
+import { ReviewDialog } from '../components/review-dialog/review-dialog';
 
 @Component({
   selector: 'app-location-profile',
@@ -115,22 +115,12 @@ export class LocationProfile {
       },
     });
 
-    dialogRef.afterClosed().subscribe((result: ReviewFormResult | undefined) => {
+    dialogRef.afterClosed().subscribe((result: ReviewResponse | undefined) => {
       if (!result || !this.hall) {
         return;
       }
 
-      console.log('Review form result:', result);
-      console.log('Dining hall:', this.hall.uuid);
-      console.log('Photos:', result.photos);
-
-      // Later:
-      // 1. Upload photos to backend
-      // 2. Backend creates Photo records
-      // 3. Get photo UUIDs
-      // 4. POST the Review to backend
-      // 5. Backend recalculates averageRating/reviewCount
-      // 6. Refresh/re-fetch this dining hall
+      this.loadReviews(this.hall.uuid);
     });
   }
 }
