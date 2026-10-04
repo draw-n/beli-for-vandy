@@ -121,50 +121,12 @@
     <mat-divider></mat-divider>
 
     <div class="reviews" *ngIf="hall.reviews.length > 0; else noReviews">
-      <div class="review" *ngFor="let review of hall.reviews">
-        <div class="review-header">
-          <div class="review-user">
-            <mat-icon> account_circle </mat-icon>
-
-            <div>
-              <strong>
-                {{ review.userId }}
-              </strong>
-
-              <span>
-                {{ review.mealType }}
-                ·
-                {{ review.createdAt | date: 'mediumDate' }}
-              </span>
-            </div>
-          </div>
-
-          <div class="review-rating">
-            <mat-icon>star</mat-icon>
-
-            <strong>
-              {{ review.rating | number: '1.1-1' }}
-            </strong>
-            @if (isOwnReview(review)) {
-              <button mat-icon-button [matMenuTriggerFor]="reviewMenu" aria-label="Options for your review">
-                <mat-icon>more_vert</mat-icon>
-              </button>
-              <mat-menu #reviewMenu="matMenu">
-                <button mat-menu-item (click)="openReviewDialog(review)">
-                  <mat-icon>edit</mat-icon>
-                  <span>Edit review</span>
-                </button>
-              </mat-menu>
-            }
-          </div>
-        </div>
-
-        <p>
-          {{ review.reviewText }}
-        </p>
-
-        <mat-divider></mat-divider>
-      </div>
+      <app-review-item
+        *ngFor="let review of hall.reviews"
+        [review]="review"
+        [canEdit]="isOwnReview(review)"
+        (editRequested)="openReviewDialog($event)"
+      />
     </div>
 
     <ng-template #noReviews>

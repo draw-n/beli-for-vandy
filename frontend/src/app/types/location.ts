@@ -15,7 +15,7 @@ interface LocationDetails {
   reviewCount: number;
   friendRating: number | null;
   photos: string[];
-  reviews: Review[];
+  reviews: import('./review').Review[];
   image?: string;
 }
 

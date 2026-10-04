@@ -1,3 +1,4 @@
+import type { Review, ReviewResponse } from '../types/review';
 import { HttpClient } from '@angular/common/http';
 import { ChangeDetectorRef, Component, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
@@ -8,7 +9,7 @@ import { MatCardModule } from '@angular/material/card';
 import { MatChipsModule } from '@angular/material/chips';
 import { MatDividerModule } from '@angular/material/divider';
 import { MatIconModule } from '@angular/material/icon';
-import { MatMenuModule } from '@angular/material/menu';
+import { ReviewItem } from '../components/review-item/review-item';
 import { MatDialog, MatDialogModule } from '@angular/material/dialog';
 
 import { ReviewDialog } from '../components/review-dialog/review-dialog';
@@ -25,7 +26,7 @@ import { ReviewDialog } from '../components/review-dialog/review-dialog';
     MatDividerModule,
     MatIconModule,
     MatDialogModule,
-    MatMenuModule,
+    ReviewItem,
   ],
   templateUrl: './location-profile.html',
   styleUrl: './location-profile.css',

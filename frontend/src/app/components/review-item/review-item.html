@@ -1,0 +1,44 @@
+      <article class="review">
+        <div class="review-header">
+          <div class="review-user">
+            <mat-icon> account_circle </mat-icon>
+
+            <div>
+              <strong>
+                {{ review.userId }}
+              </strong>
+
+              <span>
+                {{ review.mealType }}
+                ·
+                {{ review.createdAt | date: 'mediumDate' }}
+              </span>
+            </div>
+          </div>
+
+          <div class="review-rating">
+            <mat-icon>star</mat-icon>
+
+            <strong>
+              {{ review.rating | number: '1.1-1' }}
+            </strong>
+            @if (canEdit) {
+              <button mat-icon-button [matMenuTriggerFor]="reviewMenu" aria-label="Options for your review">
+                <mat-icon>more_vert</mat-icon>
+              </button>
+              <mat-menu #reviewMenu="matMenu">
+                <button mat-menu-item (click)="editRequested.emit(review)">
+                  <mat-icon>edit</mat-icon>
+                  <span>Edit review</span>
+                </button>
+              </mat-menu>
+            }
+          </div>
+        </div>
+
+        <p>
+          {{ review.reviewText }}
+        </p>
+
+        <mat-divider></mat-divider>
+      </article>

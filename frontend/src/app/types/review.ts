@@ -1,4 +1,4 @@
-interface Review {
+export interface Review {
   uuid: string;
   userId: string;
   locationId: string;
@@ -10,7 +10,7 @@ interface Review {
   photoIds?: string[];
 }
 
-interface ReviewResponse {
+export interface ReviewResponse {
   uuid: string;
   user_id: string;
   location_id: string;

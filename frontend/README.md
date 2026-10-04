@@ -75,3 +75,20 @@ Editing reuses the form and calls `PUT /reviews/{review_id}` with `rating`, `not
 The list and average refresh after saving. Ownership is checked in the UI only;
 the existing backend does not authenticate review updates. The profile still displays
 account details only, without a review list.
+
+### Reusing review items
+
+`ReviewItem` (`app-review-item`) renders an individual review and its optional edit
+menu. Pass a typed `Review` through `[review]`, an ownership decision through
+`[canEdit]` (defaults to false), and handle `(editRequested)` in the containing page.
+The component has no route, session-storage, dialog, or HTTP dependencies; the page
+owns fetching, authentication context, editing, and refreshing. Its styles are
+encapsulated, so the same item can be used in a future profile review list.
+
+```html
+<app-review-item
+  [review]="review"
+  [canEdit]="isOwnReview(review)"
+  (editRequested)="openReviewDialog($event)"
+/>
+```
