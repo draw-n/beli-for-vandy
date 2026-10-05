@@ -170,55 +170,6 @@
   margin-top: 8px;
 }
 
-.review {
-  padding-top: 20px;
-}
-
-.review-header {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 16px;
-}
-
-.review-user {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-}
-
-.review-user > mat-icon {
-  width: 40px;
-  height: 40px;
-  font-size: 40px;
-}
-
-.review-user div {
-  display: flex;
-  flex-direction: column;
-}
-
-.review-user span {
-  font-size: 13px;
-}
-
-.review-rating {
-  display: flex;
-  align-items: center;
-  gap: 4px;
-}
-
-.review-rating mat-icon {
-  width: 20px;
-  height: 20px;
-  font-size: 20px;
-}
-
-.review p {
-  margin: 16px 0 20px;
-  line-height: 1.5;
-}
-
 /* Empty reviews */
 
 .empty-reviews {

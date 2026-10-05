@@ -1,5 +1,7 @@
+import { ReviewApi } from '../api/review.api';
+import type { Review, ReviewResponse } from '../types/review';
 import { HttpClient } from '@angular/common/http';
-import { ChangeDetectorRef, Component, inject } from '@angular/core';
+import { ChangeDetectorRef, Component, inject, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { ActivatedRoute, RouterLink } from '@angular/router';
 
@@ -8,9 +10,10 @@ import { MatCardModule } from '@angular/material/card';
 import { MatChipsModule } from '@angular/material/chips';
 import { MatDividerModule } from '@angular/material/divider';
 import { MatIconModule } from '@angular/material/icon';
+import { ReviewItem } from '../components/review-item/review-item';
 import { MatDialog, MatDialogModule } from '@angular/material/dialog';
 
-import { ReviewDialog, ReviewFormResult } from '../components/review-dialog/review-dialog';
+import { ReviewDialog } from '../components/review-dialog/review-dialog';
 
 @Component({
   selector: 'app-location-profile',
@@ -24,12 +27,16 @@ import { ReviewDialog, ReviewFormResult } from '../components/review-dialog/revi
     MatDividerModule,
     MatIconModule,
     MatDialogModule,
+    ReviewItem,
   ],
   templateUrl: './location-profile.html',
   styleUrl: './location-profile.css',
 })
 export class LocationProfile {
   hall?: LocationDetails;
+  readonly deletingId = signal<string | null>(null);
+  readonly reviewError = signal('');
+  private readonly reviewApi = inject(ReviewApi);
   private readonly http = inject(HttpClient);
   private readonly changeDetector = inject(ChangeDetectorRef);
 
@@ -101,8 +108,45 @@ export class LocationProfile {
       });
   }
 
-  openReviewDialog(): void {
-    if (!this.hall) {
+  isOwnReview(review: Review): boolean {
+    try {
+      return review.userId === JSON.parse(sessionStorage.getItem('currentAccount') ?? 'null')?.uuid;
+    } catch {
+      return false;
+    }
+  }
+
+  deleteReview(review: Review): void {
+    if (!this.hall || !this.isOwnReview(review) || this.deletingId()) {
+      return;
+    }
+    this.deletingId.set(review.uuid);
+    this.reviewError.set('');
+    this.reviewApi.delete(review.uuid).subscribe({
+      next: () => {
+        this.deletingId.set(null);
+        if (this.hall) {
+          const reviews = this.hall.reviews.filter(item => item.uuid !== review.uuid);
+          this.hall = {
+            ...this.hall,
+            reviews,
+            reviewCount: reviews.length,
+            averageRating: reviews.length
+              ? reviews.reduce((total, item) => total + item.rating, 0) / reviews.length
+              : 0,
+          };
+          this.changeDetector.markForCheck();
+        }
+      },
+      error: () => {
+        this.deletingId.set(null);
+        this.reviewError.set('Could not delete your review. Please try again.');
+      },
+    });
+  }
+
+  openReviewDialog(review?: Review): void {
+    if (!this.hall || (review && !this.isOwnReview(review))) {
       return;
     }
 
@@ -112,25 +156,16 @@ export class LocationProfile {
       data: {
         locationId: this.hall.uuid,
         locationName: this.hall.name,
+        review,
       },
     });
 
-    dialogRef.afterClosed().subscribe((result: ReviewFormResult | undefined) => {
+    dialogRef.afterClosed().subscribe((result: ReviewResponse | undefined) => {
       if (!result || !this.hall) {
         return;
       }
 
-      console.log('Review form result:', result);
-      console.log('Dining hall:', this.hall.uuid);
-      console.log('Photos:', result.photos);
-
-      // Later:
-      // 1. Upload photos to backend
-      // 2. Backend creates Photo records
-      // 3. Get photo UUIDs
-      // 4. POST the Review to backend
-      // 5. Backend recalculates averageRating/reviewCount
-      // 6. Refresh/re-fetch this dining hall
+      this.loadReviews(this.hall.uuid);
     });
   }
 }

@@ -120,40 +120,18 @@
 
     <mat-divider></mat-divider>
 
+    @if (reviewError()) {
+      <p role="alert">{{ reviewError() }}</p>
+    }
     <div class="reviews" *ngIf="hall.reviews.length > 0; else noReviews">
-      <div class="review" *ngFor="let review of hall.reviews">
-        <div class="review-header">
-          <div class="review-user">
-            <mat-icon> account_circle </mat-icon>
-
-            <div>
-              <strong>
-                {{ review.userId }}
-              </strong>
-
-              <span>
-                {{ review.mealType }}
-                ·
-                {{ review.createdAt | date: 'mediumDate' }}
-              </span>
-            </div>
-          </div>
-
-          <div class="review-rating">
-            <mat-icon>star</mat-icon>
-
-            <strong>
-              {{ review.rating | number: '1.1-1' }}
-            </strong>
-          </div>
-        </div>
-
-        <p>
-          {{ review.reviewText }}
-        </p>
-
-        <mat-divider></mat-divider>
-      </div>
+      <app-review-item
+        *ngFor="let review of hall.reviews"
+        [review]="review"
+        [canEdit]="isOwnReview(review)"
+        [busy]="deletingId() !== null"
+        (deleteRequested)="deleteReview($event)"
+        (editRequested)="openReviewDialog($event)"
+      />
     </div>
 
     <ng-template #noReviews>
