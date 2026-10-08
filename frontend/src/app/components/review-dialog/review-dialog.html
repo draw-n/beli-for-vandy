@@ -1,0 +1,63 @@
+<h2 mat-dialog-title>{{ data.review ? 'Edit your review of' : 'Rate' }} {{ data.locationName }}</h2>
+
+<mat-dialog-content>
+  <div class="form">
+    <!-- Rating -->
+    <mat-form-field appearance="outline">
+      <mat-label>Rating</mat-label>
+
+      <input
+        matInput
+        type="number"
+        min="1"
+        max="10"
+        step="1"
+        [(ngModel)]="rating"
+        placeholder="1–10"
+      />
+
+      <span matTextSuffix>/ 10</span>
+    </mat-form-field>
+
+    <!-- Meal type -->
+    <mat-form-field appearance="outline">
+      <mat-label>Meal</mat-label>
+
+      <mat-select [(ngModel)]="mealType">
+        <mat-option *ngFor="let meal of mealTypes" [value]="meal">
+          {{ meal }}
+        </mat-option>
+      </mat-select>
+    </mat-form-field>
+
+    <!-- Review text -->
+    <mat-form-field appearance="outline">
+      <mat-label>Review</mat-label>
+
+      <textarea
+        matInput
+        rows="5"
+        [(ngModel)]="reviewText"
+        placeholder="What did you think?"
+      ></textarea>
+    </mat-form-field>
+
+    <p>Photo uploads are not available yet.</p>
+  </div>
+</mat-dialog-content>
+
+@if (errorMessage()) {
+  <p role="alert">{{ errorMessage() }}</p>
+}
+
+<mat-dialog-actions align="end">
+  <button mat-button mat-dialog-close [disabled]="saving()">Cancel</button>
+
+  <button
+    mat-flat-button
+    (click)="submitReview()"
+    [disabled]="saving() || !validRating || !mealType"
+  >
+    {{ saving() ? 'Saving…' : data.review ? 'Save changes' : 'Submit review' }}
+  </button>
+</mat-dialog-actions>

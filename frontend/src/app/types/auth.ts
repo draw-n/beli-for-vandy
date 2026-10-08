@@ -19,7 +19,23 @@ export interface AccountDeleteRequest {
   password: string;
 }
 
+export interface AccountLoginRequest {
+  username: string;
+  password: string;
+}
+
 export interface Account extends AccountBase {
   uuid: string;
   created_at: string;
+}
+
+interface User {
+  uuid: string;
+  name: string;
+  location: string;
+  tags: string[];
+  hours: LocationHours[];
+  averageRating: number;
+  reviewCount: number;
+  image?: string;
 }

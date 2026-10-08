@@ -1,9 +1,10 @@
 import { Routes } from '@angular/router';
 
-import { LoginComponent } from './login/login.component';
+import { LoginComponent } from './login/login';
 import { Register } from './register/register';
-import { DiningHalls } from './dining-halls/dining-halls';
-import { DiningHallDetail } from './dining-hall-detail/dining-hall-detail';
+import { Locations } from './locations/locations';
+import { LocationProfile} from './location-profile/location-profile';
+import { Profile } from './user-profile/user-profile';
 
 export const routes: Routes = [
   {
@@ -20,12 +21,16 @@ export const routes: Routes = [
     component: Register,
   },
   {
-    path: 'dining-halls',
-    component: DiningHalls,
+    path: 'locations',
+    component: Locations,
   },
   {
-    path: 'dining-halls/:id',
-    component: DiningHallDetail,
+    path: 'locations/:id',
+    component: LocationProfile,
+  },
+  {
+    path: 'profile',
+    component: Profile,
   },
   {
     path: '**',

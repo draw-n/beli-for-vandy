@@ -1,4 +1,4 @@
-from fastapi import APIRouter
+from fastapi import APIRouter, Query
 
 from models.review import ReviewCreate, ReviewUpdate, ReviewResponse
 from controllers.review import (
@@ -21,8 +21,8 @@ async def create(review: ReviewCreate):
 
 
 @router.get("/", response_model=list[ReviewResponse])
-async def get_all():
-    return await get_reviews()
+async def get_all(location_id: str | None = Query(default=None)):
+    return await get_reviews(location_id)
 
 
 @router.get("/{review_id}", response_model=ReviewResponse)

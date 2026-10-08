@@ -1,6 +1,6 @@
 <div class="detail-page" *ngIf="hall; else notFound">
   <!-- Back -->
-  <a mat-button routerLink="/dining-halls" class="back-button">
+  <a mat-button routerLink="/locations" class="back-button">
     <mat-icon>arrow_back</mat-icon>
     All dining spots
   </a>
@@ -100,7 +100,7 @@
   </section>
 
   <!-- Photos -->
-  <section class="section" *ngIf="hall.photos?.length">
+  <section class="section" *ngIf="hall.photos.length">
     <h2>Photos</h2>
 
     <div class="photo-row">
@@ -120,40 +120,18 @@
 
     <mat-divider></mat-divider>
 
+    @if (reviewError()) {
+      <p role="alert">{{ reviewError() }}</p>
+    }
     <div class="reviews" *ngIf="hall.reviews.length > 0; else noReviews">
-      <div class="review" *ngFor="let review of hall.reviews">
-        <div class="review-header">
-          <div class="review-user">
-            <mat-icon> account_circle </mat-icon>
-
-            <div>
-              <strong>
-                {{ review.userId }}
-              </strong>
-
-              <span>
-                {{ review.mealType }}
-                ·
-                {{ review.createdAt | date: 'mediumDate' }}
-              </span>
-            </div>
-          </div>
-
-          <div class="review-rating">
-            <mat-icon>star</mat-icon>
-
-            <strong>
-              {{ review.rating | number: '1.1-1' }}
-            </strong>
-          </div>
-        </div>
-
-        <p>
-          {{ review.reviewText }}
-        </p>
-
-        <mat-divider></mat-divider>
-      </div>
+      <app-review-item
+        *ngFor="let review of hall.reviews"
+        [review]="review"
+        [canEdit]="isOwnReview(review)"
+        [busy]="deletingId() !== null"
+        (deleteRequested)="deleteReview($event)"
+        (editRequested)="openReviewDialog($event)"
+      />
     </div>
 
     <ng-template #noReviews>
@@ -173,11 +151,11 @@
   <div class="not-found">
     <mat-icon> restaurant </mat-icon>
 
-    <h2>Dining hall not found</h2>
+    <h2>Location not found</h2>
 
     <p>We couldn't find that dining spot.</p>
 
-    <a mat-button routerLink="/dining-halls">
+    <a mat-button routerLink="/locations">
       <mat-icon>arrow_back</mat-icon>
       Back to dining spots
     </a>

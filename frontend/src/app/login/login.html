@@ -1,13 +1,11 @@
 <div class="login-page">
   <div class="login-card">
-
     <div class="login-header">
       <h1>Beli for Vandy</h1>
       <p>Discover your next favorite spot.</p>
     </div>
 
     <form (ngSubmit)="onSubmit()">
-
       <mat-form-field appearance="outline">
         <mat-label>Username</mat-label>
 
@@ -18,7 +16,7 @@
           [(ngModel)]="username"
           placeholder="Enter your username"
           required
-        >
+        />
 
         <mat-icon matSuffix>person</mat-icon>
       </mat-form-field>
@@ -33,20 +31,16 @@
           [(ngModel)]="password"
           placeholder="Enter your password"
           required
-        >
+        />
 
         <mat-icon matSuffix>lock</mat-icon>
       </mat-form-field>
 
-      <button
-        mat-flat-button
-        type="submit"
-        [disabled]="!username || !password"
-      >
+      <button mat-flat-button type="submit" [disabled]="!username || !password || loggingIn">
         Log in
       </button>
 
+      <p class="login-message" *ngIf="loginMessage" role="alert">{{ loginMessage }}</p>
     </form>
-
   </div>
 </div>

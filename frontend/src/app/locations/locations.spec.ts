@@ -1,17 +1,19 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
+import { provideHttpClient } from '@angular/common/http';
 
-import { RateReviewDialog } from './rate-review-dialog';
+import { Locations } from './locations';
 
-describe('RateReviewDialog', () => {
-  let component: RateReviewDialog;
-  let fixture: ComponentFixture<RateReviewDialog>;
+describe('Locations', () => {
+  let component: Locations;
+  let fixture: ComponentFixture<Locations>;
 
   beforeEach(async () => {
     await TestBed.configureTestingModule({
-      imports: [RateReviewDialog],
+      imports: [Locations],
+      providers: [provideHttpClient()],
     }).compileComponents();
 
-    fixture = TestBed.createComponent(RateReviewDialog);
+    fixture = TestBed.createComponent(Locations);
     component = fixture.componentInstance;
     await fixture.whenStable();
   });

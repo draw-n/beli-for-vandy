@@ -23,4 +23,4 @@ class LocationUpdate(BaseModel):
 
 
 class LocationResponse(LocationBase):
-    pass
+    uuid: str

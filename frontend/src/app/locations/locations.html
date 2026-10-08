@@ -2,9 +2,14 @@
   <header>
     <div class="header-top">
       <p class="eyebrow">VANDERBILT DINING</p>
-      <button mat-button type="button" (click)="logout()">
-        <mat-icon>logout</mat-icon> Logout
-      </button>
+      <div class="header-actions">
+        <button mat-button type="button" [routerLink]="['/profile']">
+          <mat-icon>account_circle</mat-icon> Profile
+        </button>
+        <button mat-button type="button" (click)="logout()">
+          <mat-icon>logout</mat-icon> Logout
+        </button>
+      </div>
     </div>
 
     <h1>Find your next meal.</h1>
@@ -12,7 +17,7 @@
     <p class="subtitle">Explore dining spots across Vanderbilt and see what students think.</p>
 
     <mat-form-field appearance="outline" class="search">
-      <mat-label>Search dining halls</mat-label>
+      <mat-label>Search locations</mat-label>
 
       <mat-icon matPrefix>search</mat-icon>
 
@@ -33,9 +38,18 @@
         *ngFor="let hall of filteredDiningHalls"
         class="dining-card"
         appearance="outlined"
-        [routerLink]="['/dining-halls', hall.uuid]"
+        [routerLink]="['/locations', hall.uuid]"
       >
-        <img *ngIf="hall.image" mat-card-image [src]="hall.image" [alt]="hall.name" />
+        <img
+          *ngIf="hall.image; else imagePlaceholder"
+          mat-card-image
+          [src]="hall.image"
+          [alt]="hall.name"
+        />
+
+        <ng-template #imagePlaceholder>
+          <div class="image-placeholder" aria-label="Image coming soon">Image coming soon</div>
+        </ng-template>
 
         <mat-card-header>
           <mat-card-title>

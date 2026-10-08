@@ -55,6 +55,20 @@ class UserController:
 
         return StoredUser.model_validate(document)
 
+    async def authenticate_user(self, username: str, password: str) -> StoredUser:
+        user = self._to_user(await self._users.find_one({"username": username.strip()}))
+        encoded_password = user.password_hash if user is not None else DUMMY_PASSWORD_HASH
+        password_is_valid = await run_in_threadpool(
+            verify_password,
+            password,
+            encoded_password,
+        )
+
+        if user is None or not password_is_valid:
+            raise InvalidCredentialsError
+
+        return user
+
     async def delete_user(self, email: str, password: str) -> None:
         normalized_email = self._normalize_email(email)
         user = self._to_user(await self._users.find_one({"email": normalized_email}))

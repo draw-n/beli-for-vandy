@@ -11,5 +11,5 @@
   "include": [
     "src/**/*.d.ts",
     "src/**/*.spec.ts"
-  ]
+, "src/app/location-profile/location-profile.ts", "src/app/login/login.ts", "src/app/locations/locations.spec..ts"  ]
 }
