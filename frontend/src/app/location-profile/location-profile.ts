@@ -4,6 +4,7 @@ import { HttpClient } from '@angular/common/http';
 import { ChangeDetectorRef, Component, inject, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { ActivatedRoute, RouterLink } from '@angular/router';
+import type { LocationDetails, LocationResponse } from '../types/auth';
 
 import { MatButtonModule } from '@angular/material/button';
 import { MatCardModule } from '@angular/material/card';
@@ -47,37 +48,41 @@ export class LocationProfile {
     const uuid = this.route.snapshot.paramMap.get('id');
 
     if (uuid) {
-      this.http.get<LocationResponse>(`http://localhost:8000/locations/${encodeURIComponent(uuid)}`).subscribe({
-        next: (hall) => {
-          this.hall = {
-            ...hall,
-            location: hall.address,
-            tags: hall.tags ?? [],
-            hours: (hall.hours ?? []).map(([day, openTime, closeTime]) => ({
-              day,
-              openTime,
-              closeTime,
-            })),
-            averageRating: 0,
-            reviewCount: 0,
-            friendRating: null,
-            photos: [],
-            reviews: [],
-          };
-          this.changeDetector.markForCheck();
-          this.loadReviews(hall.uuid);
-        },
-        error: () => {
-          this.hall = undefined;
-          this.changeDetector.markForCheck();
-        },
-      });
+      this.http
+        .get<LocationResponse>(`http://localhost:8000/locations/${encodeURIComponent(uuid)}`)
+        .subscribe({
+          next: (hall) => {
+            this.hall = {
+              ...hall,
+              location: hall.address,
+              tags: hall.tags ?? [],
+              hours: (hall.hours ?? []).map(([day, openTime, closeTime]) => ({
+                day,
+                openTime,
+                closeTime,
+              })),
+              averageRating: 0,
+              reviewCount: 0,
+              friendRating: null,
+              photos: [],
+              reviews: [],
+            };
+            this.changeDetector.markForCheck();
+            this.loadReviews(hall.uuid);
+          },
+          error: () => {
+            this.hall = undefined;
+            this.changeDetector.markForCheck();
+          },
+        });
     }
   }
 
   private loadReviews(locationId: string): void {
     this.http
-      .get<ReviewResponse[]>(`http://localhost:8000/reviews/?location_id=${encodeURIComponent(locationId)}`)
+      .get<ReviewResponse[]>(
+        `http://localhost:8000/reviews/?location_id=${encodeURIComponent(locationId)}`,
+      )
       .subscribe({
         next: (reviews) => {
           const mappedReviews = reviews.map((review) => ({
@@ -99,7 +104,8 @@ export class LocationProfile {
               reviewCount: mappedReviews.length,
               averageRating:
                 mappedReviews.length > 0
-                  ? mappedReviews.reduce((total, review) => total + review.rating, 0) / mappedReviews.length
+                  ? mappedReviews.reduce((total, review) => total + review.rating, 0) /
+                    mappedReviews.length
                   : 0,
             };
             this.changeDetector.markForCheck();
@@ -126,7 +132,7 @@ export class LocationProfile {
       next: () => {
         this.deletingId.set(null);
         if (this.hall) {
-          const reviews = this.hall.reviews.filter(item => item.uuid !== review.uuid);
+          const reviews = this.hall.reviews.filter((item) => item.uuid !== review.uuid);
           this.hall = {
             ...this.hall,
             reviews,

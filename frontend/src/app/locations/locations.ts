@@ -12,6 +12,7 @@ import { MatIconModule } from '@angular/material/icon';
 import { MatChipsModule } from '@angular/material/chips';
 import { MatButtonModule } from '@angular/material/button';
 import { MatToolbarModule } from '@angular/material/toolbar';
+import type { LocationDetails, LocationHours, LocationResponse } from '../types/auth';
 
 @Component({
   selector: 'app-locations',
@@ -26,7 +27,7 @@ import { MatToolbarModule } from '@angular/material/toolbar';
     MatIconModule,
     MatChipsModule,
     MatButtonModule,
-    MatToolbarModule
+    MatToolbarModule,
   ],
   templateUrl: './locations.html',
   styleUrl: './locations.css',
@@ -40,22 +41,24 @@ export class Locations {
   constructor() {
     this.http.get<LocationResponse[]>('http://localhost:8000/locations/').subscribe({
       next: (locations) => {
-        this.locations.set(locations.map((location) => ({
-          uuid: location.uuid,
-          name: location.name,
-          location: location.address,
-          tags: location.tags ?? [],
-          hours: (location.hours ?? []).map(([day, openTime, closeTime]) => ({
-            day,
-            openTime,
-            closeTime,
+        this.locations.set(
+          locations.map((location) => ({
+            uuid: location.uuid,
+            name: location.name,
+            location: location.address,
+            tags: location.tags ?? [],
+            hours: (location.hours ?? []).map(([day, openTime, closeTime]) => ({
+              day,
+              openTime,
+              closeTime,
+            })),
+            averageRating: 0,
+            reviewCount: 0,
+            friendRating: null,
+            photos: [],
+            reviews: [],
           })),
-          averageRating: 0,
-          reviewCount: 0,
-          friendRating: null,
-          photos: [],
-          reviews: [],
-        })));
+        );
         this.http.get<ReviewResponse[]>('http://localhost:8000/reviews/').subscribe({
           next: (reviews) => {
             const reviewsByLocation = new Map<string, ReviewResponse[]>();
@@ -66,18 +69,21 @@ export class Locations {
               reviewsByLocation.set(review.location_id, locationReviews);
             }
 
-            this.locations.update((currentLocations) => currentLocations.map((location) => {
-              const locationReviews = reviewsByLocation.get(location.uuid) ?? [];
+            this.locations.update((currentLocations) =>
+              currentLocations.map((location) => {
+                const locationReviews = reviewsByLocation.get(location.uuid) ?? [];
 
-              return {
-                ...location,
-                reviewCount: locationReviews.length,
-                averageRating:
-                  locationReviews.length > 0
-                    ? locationReviews.reduce((total, review) => total + review.rating, 0) / locationReviews.length
-                    : 0,
-              };
-            }));
+                return {
+                  ...location,
+                  reviewCount: locationReviews.length,
+                  averageRating:
+                    locationReviews.length > 0
+                      ? locationReviews.reduce((total, review) => total + review.rating, 0) /
+                        locationReviews.length
+                      : 0,
+                };
+              }),
+            );
           },
         });
       },
@@ -110,8 +116,7 @@ export class Locations {
   }
 
   logout(): void {
-    document.cookie =
-      'mockAuth=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;';
+    document.cookie = 'mockAuth=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;';
     sessionStorage.removeItem('currentAccount');
 
     this.router.navigate(['/login']);
