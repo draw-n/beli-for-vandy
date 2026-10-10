@@ -4,6 +4,8 @@ import { Component, inject, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { RouterLink, Router } from '@angular/router';
+import { apiBaseUrl } from '../api/api-base-url';
+import type { LocationDetails, LocationHours, LocationResponse } from '../types/location';
 
 import { MatCardModule } from '@angular/material/card';
 import { MatFormFieldModule } from '@angular/material/form-field';
@@ -38,7 +40,7 @@ export class Locations {
   private readonly router = inject(Router);
 
   constructor() {
-    this.http.get<LocationResponse[]>('http://localhost:8000/locations/').subscribe({
+    this.http.get<LocationResponse[]>(`${apiBaseUrl}/locations/`).subscribe({
       next: (locations) => {
         this.locations.set(locations.map((location) => ({
           uuid: location.uuid,
@@ -56,7 +58,7 @@ export class Locations {
           photos: [],
           reviews: [],
         })));
-        this.http.get<ReviewResponse[]>('http://localhost:8000/reviews/').subscribe({
+        this.http.get<ReviewResponse[]>(`${apiBaseUrl}/reviews/`).subscribe({
           next: (reviews) => {
             const reviewsByLocation = new Map<string, ReviewResponse[]>();
 

@@ -7,11 +7,12 @@ import {
   AccountDeleteRequest,
   AccountLoginRequest,
 } from '../types/auth';
+import { apiBaseUrl } from './api-base-url';
 
 @Injectable({ providedIn: 'root' })
 export class AccountApi {
   private readonly http = inject(HttpClient);
-  private readonly accountsUrl = 'http://localhost:8000/accounts';
+  private readonly accountsUrl = `${apiBaseUrl}/accounts`;
 
   create(request: AccountCreateRequest): Observable<Account> {
     return this.http.post<Account>(this.accountsUrl, request);

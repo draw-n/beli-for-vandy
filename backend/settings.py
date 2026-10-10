@@ -9,6 +9,7 @@ class Settings(BaseSettings):
     mongodb_uri: str = "mongodb://localhost:27017"
     host: str = "0.0.0.0"
     port: int = 8000
+    cors_origins: list[str] = ["http://localhost:4200"]
 
 
 @lru_cache
