@@ -86,6 +86,36 @@ absolute URL at build time:
 API_BASE_URL=https://api.example.com npm run build
 ```
 
+### Vercel CLI
+
+Vercel is repository-wide deployment tooling for both applications, so install its CLI
+globally rather than adding it to the frontend's runtime or development dependencies:
+
+```bash
+npm install --global vercel@latest
+vercel --version
+vercel login
+```
+
+Link each application to its corresponding Vercel project:
+
+```bash
+vercel link --cwd frontend --project beli-for-vandy-frontend --yes
+vercel link --cwd backend --project beli-for-vandy-backend --yes
+```
+
+The link commands store project metadata under ignored `.vercel/` directories and may
+create ignored `.env.local` files containing short-lived credentials. Keep the following
+repository-level values in the ignored root `.env`; never commit or print their values:
+
+```dotenv
+VERCEL_TOKEN=
+VERCEL_ORG_ID=
+VERCEL_FRONTEND_PROJECT_ID=
+VERCEL_BACKEND_PROJECT_ID=
+STAGING_MONGODB_URI=
+```
+
 ## Continuous integration
 
 The `CI` GitHub Actions workflow runs for every pull request targeting `main` and every
