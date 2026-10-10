@@ -2,7 +2,6 @@ import os
 from dotenv import load_dotenv
 from pymongo import MongoClient
 from pymongo.errors import PyMongoError
-from datetime import datetime
 from seeds.follow import seed_follows
 from seeds.location import seed_locations
 from seeds.review import seed_reviews
