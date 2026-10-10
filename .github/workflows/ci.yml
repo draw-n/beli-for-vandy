@@ -1,0 +1,184 @@
+name: CI
+
+on:
+  pull_request:
+    branches: [main]
+  push:
+    branches: [main]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  quality-gate:
+    name: Quality gate
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+          cache: pip
+          cache-dependency-path: |
+            backend/requirements.txt
+            backend/requirements-dev.txt
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22.12.0'
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
+
+      - name: Install backend dependencies
+        run: python -m pip install --requirement backend/requirements-dev.txt
+
+      - name: Install frontend dependencies
+        working-directory: frontend
+        run: npm ci
+
+      - name: Lint backend
+        run: ruff check backend
+
+      - name: Lint frontend
+        working-directory: frontend
+        run: npm run lint
+
+      - name: Type-check frontend
+        working-directory: frontend
+        run: npm run typecheck
+
+      - name: Run backend unit tests
+        run: >-
+          python -m pytest
+          backend/tests/test_user_models.py
+          backend/tests/test_user_controller.py
+          backend/tests/test_account_api.py
+
+      - name: Run frontend unit tests
+        working-directory: frontend
+        run: npm run test:unit
+
+      - name: Run backend integration tests
+        run: >-
+          python -m pytest
+          backend/tests/test_reviews.py
+          backend/tests/test_locations.py
+          backend/tests/test_follows.py
+
+      - name: Enforce backend coverage gate
+        run: >-
+          python -m pytest
+          --cov=backend
+          --cov-config=.coveragerc
+          --cov-report=term-missing
+          --cov-report=xml:backend/coverage.xml
+          --cov-fail-under=50
+
+      - name: Enforce frontend coverage gate
+        working-directory: frontend
+        run: npm run test:coverage
+
+      - name: Build frontend
+        working-directory: frontend
+        env:
+          API_BASE_URL: http://localhost:8000
+        run: npm run build
+
+      - name: Upload coverage reports
+        uses: actions/upload-artifact@v4
+        with:
+          name: coverage-reports
+          path: |
+            backend/coverage.xml
+            frontend/coverage/
+          if-no-files-found: error
+
+  deploy-staging:
+    name: Deploy staging
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    needs: quality-gate
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    environment: staging
+    env:
+      VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
+      VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22.12.0'
+
+      - name: Install pinned Vercel CLI
+        run: npm install --global vercel@63.1.2
+
+      - name: Pull backend staging configuration
+        working-directory: backend
+        env:
+          VERCEL_PROJECT_ID: ${{ secrets.VERCEL_BACKEND_PROJECT_ID }}
+        run: vercel pull --yes --environment=production --token="$VERCEL_TOKEN"
+
+      - name: Build backend staging deployment
+        working-directory: backend
+        env:
+          VERCEL_PROJECT_ID: ${{ secrets.VERCEL_BACKEND_PROJECT_ID }}
+        run: vercel build --prod --token="$VERCEL_TOKEN"
+
+      - name: Deploy backend to staging
+        id: backend-deploy
+        working-directory: backend
+        env:
+          CORS_ORIGINS: '["${{ vars.STAGING_WEB_URL }}"]'
+          STAGING_MONGODB_URI: ${{ secrets.STAGING_MONGODB_URI }}
+          VERCEL_PROJECT_ID: ${{ secrets.VERCEL_BACKEND_PROJECT_ID }}
+        run: |
+          deployment_url=$(vercel deploy --prebuilt --prod --token="$VERCEL_TOKEN" \
+            --env MONGODB_URI="$STAGING_MONGODB_URI" \
+            --env CORS_ORIGINS="$CORS_ORIGINS")
+          echo "url=$deployment_url" >> "$GITHUB_OUTPUT"
+
+      - name: Smoke-test backend deployment
+        env:
+          DEPLOYMENT_URL: ${{ steps.backend-deploy.outputs.url }}
+        run: curl --fail --retry 5 --retry-delay 5 --retry-all-errors "$DEPLOYMENT_URL/"
+
+      - name: Pull frontend staging configuration
+        working-directory: frontend
+        env:
+          VERCEL_PROJECT_ID: ${{ secrets.VERCEL_FRONTEND_PROJECT_ID }}
+        run: vercel pull --yes --environment=production --token="$VERCEL_TOKEN"
+
+      - name: Build frontend staging deployment
+        working-directory: frontend
+        env:
+          API_BASE_URL: ${{ vars.STAGING_API_URL }}
+          VERCEL_PROJECT_ID: ${{ secrets.VERCEL_FRONTEND_PROJECT_ID }}
+        run: vercel build --prod --token="$VERCEL_TOKEN"
+
+      - name: Deploy frontend to staging
+        id: frontend-deploy
+        working-directory: frontend
+        env:
+          VERCEL_PROJECT_ID: ${{ secrets.VERCEL_FRONTEND_PROJECT_ID }}
+        run: |
+          deployment_url=$(vercel deploy --prebuilt --prod --token="$VERCEL_TOKEN")
+          echo "url=$deployment_url" >> "$GITHUB_OUTPUT"
+
+      - name: Smoke-test frontend deployment
+        env:
+          DEPLOYMENT_URL: ${{ steps.frontend-deploy.outputs.url }}
+        run: curl --fail --retry 5 --retry-delay 5 --retry-all-errors "$DEPLOYMENT_URL/"
