@@ -217,6 +217,12 @@ Add these non-secret environment variables:
 The workflow passes the MongoDB URI and allowed frontend origin to the backend deployment
 at runtime. Secret values remain in GitHub Actions and are never committed.
 
+The staging Atlas URI must name the `beli_staging` database in its path. The backend selects
+the database from `MONGODB_URI`, while a URI without a database path falls back to `beli_db`
+for local development. The staging database uses the existing `users`, `locations`,
+`reviews`, and `follows` collections and the application models documented in
+`backend/routes/README.md`; do not create a separate staging schema.
+
 ## Main branch protection
 
 The `main` ruleset must require pull requests, one approving review, and the
