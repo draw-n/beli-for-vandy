@@ -16,6 +16,8 @@ Beli for Vanderbilt helps Vanderbilt students, faculty, and staff discover dinin
 - Keep MongoDB access isolated in the backend database layer and use asynchronous operations.
 - Structure the backend into model, controller, and API layers: models define application data, controllers coordinate application logic and persistence, and API modules define HTTP endpoints.
 - Deploy the Angular frontend and FastAPI backend as separate Vercel projects. Treat the Vercel CLI as repository-wide tooling rather than a frontend dependency.
+- Configure the Vercel project roots as `frontend` and `backend`, then run Vercel CLI build and deployment commands from the repository root so the configured roots are applied exactly once.
+- Build the Angular application in static output mode for Vercel; pages that load API data at runtime use client rendering, while data-independent pages may be prerendered.
 - Support account creation and password-verified deletion only; do not add login or session functionality unless explicitly requested.
 - Keep secrets and environment-specific configuration in ignored `.env` files; document only safe placeholders in `.env.example`.
 - If a new architectural pattern is introduced, explicitly document it in this section.

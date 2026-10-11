@@ -92,21 +92,50 @@ Vercel is repository-wide deployment tooling for both applications, so install i
 globally rather than adding it to the frontend's runtime or development dependencies:
 
 ```bash
-npm install --global vercel@latest
+npm install --global vercel@63.1.2
 vercel --version
 vercel login
 ```
 
-Link each application to its corresponding Vercel project:
+Create the applications as separate Vercel projects with these settings:
+
+| Project | Root Directory | Framework Preset | Stable staging URL |
+| --- | --- | --- | --- |
+| `beli-for-vandy-frontend` | `frontend` | Angular | `https://beli-for-vandy-frontend.vercel.app` |
+| `beli-for-vandy-backend` | `backend` | FastAPI | `https://beli-for-vandy-backend.vercel.app` |
+
+Keep the framework defaults for dependency installation and the build command. The
+frontend's `vercel.json` selects its Angular browser output and supplies the single-page
+application fallback. Its build script reads `API_BASE_URL`; set it to the stable backend
+URL at build time. The backend reads `MONGODB_URI` and `CORS_ORIGINS` at runtime. For
+staging, set `CORS_ORIGINS` to a JSON array containing the stable frontend URL.
+
+The Angular build uses static output mode. Data-independent routes are prerendered, while
+routes that fetch FastAPI data are rendered in the browser. This keeps the frontend a
+static Vercel deployment and avoids making database-backed API requests during the build.
+
+Because each Vercel project already has a Root Directory, run Vercel CLI commands from
+the repository root. Running them from `frontend/` or `backend/` makes Vercel resolve the
+configured root twice. Select the intended project with `VERCEL_PROJECT_ID`:
 
 ```bash
-vercel link --cwd frontend --project beli-for-vandy-frontend --yes
-vercel link --cwd backend --project beli-for-vandy-backend --yes
+export VERCEL_ORG_ID="your-team-id"
+export VERCEL_TOKEN="your-access-token"
+
+VERCEL_PROJECT_ID="your-backend-project-id" vercel pull --yes --environment=production --token="$VERCEL_TOKEN"
+VERCEL_PROJECT_ID="your-backend-project-id" vercel build --prod --token="$VERCEL_TOKEN"
+VERCEL_PROJECT_ID="your-backend-project-id" vercel deploy --prebuilt --prod --token="$VERCEL_TOKEN"
+
+VERCEL_PROJECT_ID="your-frontend-project-id" vercel pull --yes --environment=production --token="$VERCEL_TOKEN"
+API_BASE_URL="https://beli-for-vandy-backend.vercel.app" \
+  VERCEL_PROJECT_ID="your-frontend-project-id" \
+  vercel build --prod --token="$VERCEL_TOKEN"
+VERCEL_PROJECT_ID="your-frontend-project-id" vercel deploy --prebuilt --prod --token="$VERCEL_TOKEN"
 ```
 
-The link commands store project metadata under ignored `.vercel/` directories and may
-create ignored `.env.local` files containing short-lived credentials. Keep the following
-repository-level values in the ignored root `.env`; never commit or print their values:
+`vercel pull` stores project metadata under the ignored root `.vercel/` directory and may
+create an ignored `.env.local` containing credentials. Copy `.env.example` to the ignored
+root `.env`, then fill in these repository-level values; never commit or print them:
 
 ```dotenv
 VERCEL_TOKEN=
@@ -115,6 +144,11 @@ VERCEL_FRONTEND_PROJECT_ID=
 VERCEL_BACKEND_PROJECT_ID=
 STAGING_MONGODB_URI=
 ```
+
+If Vercel Authentication protects a deployment, use `vercel curl <url>` for an
+authenticated smoke test. The command uses `VERCEL_TOKEN` from the environment and
+creates the required protection bypass without exposing it. Put ordinary curl flags after
+the URL; Vercel CLI flags placed there are forwarded to curl.
 
 ## Continuous integration
 
@@ -163,6 +197,8 @@ After the quality gate passes on a push to `main`, GitHub Actions automatically 
 the backend and frontend to two staging-only Vercel projects and smoke-tests both generated
 deployment URLs. The Vercel projects use their production targets as the stable staging
 environment; this repository does not automatically deploy the public production system.
+The deploy commands run from the repository root because Vercel applies each project's
+configured Root Directory.
 
 Configure a GitHub environment named `staging` without required reviewers so delivery has
 no manual step. Add these environment secrets:

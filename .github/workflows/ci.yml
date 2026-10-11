@@ -127,20 +127,17 @@ jobs:
         run: npm install --global vercel@63.1.2
 
       - name: Pull backend staging configuration
-        working-directory: backend
         env:
           VERCEL_PROJECT_ID: ${{ secrets.VERCEL_BACKEND_PROJECT_ID }}
         run: vercel pull --yes --environment=production --token="$VERCEL_TOKEN"
 
       - name: Build backend staging deployment
-        working-directory: backend
         env:
           VERCEL_PROJECT_ID: ${{ secrets.VERCEL_BACKEND_PROJECT_ID }}
         run: vercel build --prod --token="$VERCEL_TOKEN"
 
       - name: Deploy backend to staging
         id: backend-deploy
-        working-directory: backend
         env:
           CORS_ORIGINS: '["${{ vars.STAGING_WEB_URL }}"]'
           STAGING_MONGODB_URI: ${{ secrets.STAGING_MONGODB_URI }}
@@ -154,16 +151,16 @@ jobs:
       - name: Smoke-test backend deployment
         env:
           DEPLOYMENT_URL: ${{ steps.backend-deploy.outputs.url }}
-        run: curl --fail --retry 5 --retry-delay 5 --retry-all-errors "$DEPLOYMENT_URL/"
+        run: >-
+          vercel curl "$DEPLOYMENT_URL/"
+          --fail --retry 5 --retry-delay 5 --retry-all-errors --max-time 30
 
       - name: Pull frontend staging configuration
-        working-directory: frontend
         env:
           VERCEL_PROJECT_ID: ${{ secrets.VERCEL_FRONTEND_PROJECT_ID }}
         run: vercel pull --yes --environment=production --token="$VERCEL_TOKEN"
 
       - name: Build frontend staging deployment
-        working-directory: frontend
         env:
           API_BASE_URL: ${{ vars.STAGING_API_URL }}
           VERCEL_PROJECT_ID: ${{ secrets.VERCEL_FRONTEND_PROJECT_ID }}
@@ -171,7 +168,6 @@ jobs:
 
       - name: Deploy frontend to staging
         id: frontend-deploy
-        working-directory: frontend
         env:
           VERCEL_PROJECT_ID: ${{ secrets.VERCEL_FRONTEND_PROJECT_ID }}
         run: |
@@ -181,4 +177,6 @@ jobs:
       - name: Smoke-test frontend deployment
         env:
           DEPLOYMENT_URL: ${{ steps.frontend-deploy.outputs.url }}
-        run: curl --fail --retry 5 --retry-delay 5 --retry-all-errors "$DEPLOYMENT_URL/"
+        run: >-
+          vercel curl "$DEPLOYMENT_URL/"
+          --fail --retry 5 --retry-delay 5 --retry-all-errors --max-time 30
