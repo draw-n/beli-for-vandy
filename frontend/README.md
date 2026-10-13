@@ -60,7 +60,9 @@ For more information on using the Angular CLI, including detailed command refere
 
 ## Review form integration
 
-The location review dialog submits to `POST http://localhost:8000/reviews/`.
+The location review dialog submits to `POST <API_BASE_URL>/reviews/`. The base URL defaults
+to `http://localhost:8000` for local development and can be supplied to `npm run build`
+through the `API_BASE_URL` environment variable.
 It uses the signed-in `currentAccount.uuid` for `user_id` and the current location UUID
 for `location_id`. Rating is a whole number from 1–10; review text maps to `note`,
 and the selected meal maps to `meal_type`. Both timestamps are generated as ISO
