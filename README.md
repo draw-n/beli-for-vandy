@@ -89,7 +89,7 @@ API_BASE_URL=https://api.example.com npm run build
 ### Vercel CLI
 
 Vercel is repository-wide deployment tooling for both applications, so install its CLI
-globally rather than adding it to the frontend's runtime or development dependencies:
+globally:
 
 ```bash
 npm install --global vercel@63.1.2
