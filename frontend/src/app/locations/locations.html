@@ -64,7 +64,14 @@
 
         <mat-card-content>
           <mat-chip-set>
-            <mat-chip *ngFor="let tag of hall.tags">
+            <mat-chip
+              *ngFor="let tag of hall.tags"
+              role="button"
+              tabindex="0"
+              (click)="searchByTag($event, tag)"
+              (keydown.enter)="searchByTag($event, tag)"
+              (keydown.space)="searchByTag($event, tag); $event.preventDefault()"
+            >
               {{ tag }}
             </mat-chip>
           </mat-chip-set>

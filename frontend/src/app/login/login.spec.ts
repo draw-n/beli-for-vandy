@@ -20,6 +20,13 @@ describe('LoginComponent', () => {
     expect(component).toBeTruthy();
   });
 
+  it('should provide a link to sign up', () => {
+    const signupLink = fixture.debugElement.query(By.css('a[routerLink="/register"]'));
+
+    expect(signupLink).toBeTruthy();
+    expect(signupLink.nativeElement.textContent).toContain('Sign up');
+  });
+
   it('should display a username input', () => {
     const usernameInput = fixture.debugElement.query(
       By.css('input[name="username"]')

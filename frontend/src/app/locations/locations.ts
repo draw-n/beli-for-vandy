@@ -3,7 +3,7 @@ import { HttpClient } from '@angular/common/http';
 import { Component, inject, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
-import { RouterLink, Router } from '@angular/router';
+import { ActivatedRoute, RouterLink, Router } from '@angular/router';
 
 import { MatCardModule } from '@angular/material/card';
 import { MatFormFieldModule } from '@angular/material/form-field';
@@ -36,8 +36,13 @@ export class Locations {
   readonly locations = signal<LocationDetails[]>([]);
   private readonly http = inject(HttpClient);
   private readonly router = inject(Router);
+  private readonly route = inject(ActivatedRoute);
 
   constructor() {
+    this.route.queryParamMap.subscribe((params) => {
+      this.searchTerm = params.get('search') ?? '';
+    });
+
     this.http.get<LocationResponse[]>('http://localhost:8000/locations/').subscribe({
       next: (locations) => {
         this.locations.set(locations.map((location) => ({
@@ -99,6 +104,11 @@ export class Locations {
         );
       })
       .sort((a, b) => b.averageRating - a.averageRating);
+  }
+
+  searchByTag(event: Event, tag: string): void {
+    event.stopPropagation();
+    this.router.navigate(['/locations'], { queryParams: { search: tag } });
   }
 
   getTodayHours(hall: LocationDetails): LocationHours | undefined {
