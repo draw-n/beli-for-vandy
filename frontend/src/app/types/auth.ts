@@ -1,5 +1,3 @@
-import type { Review } from './review';
-
 export type AccountType = 'student' | 'faculty';
 
 interface AccountBase {
