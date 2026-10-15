@@ -8,14 +8,14 @@ import {
   AccountDeleteRequest,
   AccountLoginRequest,
 } from '../types/auth';
+import { apiBaseUrl } from './api-base-url';
 
 @Injectable({
   providedIn: 'root',
 })
 export class AccountApi {
   private readonly http = inject(HttpClient);
-
-  private readonly accountsUrl = 'http://localhost:8000/accounts';
+  private readonly accountsUrl = `${apiBaseUrl}/accounts`;
 
   getAll(): Observable<Account[]> {
     return this.http.get<Account[]>(this.accountsUrl);

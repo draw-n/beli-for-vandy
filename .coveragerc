@@ -1,0 +1,11 @@
+[run]
+branch = True
+source = backend
+omit =
+    backend/tests/*
+    backend/seed.py
+    backend/seeds/*
+
+[report]
+fail_under = 50
+show_missing = True

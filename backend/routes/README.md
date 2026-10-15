@@ -2,6 +2,11 @@
 
 The backend is a FastAPI service. When running locally with the default settings, its base URL is `http://localhost:8000`. Interactive OpenAPI documentation is available at `/docs`, and the raw schema is available at `/openapi.json`.
 
+Deployment configuration is read from environment variables. `MONGODB_URI` selects the
+database and `CORS_ORIGINS` is a JSON array of allowed frontend origins, for example
+`["https://staging.example.com"]`. Safe local placeholders are documented in
+`backend/.env.example`; secrets must be supplied by the deployment environment.
+
 The account API intentionally supports account creation and deletion only. It does not provide login, session, or current-user endpoints. User records are stored in the MongoDB `users` collection. Passwords are stored as Argon2 hashes and are never included in responses.
 
 ## Account representation

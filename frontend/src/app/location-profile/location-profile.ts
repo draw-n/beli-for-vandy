@@ -1,10 +1,11 @@
 import { ReviewApi } from '../api/review.api';
+import { apiBaseUrl } from '../api/api-base-url';
+import type { LocationDetails, LocationResponse } from '../types/location';
 import type { Review, ReviewResponse } from '../types/review';
 import { HttpClient } from '@angular/common/http';
 import { ChangeDetectorRef, Component, inject, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { ActivatedRoute, RouterLink } from '@angular/router';
-import type { LocationDetails, LocationResponse } from '../types/auth';
 
 import { MatButtonModule } from '@angular/material/button';
 import { MatCardModule } from '@angular/material/card';
@@ -48,41 +49,37 @@ export class LocationProfile {
     const uuid = this.route.snapshot.paramMap.get('id');
 
     if (uuid) {
-      this.http
-        .get<LocationResponse>(`http://localhost:8000/locations/${encodeURIComponent(uuid)}`)
-        .subscribe({
-          next: (hall) => {
-            this.hall = {
-              ...hall,
-              location: hall.address,
-              tags: hall.tags ?? [],
-              hours: (hall.hours ?? []).map(([day, openTime, closeTime]) => ({
-                day,
-                openTime,
-                closeTime,
-              })),
-              averageRating: 0,
-              reviewCount: 0,
-              friendRating: null,
-              photos: [],
-              reviews: [],
-            };
-            this.changeDetector.markForCheck();
-            this.loadReviews(hall.uuid);
-          },
-          error: () => {
-            this.hall = undefined;
-            this.changeDetector.markForCheck();
-          },
-        });
+      this.http.get<LocationResponse>(`${apiBaseUrl}/locations/${encodeURIComponent(uuid)}`).subscribe({
+        next: (hall) => {
+          this.hall = {
+            ...hall,
+            location: hall.address,
+            tags: hall.tags ?? [],
+            hours: (hall.hours ?? []).map(([day, openTime, closeTime]) => ({
+              day,
+              openTime,
+              closeTime,
+            })),
+            averageRating: 0,
+            reviewCount: 0,
+            friendRating: null,
+            photos: [],
+            reviews: [],
+          };
+          this.changeDetector.markForCheck();
+          this.loadReviews(hall.uuid);
+        },
+        error: () => {
+          this.hall = undefined;
+          this.changeDetector.markForCheck();
+        },
+      });
     }
   }
 
   private loadReviews(locationId: string): void {
     this.http
-      .get<ReviewResponse[]>(
-        `http://localhost:8000/reviews/?location_id=${encodeURIComponent(locationId)}`,
-      )
+      .get<ReviewResponse[]>(`${apiBaseUrl}/reviews/?location_id=${encodeURIComponent(locationId)}`)
       .subscribe({
         next: (reviews) => {
           const mappedReviews = reviews.map((review) => ({
