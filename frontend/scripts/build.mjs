@@ -1,4 +1,5 @@
 import { spawnSync } from 'node:child_process';
+import { createRequire } from 'node:module';
 
 const apiBaseUrl = process.env.API_BASE_URL ?? 'http://localhost:8000';
 
@@ -7,9 +8,12 @@ if (!/^https?:\/\//.test(apiBaseUrl)) {
   process.exit(1);
 }
 
+const require = createRequire(import.meta.url);
+const ngScript = require.resolve('@angular/cli/bin/ng.js');
+
 const result = spawnSync(
-  process.platform === 'win32' ? 'ng.cmd' : 'ng',
-  ['build', '--define', `API_BASE_URL=${JSON.stringify(apiBaseUrl)}`],
+  process.execPath,
+  [ngScript, 'build', '--define', `API_BASE_URL=${JSON.stringify(apiBaseUrl)}`],
   { stdio: 'inherit' },
 );
 
