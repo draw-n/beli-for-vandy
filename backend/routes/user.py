@@ -49,6 +49,24 @@ async def create_account(
 
     return user_response(user)
 
+@router.get(
+    "",
+    response_model=list[UserResponse],
+    summary="Get all accounts",
+    description="Return public account information for all users.",
+)
+async def get_accounts(
+    controller: Annotated[
+        UserController,
+        Depends(get_user_controller)
+    ],
+) -> list[UserResponse]:
+    users = await controller.get_users()
+
+    return [
+        user_response(user)
+        for user in users
+    ]
 
 @router.post(
     "/login",

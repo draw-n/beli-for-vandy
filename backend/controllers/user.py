@@ -85,6 +85,16 @@ class UserController:
         result = await self._users.delete_one({"uuid": user.uuid})
         if result.deleted_count != 1:
             raise InvalidCredentialsError
+        
+    async def get_users(self) -> list[StoredUser]:
+        users: list[StoredUser] = []
+
+        cursor = self._users.find()
+
+        async for document in cursor:
+            users.append(StoredUser.model_validate(document))
+
+        return users
 
     @staticmethod
     def _normalize_email(email: str) -> str:
@@ -96,3 +106,5 @@ class UserController:
             return None
 
         return StoredUser.model_validate(document)
+
+    
