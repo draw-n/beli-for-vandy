@@ -1,11 +1,13 @@
-import { Component } from '@angular/core';
+import { ChangeDetectorRef, Component, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { RouterLink } from '@angular/router';
+import { ActivatedRoute, RouterLink } from '@angular/router';
 
 import { MatCardModule } from '@angular/material/card';
 import { MatIconModule } from '@angular/material/icon';
 import { MatButtonModule } from '@angular/material/button';
-import { Account } from '../types/auth';
+
+import { AccountApi } from '../api/account.api';
+import type { Account } from '../types/auth';
 
 @Component({
   selector: 'app-profile',
@@ -21,7 +23,36 @@ import { Account } from '../types/auth';
   styleUrl: './user-profile.css',
 })
 export class Profile {
-  readonly account: Account | null = this.loadAccount();
+  account: Account | null = null;
+
+  private readonly route = inject(ActivatedRoute);
+  private readonly accountApi = inject(AccountApi);
+  private readonly changeDetector = inject(ChangeDetectorRef);
+
+  constructor() {
+    const userId = this.route.snapshot.paramMap.get('id');
+
+    if (userId) {
+      this.loadUser(userId);
+    } else {
+      this.account = this.loadAccount();
+    }
+  }
+
+  private loadUser(userId: string): void {
+    this.accountApi.getAll().subscribe({
+      next: (accounts) => {
+        this.account =
+          accounts.find((account) => account.uuid === userId) ?? null;
+
+        this.changeDetector.markForCheck();
+      },
+      error: () => {
+        this.account = null;
+        this.changeDetector.markForCheck();
+      },
+    });
+  }
 
   private loadAccount(): Account | null {
     if (typeof sessionStorage === 'undefined') {

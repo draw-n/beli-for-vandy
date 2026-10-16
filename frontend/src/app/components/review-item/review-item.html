@@ -1,48 +1,70 @@
-      <article class="review">
-        <div class="review-header">
-          <div class="review-user">
-            <mat-icon> account_circle </mat-icon>
+<article class="review">
+  <div class="review-header">
 
-            <div>
-              <strong>
-                {{ authorName || review.userId }}
-              </strong>
+    <a
+      class="review-user"
+      [routerLink]="['/profile', review.userId]"
+      [attr.aria-label]="'View profile for ' + (authorName || review.userId)"
+    >
+      <mat-icon>account_circle</mat-icon>
 
-              <span>
-                {{ review.mealType }}
-                ·
-                {{ review.createdAt | date: 'mediumDate' }}
-              </span>
-            </div>
-          </div>
+      <div>
+        <strong>
+          {{ authorName || review.userId }}
+        </strong>
 
-          <div class="review-rating">
-            <mat-icon>star</mat-icon>
+        <span>
+          {{ review.mealType }}
+          ·
+          {{ review.createdAt | date: 'mediumDate' }}
+        </span>
+      </div>
+    </a>
 
-            <strong>
-              {{ review.rating | number: '1.1-1' }}
-            </strong>
-            @if (canEdit) {
-              <button mat-icon-button [disabled]="busy" [matMenuTriggerFor]="reviewMenu" aria-label="Options for your review">
-                <mat-icon>more_vert</mat-icon>
-              </button>
-              <mat-menu #reviewMenu="matMenu">
-                <button mat-menu-item [disabled]="busy" (click)="editRequested.emit(review)">
-                  <mat-icon>edit</mat-icon>
-                  <span>Edit</span>
-                </button>
-                <button mat-menu-item [disabled]="busy" (click)="deleteRequested.emit(review)">
-                  <mat-icon>delete</mat-icon>
-                  <span>Delete</span>
-                </button>
-              </mat-menu>
-            }
-          </div>
-        </div>
+    <div class="review-rating">
+      <mat-icon>star</mat-icon>
 
-        <p>
-          {{ review.reviewText }}
-        </p>
+      <strong>
+        {{ review.rating | number: '1.1-1' }}
+      </strong>
 
-        <mat-divider></mat-divider>
-      </article>
+      @if (canEdit) {
+        <button
+          mat-icon-button
+          [disabled]="busy"
+          [matMenuTriggerFor]="reviewMenu"
+          aria-label="Options for your review"
+        >
+          <mat-icon>more_vert</mat-icon>
+        </button>
+
+        <mat-menu #reviewMenu="matMenu">
+          <button
+            mat-menu-item
+            [disabled]="busy"
+            (click)="editRequested.emit(review)"
+          >
+            <mat-icon>edit</mat-icon>
+            <span>Edit</span>
+          </button>
+
+          <button
+            mat-menu-item
+            [disabled]="busy"
+            (click)="deleteRequested.emit(review)"
+          >
+            <mat-icon>delete</mat-icon>
+            <span>Delete</span>
+          </button>
+        </mat-menu>
+      }
+    </div>
+
+  </div>
+
+  <p>
+    {{ review.reviewText }}
+  </p>
+
+  <mat-divider></mat-divider>
+</article>

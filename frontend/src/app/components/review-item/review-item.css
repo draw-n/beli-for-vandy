@@ -14,9 +14,16 @@
 }
 
 .review-user {
+  color: inherit;
+  text-decoration: none;
+  cursor: pointer;
   display: flex;
   align-items: center;
   gap: 10px;
+}
+
+.review-user:hover strong {
+  text-decoration: underline;
 }
 
 .review-user > mat-icon {

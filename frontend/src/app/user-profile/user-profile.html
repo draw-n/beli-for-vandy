@@ -9,8 +9,8 @@
       </div>
     </div>
 
-    <h1>{{ account ? account.first_name + ' ' + account.last_name : 'Your profile' }}</h1>
-    <p class="subtitle">Your Beli for Vandy account details.</p>
+    <h1>{{ account ? account.first_name + ' ' + account.last_name : 'Profile' }}</h1>
+    <p class="subtitle">Beli for Vandy profile.</p>
   </header>
 
   <main>
@@ -45,8 +45,8 @@
       <div class="empty-state">
         <mat-icon>account_circle</mat-icon>
         <h2>Profile unavailable</h2>
-        <p>Log in again to view your account details.</p>
-        <a mat-flat-button routerLink="/login">Log in</a>
+        <p>We couldn't find this user's profile.</p>
+        <a mat-flat-button routerLink="/locations">Back to dining spots</a>
       </div>
     </ng-template>
   </main>
