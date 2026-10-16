@@ -144,6 +144,7 @@
         [busy]="deletingId() !== null"
         (deleteRequested)="deleteReview($event)"
         (editRequested)="openReviewDialog($event)"
+        [authorName]="authorNames[review.userId] || ''"
       />
     </div>
 

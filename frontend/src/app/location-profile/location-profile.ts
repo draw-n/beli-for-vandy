@@ -1,4 +1,5 @@
 import { ReviewApi } from '../api/review.api';
+import { AccountApi } from '../api/account.api';
 import { apiBaseUrl } from '../api/api-base-url';
 import type { LocationDetails, LocationResponse } from '../types/location';
 import type { Review, ReviewResponse } from '../types/review';
@@ -45,6 +46,9 @@ export class LocationProfile {
   private readonly reviewApi = inject(ReviewApi);
   private readonly http = inject(HttpClient);
   private readonly changeDetector = inject(ChangeDetectorRef);
+  private readonly accountApi = inject(AccountApi);
+
+  authorNames: Record<string, string> = {};
 
   get filteredReviews(): Review[] {
     const reviews = this.hall?.reviews ?? [];
@@ -65,6 +69,7 @@ export class LocationProfile {
     private dialog: MatDialog,
   ) {
     const uuid = this.route.snapshot.paramMap.get('id');
+    this.loadAuthorNames();
 
     if (uuid) {
       this.http.get<LocationResponse>(`${apiBaseUrl}/locations/${encodeURIComponent(uuid)}`).subscribe({
@@ -93,6 +98,21 @@ export class LocationProfile {
         },
       });
     }
+  }
+
+  private loadAuthorNames(): void {
+    this.accountApi.getAll().subscribe({
+      next: (accounts) => {
+        this.authorNames = Object.fromEntries(
+          accounts.map(account => [
+            account.uuid,
+            `${account.first_name} ${account.last_name}`
+          ])
+        );
+
+        this.changeDetector.markForCheck();
+      }
+    });
   }
 
   private loadReviews(locationId: string): void {
