@@ -17,6 +17,8 @@ import type { Review } from '../../types/review';
 export class ReviewItem {
   @Input({ required: true }) review!: Review;
   @Input() authorName = '';
+  @Input() locationName = '';
+  @Input() showLocation = false;
   @Input() canEdit = false;
   @Input() busy = false;
   @Output() deleteRequested = new EventEmitter<Review>();

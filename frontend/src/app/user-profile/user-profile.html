@@ -55,7 +55,8 @@
         <app-review-item
           *ngFor="let review of reviews"
           [review]="review"
-          [authorName]="account.first_name + ' ' + account.last_name"
+          [showLocation]="true"
+          [locationName]="locationNames[review.locationId] || ''"
         />
       </div>
 

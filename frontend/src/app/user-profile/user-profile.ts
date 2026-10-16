@@ -13,6 +13,7 @@ import { apiBaseUrl } from '../api/api-base-url';
 import { HttpClient } from '@angular/common/http';
 import type { Account } from '../types/auth';
 import type { Review, ReviewResponse } from '../types/review';
+import type { LocationResponse } from '../types/location';
 
 @Component({
   selector: 'app-profile',
@@ -32,6 +33,7 @@ import type { Review, ReviewResponse } from '../types/review';
 export class Profile {
   account: Account | null = null;
   reviews: Review[] = [];
+  locationNames: Record<string, string> = {};
 
   private readonly route = inject(ActivatedRoute);
   private readonly accountApi = inject(AccountApi);
@@ -87,6 +89,7 @@ export class Profile {
             photoIds: review.photo_ids ?? [],
           }));
 
+          this.loadLocationNames();
           this.changeDetector.markForCheck();
         },
         error: () => {
@@ -112,6 +115,29 @@ export class Profile {
     } catch {
       sessionStorage.removeItem('currentAccount');
       return null;
+    }
+  }
+
+  private loadLocationNames(): void {
+    const locationIds = [
+      ...new Set(this.reviews.map((review) => review.locationId)),
+    ];
+
+    for (const locationId of locationIds) {
+      this.http
+        .get<LocationResponse>(
+          `${apiBaseUrl}/locations/${encodeURIComponent(locationId)}`
+        )
+        .subscribe({
+          next: (location) => {
+            this.locationNames = {
+              ...this.locationNames,
+              [locationId]: location.name,
+            };
+
+            this.changeDetector.markForCheck();
+          },
+        });
     }
   }
 }

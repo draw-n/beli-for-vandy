@@ -37,6 +37,38 @@ describe('Reusable review item', () => {
     ).toBeNull();
   });
 
+  it('links the author to their profile by default', () => {
+    const fixture = TestBed.createComponent(ReviewItem);
+
+    fixture.componentRef.setInput('review', review);
+    fixture.componentRef.setInput('authorName', 'Ava Martin');
+    fixture.detectChanges();
+
+    const link = fixture.nativeElement.querySelector(
+      '[aria-label="View profile for Ava Martin"]'
+    ) as HTMLAnchorElement | null;
+
+    expect(link).not.toBeNull();
+    expect(link!.getAttribute('href')).toBe('/profile/author');
+  });
+
+  it('links the dining spot when displaying a review on a user profile', () => {
+    const fixture = TestBed.createComponent(ReviewItem);
+
+    fixture.componentRef.setInput('review', review);
+    fixture.componentRef.setInput('showLocation', true);
+    fixture.componentRef.setInput('locationName', 'Commons');
+    fixture.detectChanges();
+
+    const link = fixture.nativeElement.querySelector(
+      '[aria-label="View dining spot Commons"]'
+    ) as HTMLAnchorElement | null;
+
+    expect(link).not.toBeNull();
+    expect(link!.getAttribute('href')).toBe('/locations/hall');
+    expect(link!.textContent).toContain('Commons');
+  });
+
   it.each(['Edit', 'Delete'])(
     'emits the selected review through the %s menu option',
     async (action) => {

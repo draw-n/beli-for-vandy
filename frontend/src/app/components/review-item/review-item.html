@@ -1,25 +1,46 @@
 <article class="review">
   <div class="review-header">
+    @if (showLocation) {
+      <a
+        class="review-user"
+        [routerLink]="['/locations', review.locationId]"
+        [attr.aria-label]="'View dining spot ' + (locationName || review.locationId)"
+      >
+        <mat-icon>restaurant</mat-icon>
 
-    <a
-      class="review-user"
-      [routerLink]="['/profile', review.userId]"
-      [attr.aria-label]="'View profile for ' + (authorName || review.userId)"
-    >
-      <mat-icon>account_circle</mat-icon>
+        <div>
+          <strong>
+            {{ locationName || review.locationId }}
+          </strong>
 
-      <div>
-        <strong>
-          {{ authorName || review.userId }}
-        </strong>
+          <span>
+            {{ review.mealType }}
+            ·
+            {{ review.createdAt | date: 'mediumDate' }}
+          </span>
+        </div>
+      </a>
+    } @else {
+      <a
+        class="review-user"
+        [routerLink]="['/profile', review.userId]"
+        [attr.aria-label]="'View profile for ' + (authorName || review.userId)"
+      >
+        <mat-icon>account_circle</mat-icon>
 
-        <span>
-          {{ review.mealType }}
-          ·
-          {{ review.createdAt | date: 'mediumDate' }}
-        </span>
-      </div>
-    </a>
+        <div>
+          <strong>
+            {{ authorName || review.userId }}
+          </strong>
+
+          <span>
+            {{ review.mealType }}
+            ·
+            {{ review.createdAt | date: 'mediumDate' }}
+          </span>
+        </div>
+      </a>
+    }
 
     <div class="review-rating">
       <mat-icon>star</mat-icon>
