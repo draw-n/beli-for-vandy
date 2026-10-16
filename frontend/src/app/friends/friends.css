@@ -1,0 +1,432 @@
+:host {
+  display: block;
+  min-height: 100vh;
+  background: #fafafa;
+  color: #181818;
+}
+
+/* Page */
+
+.page {
+  max-width: 1100px;
+  min-height: 100vh;
+  margin: 0 auto;
+  padding: 32px 24px 64px;
+  box-sizing: border-box;
+}
+
+/* Header */
+
+.page-header {
+  margin-bottom: 32px;
+}
+
+.header-top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 24px;
+  width: 100%;
+  margin-bottom: 8px;
+}
+
+.eyebrow {
+  margin: 0;
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 0.12em;
+}
+
+.header-actions {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.header-actions button {
+  border-radius: 999px;
+}
+
+/* Hero */
+
+.hero {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-end;
+  gap: 32px;
+  margin-bottom: 30px;
+}
+
+.hero-text {
+  min-width: 0;
+}
+
+.hero h1 {
+  margin: 0 0 8px;
+}
+
+.subtitle {
+  max-width: 600px;
+  margin: 0;
+  color: #666;
+  font-size: 17px;
+  line-height: 1.6;
+}
+
+/* Friend count */
+
+.friend-count {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-shrink: 0;
+  padding: 14px 18px;
+  background: white;
+  border: 1px solid #e5e5e5;
+  border-radius: 16px;
+}
+
+.friend-count mat-icon {
+  width: 30px;
+  height: 30px;
+  font-size: 30px;
+}
+
+.friend-count div {
+  display: flex;
+  flex-direction: column;
+}
+
+.friend-count strong {
+  font-size: 20px;
+  line-height: 1;
+}
+
+.friend-count span {
+  margin-top: 3px;
+  color: #777;
+  font-size: 12px;
+}
+
+/* Search */
+
+.search {
+  width: 100%;
+}
+
+/* Discover / Friends toggle */
+
+.view-toggle {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 4px;
+  background: #eeeeee;
+  border-radius: 999px;
+}
+
+.view-toggle-button {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  padding: 9px 14px;
+  border: 0;
+  border-radius: 999px;
+  background: transparent;
+  color: #666;
+  font: inherit;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  transition:
+    background 150ms ease,
+    color 150ms ease,
+    box-shadow 150ms ease;
+}
+
+.view-toggle-button:hover {
+  color: #181818;
+}
+
+.view-toggle-button.active {
+  background: white;
+  color: #181818;
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.1);
+}
+
+.view-toggle-button mat-icon {
+  width: 18px;
+  height: 18px;
+  font-size: 18px;
+}
+
+.toggle-count {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 20px;
+  height: 20px;
+  padding: 0 6px;
+  background: #e2e2e2;
+  border-radius: 999px;
+  font-size: 11px;
+  font-weight: 700;
+  box-sizing: border-box;
+}
+
+/* Main content */
+
+main {
+  padding-top: 10px;
+}
+
+/* Error */
+
+.error-banner {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 20px;
+  padding: 10px 14px;
+  background: #fff3f3;
+  border: 1px solid #f1cccc;
+  border-radius: 12px;
+  color: #7b2525;
+}
+
+.error-banner span {
+  flex: 1;
+}
+
+/* Section header */
+
+.section-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-end;
+  margin: 12px 0 16px;
+}
+
+.section-header h2 {
+  margin: 0;
+  font-size: 21px;
+  letter-spacing: -0.02em;
+}
+
+.section-header p {
+  margin: 5px 0 0;
+  color: #777;
+  font-size: 13px;
+}
+
+/* People */
+
+.people-list {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.person-card {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  gap: 18px;
+  padding: 18px 20px;
+  border-radius: 18px;
+  transition:
+    transform 150ms ease,
+    box-shadow 150ms ease;
+}
+
+.person-card:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 7px 22px rgba(0, 0, 0, 0.06);
+}
+
+/* Avatar */
+
+.avatar {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 54px;
+  height: 54px;
+  flex: 0 0 54px;
+  border-radius: 50%;
+  background: #eeeeee;
+  font-size: 17px;
+  font-weight: 700;
+}
+
+/* Person info */
+
+.person-info {
+  min-width: 0;
+  flex: 1;
+}
+
+.name-row {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.name-row h3 {
+  margin: 0;
+  font-size: 16px;
+  font-weight: 650;
+}
+
+.friend-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 3px 8px;
+  background: #eeeeee;
+  border-radius: 999px;
+  font-size: 11px;
+  font-weight: 600;
+}
+
+.friend-badge mat-icon {
+  width: 13px;
+  height: 13px;
+  font-size: 13px;
+}
+
+.username {
+  margin: 3px 0 0;
+  color: #666;
+  font-size: 14px;
+}
+
+.user-details {
+  margin: 5px 0 0;
+  color: #888;
+  font-size: 12px;
+}
+
+.follows-you {
+  display: inline-block;
+  margin-top: 7px;
+  padding: 3px 8px;
+  background: #f0f0f0;
+  border-radius: 999px;
+  color: #555;
+  font-size: 11px;
+  font-weight: 600;
+}
+
+/* Person action */
+
+.person-action {
+  flex-shrink: 0;
+}
+
+.person-action button {
+  min-width: 120px;
+  border-radius: 999px;
+}
+
+/* Loading */
+
+.loading-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 18px;
+  padding: 90px 20px;
+  color: #777;
+}
+
+/* Empty state */
+
+.empty-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 80px 20px;
+  text-align: center;
+}
+
+.empty-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 64px;
+  height: 64px;
+  margin-bottom: 18px;
+  background: #eeeeee;
+  border-radius: 50%;
+}
+
+.empty-icon mat-icon {
+  width: 30px;
+  height: 30px;
+  font-size: 30px;
+}
+
+.empty-state h2 {
+  margin: 0;
+  font-size: 20px;
+}
+
+.empty-state p {
+  max-width: 420px;
+  margin: 8px 0 18px;
+  color: #777;
+}
+
+/* Mobile */
+
+@media (max-width: 600px) {
+  .page {
+    padding: 24px 16px 48px;
+  }
+
+  .header-top {
+    align-items: flex-start;
+  }
+
+  .hero {
+    align-items: flex-start;
+    flex-direction: column;
+    gap: 20px;
+  }
+
+  .friend-count {
+    align-self: flex-start;
+  }
+
+  .view-toggle {
+    display: flex;
+    width: 100%;
+    box-sizing: border-box;
+  }
+
+  .view-toggle-button {
+    flex: 1;
+    justify-content: center;
+  }
+
+  .person-card {
+    align-items: flex-start;
+    flex-wrap: wrap;
+  }
+
+  .person-info {
+    width: calc(100% - 72px);
+  }
+
+  .person-action {
+    width: 100%;
+    padding-left: 72px;
+    box-sizing: border-box;
+  }
+
+  .person-action button {
+    width: 100%;
+  }
+}

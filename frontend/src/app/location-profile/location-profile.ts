@@ -101,7 +101,8 @@ export class LocationProfile {
               reviewCount: mappedReviews.length,
               averageRating:
                 mappedReviews.length > 0
-                  ? mappedReviews.reduce((total, review) => total + review.rating, 0) / mappedReviews.length
+                  ? mappedReviews.reduce((total, review) => total + review.rating, 0) /
+                    mappedReviews.length
                   : 0,
             };
             this.changeDetector.markForCheck();
@@ -128,7 +129,7 @@ export class LocationProfile {
       next: () => {
         this.deletingId.set(null);
         if (this.hall) {
-          const reviews = this.hall.reviews.filter(item => item.uuid !== review.uuid);
+          const reviews = this.hall.reviews.filter((item) => item.uuid !== review.uuid);
           this.hall = {
             ...this.hall,
             reviews,
