@@ -98,6 +98,50 @@ dd {
 	margin: 0 0 20px;
 }
 
+.reviews-section {
+	margin-top: 32px;
+}
+
+.reviews-heading {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	margin-bottom: 12px;
+}
+
+.reviews-heading h2 {
+	margin: 0;
+}
+
+.reviews-heading p {
+	margin: 4px 0 0;
+}
+
+.reviews {
+	display: grid;
+	gap: 16px;
+	margin-top: 16px;
+}
+
+.empty-reviews {
+	padding: 48px 16px;
+	text-align: center;
+}
+
+.empty-reviews mat-icon {
+	width: 40px;
+	height: 40px;
+	font-size: 40px;
+}
+
+.empty-reviews h3 {
+	margin: 12px 0 4px;
+}
+
+.empty-reviews p {
+	margin: 0;
+}
+
 @media (max-width: 600px) {
 	.page {
 		padding: 24px 16px 48px;

@@ -5,9 +5,14 @@ import { ActivatedRoute, RouterLink } from '@angular/router';
 import { MatCardModule } from '@angular/material/card';
 import { MatIconModule } from '@angular/material/icon';
 import { MatButtonModule } from '@angular/material/button';
+import { MatDividerModule } from '@angular/material/divider';
 
 import { AccountApi } from '../api/account.api';
+import { ReviewItem } from '../components/review-item/review-item';
+import { apiBaseUrl } from '../api/api-base-url';
+import { HttpClient } from '@angular/common/http';
 import type { Account } from '../types/auth';
+import type { Review, ReviewResponse } from '../types/review';
 
 @Component({
   selector: 'app-profile',
@@ -18,15 +23,19 @@ import type { Account } from '../types/auth';
     MatIconModule,
     MatButtonModule,
     MatCardModule,
+    MatDividerModule,
+    ReviewItem,
   ],
   templateUrl: './user-profile.html',
   styleUrl: './user-profile.css',
 })
 export class Profile {
   account: Account | null = null;
+  reviews: Review[] = [];
 
   private readonly route = inject(ActivatedRoute);
   private readonly accountApi = inject(AccountApi);
+  private readonly http = inject(HttpClient);
   private readonly changeDetector = inject(ChangeDetectorRef);
 
   constructor() {
@@ -34,8 +43,13 @@ export class Profile {
 
     if (userId) {
       this.loadUser(userId);
+      this.loadReviews(userId);
     } else {
       this.account = this.loadAccount();
+    }
+
+    if (this.account) {
+      this.loadReviews(this.account.uuid);
     }
   }
 
@@ -52,6 +66,34 @@ export class Profile {
         this.changeDetector.markForCheck();
       },
     });
+  }
+
+  private loadReviews(userId: string): void {
+    this.http
+      .get<ReviewResponse[]>(
+        `${apiBaseUrl}/reviews/?user_id=${encodeURIComponent(userId)}`
+      )
+      .subscribe({
+        next: (reviews) => {
+          this.reviews = reviews.map((review) => ({
+            uuid: review.uuid,
+            userId: review.user_id,
+            locationId: review.location_id,
+            rating: review.rating,
+            reviewText: review.note ?? '',
+            mealType: review.meal_type ?? '',
+            createdAt: new Date(review.created_at),
+            updatedAt: new Date(review.updated_at),
+            photoIds: review.photo_ids ?? [],
+          }));
+
+          this.changeDetector.markForCheck();
+        },
+        error: () => {
+          this.reviews = [];
+          this.changeDetector.markForCheck();
+        },
+      });
   }
 
   private loadAccount(): Account | null {

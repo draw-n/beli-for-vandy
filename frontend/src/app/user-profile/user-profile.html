@@ -41,6 +41,33 @@
       </mat-card-content>
     </mat-card>
 
+    <section class="reviews-section" *ngIf="account">
+      <div class="reviews-heading">
+        <div>
+          <h2>Reviews</h2>
+          <p>{{ reviews.length }} {{ reviews.length === 1 ? 'review' : 'reviews' }}</p>
+        </div>
+      </div>
+
+      <mat-divider></mat-divider>
+
+      <div class="reviews" *ngIf="reviews.length > 0; else noReviews">
+        <app-review-item
+          *ngFor="let review of reviews"
+          [review]="review"
+          [authorName]="account.first_name + ' ' + account.last_name"
+        />
+      </div>
+
+      <ng-template #noReviews>
+        <div class="empty-reviews">
+          <mat-icon>rate_review</mat-icon>
+          <h3>No reviews yet</h3>
+          <p>This user hasn't reviewed any dining spots yet.</p>
+        </div>
+      </ng-template>
+    </section>
+
     <ng-template #noAccount>
       <div class="empty-state">
         <mat-icon>account_circle</mat-icon>
