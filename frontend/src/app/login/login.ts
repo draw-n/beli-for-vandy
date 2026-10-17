@@ -47,7 +47,9 @@ export class LoginComponent {
     }).subscribe({
       next: (account) => {
         document.cookie = `mockAuth=${account.uuid}; path=/; SameSite=Lax`;
-        sessionStorage.setItem('currentAccount', JSON.stringify(account));
+        const { access_token, token_type: _tokenType, expires_at: _expiresAt, ...currentAccount } = account;
+        sessionStorage.setItem('currentAccount', JSON.stringify(currentAccount));
+        sessionStorage.setItem('accessToken', access_token);
         this.router.navigate(['/locations']);
       },
       error: (error: HttpErrorResponse) => {

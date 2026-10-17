@@ -1,6 +1,8 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { By } from '@angular/platform-browser';
-import { provideRouter } from '@angular/router';
+import { provideHttpClient } from '@angular/common/http';
+import { HttpTestingController, provideHttpClientTesting } from '@angular/common/http/testing';
+import { provideRouter, Router } from '@angular/router';
 import { LoginComponent } from './login';
 
 describe('LoginComponent', () => {
@@ -10,11 +12,12 @@ describe('LoginComponent', () => {
   beforeEach(async () => {
     await TestBed.configureTestingModule({
       imports: [LoginComponent],
-      providers: [provideRouter([])],
+      providers: [provideRouter([]), provideHttpClient(), provideHttpClientTesting()],
     }).compileComponents();
 
     fixture = TestBed.createComponent(LoginComponent);
     component = fixture.componentInstance;
+    vi.spyOn(TestBed.inject(Router), 'navigate').mockResolvedValue(true);
     fixture.detectChanges();
   });
 
@@ -27,6 +30,28 @@ describe('LoginComponent', () => {
 
     expect(signupLink).toBeTruthy();
     expect(signupLink.nativeElement.textContent).toContain('Sign up');
+  });
+
+  it('stores the bearer token separately while preserving currentAccount shape', () => {
+    sessionStorage.clear();
+    component.username = 'sara';
+    component.password = 'password123';
+    component.onSubmit();
+    const http = TestBed.inject(HttpTestingController);
+    const request = http.expectOne('http://localhost:8000/accounts/login');
+    const response = {
+      uuid: 'user-1', username: 'sara', first_name: 'Sara', last_name: 'Test', email: 'sara@example.com',
+      year_graduation: 2027, type: 'student', home_city: 'Nashville', created_at: '2026-01-01',
+      access_token: 'signed-token', token_type: 'bearer', expires_at: '2026-01-02T00:00:00Z',
+    };
+    request.flush(response);
+    expect(sessionStorage.getItem('accessToken')).toBe('signed-token');
+    const currentAccount = JSON.parse(sessionStorage.getItem('currentAccount') ?? 'null');
+    expect(currentAccount.uuid).toBe('user-1');
+    expect(currentAccount).not.toHaveProperty('access_token');
+    expect(currentAccount).not.toHaveProperty('token_type');
+    expect(currentAccount).not.toHaveProperty('expires_at');
+    expect(document.cookie).toContain('mockAuth=user-1');
   });
 
   it('should display a username input', () => {

@@ -1,7 +1,7 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { provideHttpClient } from '@angular/common/http';
 import { HttpTestingController, provideHttpClientTesting } from '@angular/common/http/testing';
-import { provideRouter } from '@angular/router';
+import { provideRouter, Router } from '@angular/router';
 import type { LocationDetails } from '../types/location';
 import { apiBaseUrl } from '../api/api-base-url';
 
@@ -19,6 +19,7 @@ describe('Locations', () => {
 
     fixture = TestBed.createComponent(Locations);
     component = fixture.componentInstance;
+    vi.spyOn(TestBed.inject(Router), 'navigate').mockResolvedValue(true);
     const http = TestBed.inject(HttpTestingController);
     http.expectOne(`${apiBaseUrl}/locations/`).flush([]);
     http.expectOne(`${apiBaseUrl}/reviews/`).flush([]);
@@ -52,5 +53,13 @@ describe('Locations', () => {
     expect(component.filteredDiningHalls.map((location) => location.uuid)).toEqual([
       'late-night-hall',
     ]);
+  });
+
+  it('clears the bearer token and existing account login state on logout', () => {
+    sessionStorage.setItem('currentAccount', JSON.stringify({ uuid: 'user-1' }));
+    sessionStorage.setItem('accessToken', 'signed-token');
+    component.logout();
+    expect(sessionStorage.getItem('currentAccount')).toBeNull();
+    expect(sessionStorage.getItem('accessToken')).toBeNull();
   });
 });

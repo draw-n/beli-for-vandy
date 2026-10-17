@@ -2,6 +2,7 @@ import { TestBed } from '@angular/core/testing';
 import { provideRouter } from '@angular/router';
 import { ReviewItem } from './review-item';
 import type { Review } from '../../types/review';
+import { apiBaseUrl } from '../../api/api-base-url';
 
 const review: Review = {
   uuid: 'review-1',
@@ -29,12 +30,50 @@ describe('Reusable review item', () => {
 
     expect(fixture.nativeElement.textContent).toContain('Great lunch');
     expect(fixture.nativeElement.textContent).toContain('author');
+    expect(fixture.nativeElement.textContent).toContain('8.0');
+    expect(fixture.nativeElement.querySelector('.review-photos')).toBeNull();
 
     expect(
       fixture.nativeElement.querySelector(
         '[aria-label="Options for your review"]'
       )
     ).toBeNull();
+  });
+
+  it('renders one review photo using the API base URL', () => {
+    const fixture = TestBed.createComponent(ReviewItem);
+    fixture.componentRef.setInput('review', { ...review, photoIds: ['photo 1'] });
+    fixture.detectChanges();
+
+    const images = fixture.nativeElement.querySelectorAll('.review-photos img') as NodeListOf<HTMLImageElement>;
+    expect(images).toHaveLength(1);
+    expect(images[0].getAttribute('src')).toBe(`${apiBaseUrl}/photos/photo%201`);
+    expect(images[0].getAttribute('loading')).toBe('lazy');
+    expect(images[0].getAttribute('alt')).toBe('Food photo attached to review');
+  });
+
+  it('renders every photo attached to a review', () => {
+    const fixture = TestBed.createComponent(ReviewItem);
+    fixture.componentRef.setInput('review', { ...review, photoIds: ['photo-1', 'photo-2'] });
+    fixture.detectChanges();
+
+    const images = fixture.nativeElement.querySelectorAll('.review-photos img') as NodeListOf<HTMLImageElement>;
+    expect(Array.from(images, image => image.getAttribute('src'))).toEqual([
+      `${apiBaseUrl}/photos/photo-1`,
+      `${apiBaseUrl}/photos/photo-2`,
+    ]);
+  });
+
+  it('renders normally when photoIds is empty or missing', () => {
+    for (const photoIds of [[], undefined]) {
+      const fixture = TestBed.createComponent(ReviewItem);
+      fixture.componentRef.setInput('review', { ...review, photoIds });
+      fixture.detectChanges();
+
+      expect(fixture.nativeElement.querySelector('.review-photos')).toBeNull();
+      expect(fixture.nativeElement.textContent).toContain('Great lunch');
+      expect(fixture.nativeElement.textContent).toContain('8.0');
+    }
   });
 
   it('links the author to their profile by default', () => {

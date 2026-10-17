@@ -87,5 +87,17 @@
     {{ review.reviewText }}
   </p>
 
+  @if (review.photoIds?.length) {
+    <div class="review-photos">
+      @for (photoId of review.photoIds; track photoId) {
+        <img
+          [src]="photoUrl(photoId)"
+          alt="Food photo attached to review"
+          loading="lazy"
+        />
+      }
+    </div>
+  }
+
   <mat-divider></mat-divider>
 </article>

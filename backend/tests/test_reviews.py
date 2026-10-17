@@ -9,10 +9,7 @@ REVIEW_DATA = {
     "meal_type": "dinner",
     "created_at": "2026-09-23T18:30:00",
     "updated_at": "2026-09-23T18:30:00",
-    "photo_ids": [
-        "photo-001",
-        "photo-002"
-    ],
+    "photo_ids": [],
 }
 
 

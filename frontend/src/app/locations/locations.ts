@@ -130,6 +130,7 @@ export class Locations {
   logout(): void {
     document.cookie = 'mockAuth=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;';
     sessionStorage.removeItem('currentAccount');
+    sessionStorage.removeItem('accessToken');
 
     this.router.navigate(['/login']);
   }

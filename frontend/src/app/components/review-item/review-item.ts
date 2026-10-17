@@ -6,6 +6,7 @@ import { MatDividerModule } from '@angular/material/divider';
 import { MatIconModule } from '@angular/material/icon';
 import { MatMenuModule } from '@angular/material/menu';
 import type { Review } from '../../types/review';
+import { apiBaseUrl } from '../../api/api-base-url';
 
 @Component({
   selector: 'app-review-item',
@@ -23,4 +24,8 @@ export class ReviewItem {
   @Input() busy = false;
   @Output() deleteRequested = new EventEmitter<Review>();
   @Output() editRequested = new EventEmitter<Review>();
+
+  photoUrl(photoId: string): string {
+    return `${apiBaseUrl}/photos/${encodeURIComponent(photoId)}`;
+  }
 }

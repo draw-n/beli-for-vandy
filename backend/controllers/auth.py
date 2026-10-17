@@ -48,14 +48,11 @@ def _unauthorized() -> HTTPException:
     )
 
 
-def get_current_user_id(
-    credentials: Annotated[
-        HTTPAuthorizationCredentials | None, Depends(_bearer_scheme)
-    ],
-) -> str:
-    """Verify a bearer token and return its authenticated account UUID."""
+def _user_id_from_credentials(
+    credentials: HTTPAuthorizationCredentials | None,
+) -> str | None:
     if credentials is None:
-        raise _unauthorized()
+        return None
 
     try:
         secret = get_signing_secret()
@@ -77,5 +74,26 @@ def get_current_user_id(
 
     user_id = claims.get("sub")
     if not isinstance(user_id, str) or not user_id:
+        raise _unauthorized()
+    return user_id
+
+
+def get_optional_current_user_id(
+    credentials: Annotated[
+        HTTPAuthorizationCredentials | None, Depends(_bearer_scheme)
+    ],
+) -> str | None:
+    """Return a verified bearer identity when supplied, otherwise None."""
+    return _user_id_from_credentials(credentials)
+
+
+def get_current_user_id(
+    credentials: Annotated[
+        HTTPAuthorizationCredentials | None, Depends(_bearer_scheme)
+    ],
+) -> str:
+    """Verify a bearer token and return its authenticated account UUID."""
+    user_id = _user_id_from_credentials(credentials)
+    if user_id is None:
         raise _unauthorized()
     return user_id

@@ -51,6 +51,7 @@ class StoredPhoto:
     photo_id: str
     data: bytes
     content_type: str
+    owner_uuid: str | None
 
 
 def _encode(image: Image.Image, image_format: str, *, quality: int = WEBP_QUALITY) -> bytes:
@@ -181,7 +182,12 @@ def _photo_bucket(bucket: Any | None = None) -> Any:
     return AsyncIOMotorGridFSBucket(database.db, bucket_name="photos")
 
 
-async def store_photo(data: bytes, *, bucket: Any | None = None) -> str:
+async def store_photo(
+    data: bytes,
+    *,
+    owner_uuid: str | None = None,
+    bucket: Any | None = None,
+) -> str:
     """Optimize and store one image in GridFS; returns its opaque ID."""
     photo = process_photo(data)
     photo_id = secrets.token_urlsafe(24)
@@ -190,6 +196,8 @@ async def store_photo(data: bytes, *, bucket: Any | None = None) -> str:
         "uploaded_at": datetime.now(timezone.utc),
         "status": "pending",
     }
+    if owner_uuid is not None:
+        metadata["owner_uuid"] = owner_uuid
 
     await _photo_bucket(bucket).upload_from_stream_with_id(
         photo_id,
@@ -213,4 +221,18 @@ async def retrieve_photo(photo_id: str, *, bucket: Any | None = None) -> StoredP
         photo_id=photo_id,
         data=data,
         content_type=metadata.get("content_type", "application/octet-stream"),
+        owner_uuid=metadata.get("owner_uuid"),
     )
+
+
+async def get_photo_owner(
+    photo_id: str, *, bucket: Any | None = None
+) -> str | None:
+    """Read GridFS owner metadata without loading the stored image bytes."""
+    try:
+        stream = await _photo_bucket(bucket).open_download_stream(photo_id)
+    except NoFile as error:
+        raise PhotoNotFoundError("Photo not found.") from error
+
+    metadata = stream.metadata or {}
+    return metadata.get("owner_uuid")
