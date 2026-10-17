@@ -3,7 +3,9 @@ import { HttpClient } from '@angular/common/http';
 import { Component, inject, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
-import { ActivatedRoute, RouterLink, Router } from '@angular/router';
+import { RouterLink, Router } from '@angular/router';
+import { apiBaseUrl } from '../api/api-base-url';
+import type { LocationDetails, LocationHours, LocationResponse } from '../types/location';
 
 import { MatCardModule } from '@angular/material/card';
 import { MatFormFieldModule } from '@angular/material/form-field';
@@ -12,6 +14,7 @@ import { MatIconModule } from '@angular/material/icon';
 import { MatChipsModule } from '@angular/material/chips';
 import { MatButtonModule } from '@angular/material/button';
 import { MatToolbarModule } from '@angular/material/toolbar';
+import { MatSelectModule } from '@angular/material/select';
 
 @Component({
   selector: 'app-locations',
@@ -26,42 +29,41 @@ import { MatToolbarModule } from '@angular/material/toolbar';
     MatIconModule,
     MatChipsModule,
     MatButtonModule,
-    MatToolbarModule
+    MatToolbarModule,
+    MatSelectModule,
   ],
   templateUrl: './locations.html',
   styleUrl: './locations.css',
 })
 export class Locations {
   searchTerm = '';
+  selectedTag = 'All tags';
   readonly locations = signal<LocationDetails[]>([]);
   private readonly http = inject(HttpClient);
   private readonly router = inject(Router);
-  private readonly route = inject(ActivatedRoute);
 
   constructor() {
-    this.route.queryParamMap.subscribe((params) => {
-      this.searchTerm = params.get('search') ?? '';
-    });
-
-    this.http.get<LocationResponse[]>('http://localhost:8000/locations/').subscribe({
+    this.http.get<LocationResponse[]>(`${apiBaseUrl}/locations/`).subscribe({
       next: (locations) => {
-        this.locations.set(locations.map((location) => ({
-          uuid: location.uuid,
-          name: location.name,
-          location: location.address,
-          tags: location.tags ?? [],
-          hours: (location.hours ?? []).map(([day, openTime, closeTime]) => ({
-            day,
-            openTime,
-            closeTime,
+        this.locations.set(
+          locations.map((location) => ({
+            uuid: location.uuid,
+            name: location.name,
+            location: location.address,
+            tags: location.tags ?? [],
+            hours: (location.hours ?? []).map(([day, openTime, closeTime]) => ({
+              day,
+              openTime,
+              closeTime,
+            })),
+            averageRating: 0,
+            reviewCount: 0,
+            friendRating: null,
+            photos: [],
+            reviews: [],
           })),
-          averageRating: 0,
-          reviewCount: 0,
-          friendRating: null,
-          photos: [],
-          reviews: [],
-        })));
-        this.http.get<ReviewResponse[]>('http://localhost:8000/reviews/').subscribe({
+        );
+        this.http.get<ReviewResponse[]>(`${apiBaseUrl}/reviews/`).subscribe({
           next: (reviews) => {
             const reviewsByLocation = new Map<string, ReviewResponse[]>();
 
@@ -71,18 +73,21 @@ export class Locations {
               reviewsByLocation.set(review.location_id, locationReviews);
             }
 
-            this.locations.update((currentLocations) => currentLocations.map((location) => {
-              const locationReviews = reviewsByLocation.get(location.uuid) ?? [];
+            this.locations.update((currentLocations) =>
+              currentLocations.map((location) => {
+                const locationReviews = reviewsByLocation.get(location.uuid) ?? [];
 
-              return {
-                ...location,
-                reviewCount: locationReviews.length,
-                averageRating:
-                  locationReviews.length > 0
-                    ? locationReviews.reduce((total, review) => total + review.rating, 0) / locationReviews.length
-                    : 0,
-              };
-            }));
+                return {
+                  ...location,
+                  reviewCount: locationReviews.length,
+                  averageRating:
+                    locationReviews.length > 0
+                      ? locationReviews.reduce((total, review) => total + review.rating, 0) /
+                        locationReviews.length
+                      : 0,
+                };
+              }),
+            );
           },
         });
       },
@@ -92,23 +97,26 @@ export class Locations {
     });
   }
 
+  get availableTags(): string[] {
+    return [...new Set(this.locations().flatMap((hall) => hall.tags))].sort((a, b) =>
+      a.localeCompare(b),
+    );
+  }
+
   get filteredDiningHalls(): LocationDetails[] {
     const search = this.searchTerm.toLowerCase().trim();
 
     return this.locations()
       .filter((hall) => {
-        return (
+        const matchesSearch =
           hall.name.toLowerCase().includes(search) ||
           hall.location.toLowerCase().includes(search) ||
-          hall.tags.some((tag) => tag.toLowerCase().includes(search))
-        );
+          hall.tags.some((tag) => tag.toLowerCase().includes(search));
+        const matchesTag = this.selectedTag === 'All tags' || hall.tags.includes(this.selectedTag);
+
+        return matchesSearch && matchesTag;
       })
       .sort((a, b) => b.averageRating - a.averageRating);
-  }
-
-  searchByTag(event: Event, tag: string): void {
-    event.stopPropagation();
-    this.router.navigate(['/locations'], { queryParams: { search: tag } });
   }
 
   getTodayHours(hall: LocationDetails): LocationHours | undefined {
@@ -120,8 +128,7 @@ export class Locations {
   }
 
   logout(): void {
-    document.cookie =
-      'mockAuth=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;';
+    document.cookie = 'mockAuth=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;';
     sessionStorage.removeItem('currentAccount');
 
     this.router.navigate(['/login']);

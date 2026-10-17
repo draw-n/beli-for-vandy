@@ -1,11 +1,12 @@
+import type { Review } from './review';
 
-interface LocationHours {
+export interface LocationHours {
   day: string;
   openTime: string;
   closeTime: string;
 }
 
-interface LocationDetails {
+export interface LocationDetails {
   uuid: string;
   name: string;
   location: string;
@@ -15,11 +16,11 @@ interface LocationDetails {
   reviewCount: number;
   friendRating: number | null;
   photos: string[];
-  reviews: import('./review').Review[];
+  reviews: Review[];
   image?: string;
 }
 
-interface LocationResponse {
+export interface LocationResponse {
   uuid: string;
   name: string;
   address: string;

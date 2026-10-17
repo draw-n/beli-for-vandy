@@ -1,0 +1,236 @@
+<div class="page">
+  <header class="page-header">
+    <div class="header-top">
+      <p class="eyebrow">VANDERBILT DINING</p>
+
+      <div class="header-actions">
+        <button mat-button type="button" routerLink="/locations">
+          <mat-icon>restaurant</mat-icon>
+          Dining
+        </button>
+
+        <button mat-button type="button" routerLink="/profile">
+          <mat-icon>account_circle</mat-icon>
+          Profile
+        </button>
+      </div>
+    </div>
+
+    <div class="hero">
+      <div class="hero-text">
+        <h1>Find your people.</h1>
+
+        <p class="subtitle">
+          Follow friends, discover what they're eating, and find your next favorite spot together.
+        </p>
+      </div>
+
+      <div class="friend-count">
+        <mat-icon>group</mat-icon>
+
+        <div>
+          <strong>{{ friendCount }}</strong>
+          <span>{{ friendCount === 1 ? 'friend' : 'friends' }}</span>
+        </div>
+      </div>
+    </div>
+
+    <mat-form-field appearance="outline" class="search">
+      <mat-label>Search people</mat-label>
+
+      <mat-icon matPrefix>search</mat-icon>
+
+      <input
+        matInput
+        type="text"
+        [(ngModel)]="searchTerm"
+        placeholder="Search by name or username"
+      />
+
+      @if (searchTerm) {
+        <button
+          mat-icon-button
+          matSuffix
+          type="button"
+          aria-label="Clear search"
+          (click)="searchTerm = ''"
+        >
+          <mat-icon>close</mat-icon>
+        </button>
+      }
+    </mat-form-field>
+
+    <div class="view-toggle" aria-label="Friends view">
+      <button
+        type="button"
+        class="view-toggle-button"
+        [class.active]="activeView === 'discover'"
+        (click)="setView('discover')"
+      >
+        <mat-icon>person_search</mat-icon>
+        Discover
+      </button>
+
+      <button
+        type="button"
+        class="view-toggle-button"
+        [class.active]="activeView === 'friends'"
+        (click)="setView('friends')"
+      >
+        <mat-icon>group</mat-icon>
+        Friends
+
+        <span class="toggle-count">
+          {{ friendCount }}
+        </span>
+      </button>
+    </div>
+  </header>
+
+  <main>
+    @if (loading) {
+      <div class="loading-state">
+        <mat-spinner diameter="42"></mat-spinner>
+        <p>Finding people...</p>
+      </div>
+    } @else {
+      @if (errorMessage) {
+        <div class="error-banner">
+          <mat-icon>error_outline</mat-icon>
+
+          <span>{{ errorMessage }}</span>
+
+          <button mat-button type="button" (click)="loadData()">Retry</button>
+        </div>
+      }
+
+      <div class="section-header">
+        <div>
+          <h2>
+            @if (searchTerm) {
+              Search results
+            } @else if (activeView === 'friends') {
+              Your friends
+            } @else {
+              People you may know
+            }
+          </h2>
+
+          <p>
+            {{ filteredUsers.length }}
+            {{ filteredUsers.length === 1 ? 'person' : 'people' }}
+          </p>
+        </div>
+      </div>
+
+      <div class="people-list">
+        @for (socialUser of filteredUsers; track socialUser.account.uuid) {
+          <mat-card class="person-card" appearance="outlined">
+            <div class="avatar">
+              {{ getInitials(socialUser) }}
+            </div>
+
+            <div class="person-info">
+              <div class="name-row">
+                <h3>
+                  {{ socialUser.account.first_name }}
+                  {{ socialUser.account.last_name }}
+                </h3>
+
+                @if (socialUser.status === 'mutual') {
+                  <span class="friend-badge">
+                    <mat-icon>people</mat-icon>
+                    Friends
+                  </span>
+                }
+              </div>
+
+              <p class="username">@{{ socialUser.account.username }}</p>
+
+              <p class="user-details">
+                @if (socialUser.account.type === 'student' && socialUser.account.year_graduation) {
+                  Vanderbilt · Class of
+                  {{ socialUser.account.year_graduation }}
+                } @else {
+                  Vanderbilt · Faculty
+                }
+              </p>
+
+              @if (socialUser.status === 'follows-you') {
+                <span class="follows-you"> Follows you </span>
+              }
+            </div>
+
+            <div class="person-action">
+              @if (socialUser.status === 'not-following') {
+                <button
+                  mat-flat-button
+                  type="button"
+                  [disabled]="isPending(socialUser)"
+                  (click)="follow(socialUser)"
+                >
+                  <mat-icon>person_add</mat-icon>
+
+                  {{ isPending(socialUser) ? 'Following...' : 'Follow' }}
+                </button>
+              } @else if (socialUser.status === 'follows-you') {
+                <button
+                  mat-flat-button
+                  type="button"
+                  [disabled]="isPending(socialUser)"
+                  (click)="follow(socialUser)"
+                >
+                  <mat-icon>person_add</mat-icon>
+
+                  {{ isPending(socialUser) ? 'Following...' : 'Follow back' }}
+                </button>
+              } @else {
+                <button
+                  mat-stroked-button
+                  type="button"
+                  [disabled]="isPending(socialUser)"
+                  (click)="unfollow(socialUser)"
+                >
+                  <mat-icon>check</mat-icon>
+
+                  {{ isPending(socialUser) ? 'Updating...' : 'Following' }}
+                </button>
+              }
+            </div>
+          </mat-card>
+        }
+      </div>
+
+      @if (filteredUsers.length === 0) {
+        <div class="empty-state">
+          <div class="empty-icon">
+            @if (activeView === 'friends') {
+              <mat-icon>group</mat-icon>
+            } @else {
+              <mat-icon>person_search</mat-icon>
+            }
+          </div>
+
+          @if (searchTerm) {
+            <h2>No people found</h2>
+
+            <p>We couldn't find anyone matching "{{ searchTerm }}".</p>
+          } @else if (activeView === 'friends') {
+            <h2>No friends yet</h2>
+
+            <p>When you and another user follow each other, they'll show up here.</p>
+
+            <button mat-flat-button type="button" (click)="setView('discover')">
+              <mat-icon>person_search</mat-icon>
+              Find people
+            </button>
+          } @else {
+            <h2>No people found</h2>
+
+            <p>There aren't any other accounts to show yet.</p>
+          }
+        </div>
+      }
+    }
+  </main>
+</div>

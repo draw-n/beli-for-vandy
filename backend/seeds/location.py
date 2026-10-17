@@ -31,8 +31,8 @@ def seed_locations():
     client = MongoClient(MONGODB_URI)
 
     try:
-        # Change this to your database name
-        db = client["beli_db"]
+        # Use the database named by MONGODB_URI, with the local default as fallback.
+        db = client.get_default_database("beli_db")
 
         # Change this to your collection name
         locations = db["locations"]

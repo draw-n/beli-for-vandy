@@ -19,6 +19,9 @@
           "options": {
             "browser": "src/main.ts",
             "tsConfig": "tsconfig.app.json",
+            "define": {
+              "API_BASE_URL": "\"http://localhost:8000\""
+            },
             "assets": [
               {
                 "glob": "**/*",
@@ -27,7 +30,7 @@
             ],
             "styles": ["src/material-theme.scss", "src/styles.css"],
             "server": "src/main.server.ts",
-            "outputMode": "server",
+            "outputMode": "static",
             "security": {
               "allowedHosts": []
             },
@@ -72,7 +75,16 @@
           "defaultConfiguration": "development"
         },
         "test": {
-          "builder": "@angular/build:unit-test"
+          "builder": "@angular/build:unit-test",
+          "options": {
+            "coverageThresholds": {
+              "statements": 50,
+              "branches": 50,
+              "functions": 50,
+              "lines": 50
+            },
+            "coverageReporters": ["text", "html", "cobertura"]
+          }
         }
       }
     }

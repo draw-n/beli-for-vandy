@@ -1,4 +1,6 @@
 import { ReviewApi } from '../api/review.api';
+import { apiBaseUrl } from '../api/api-base-url';
+import type { LocationDetails, LocationResponse } from '../types/location';
 import type { Review, ReviewResponse } from '../types/review';
 import { HttpClient } from '@angular/common/http';
 import { ChangeDetectorRef, Component, inject, signal } from '@angular/core';
@@ -65,7 +67,7 @@ export class LocationProfile {
     const uuid = this.route.snapshot.paramMap.get('id');
 
     if (uuid) {
-      this.http.get<LocationResponse>(`http://localhost:8000/locations/${encodeURIComponent(uuid)}`).subscribe({
+      this.http.get<LocationResponse>(`${apiBaseUrl}/locations/${encodeURIComponent(uuid)}`).subscribe({
         next: (hall) => {
           this.hall = {
             ...hall,
@@ -95,7 +97,7 @@ export class LocationProfile {
 
   private loadReviews(locationId: string): void {
     this.http
-      .get<ReviewResponse[]>(`http://localhost:8000/reviews/?location_id=${encodeURIComponent(locationId)}`)
+      .get<ReviewResponse[]>(`${apiBaseUrl}/reviews/?location_id=${encodeURIComponent(locationId)}`)
       .subscribe({
         next: (reviews) => {
           const mappedReviews = reviews.map((review) => ({
@@ -117,7 +119,8 @@ export class LocationProfile {
               reviewCount: mappedReviews.length,
               averageRating:
                 mappedReviews.length > 0
-                  ? mappedReviews.reduce((total, review) => total + review.rating, 0) / mappedReviews.length
+                  ? mappedReviews.reduce((total, review) => total + review.rating, 0) /
+                    mappedReviews.length
                   : 0,
             };
             this.changeDetector.markForCheck();
@@ -144,7 +147,7 @@ export class LocationProfile {
       next: () => {
         this.deletingId.set(null);
         if (this.hall) {
-          const reviews = this.hall.reviews.filter(item => item.uuid !== review.uuid);
+          const reviews = this.hall.reviews.filter((item) => item.uuid !== review.uuid);
           this.hall = {
             ...this.hall,
             reviews,

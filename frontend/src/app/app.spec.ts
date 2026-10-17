@@ -1,12 +1,12 @@
-import { provideHttpClient } from '@angular/common/http';
 import { TestBed } from '@angular/core/testing';
+import { provideRouter } from '@angular/router';
 import { App } from './app';
 
 describe('App', () => {
   beforeEach(async () => {
     await TestBed.configureTestingModule({
       imports: [App],
-      providers: [provideHttpClient()],
+      providers: [provideRouter([])],
     }).compileComponents();
   });
 
@@ -17,12 +17,10 @@ describe('App', () => {
     expect(app).toBeTruthy();
   });
 
-  it('should show account creation and deletion forms', () => {
+  it('should provide the router outlet for page content', () => {
     const fixture = TestBed.createComponent(App);
     fixture.detectChanges();
 
-    const text = fixture.nativeElement.textContent;
-    expect(text).toContain('Create account');
-    expect(text).toContain('Delete account');
+    expect(fixture.nativeElement.querySelector('router-outlet')).toBeTruthy();
   });
 });

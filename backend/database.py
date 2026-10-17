@@ -1,18 +1,18 @@
-import os
+from motor.motor_asyncio import AsyncIOMotorClient, AsyncIOMotorDatabase
 
-from dotenv import load_dotenv
-from motor.motor_asyncio import AsyncIOMotorClient
+from settings import get_settings
 
-# Load environment variables from .env
-load_dotenv()
+DEFAULT_DATABASE_NAME = "beli_db"
 
-MONGO_URI = os.getenv("MONGODB_URI")
 
-# Create Motor async client
-client = AsyncIOMotorClient(MONGO_URI, tz_aware=True)
+def database_from_uri(client: AsyncIOMotorClient) -> AsyncIOMotorDatabase:
+    """Select the URI database, retaining the local development default."""
+    return client.get_default_database(DEFAULT_DATABASE_NAME)
 
-# Connect to main app database
-db = client.beli_db
+
+# Create Motor async client and select the database named by MONGODB_URI.
+client = AsyncIOMotorClient(get_settings().mongodb_uri, tz_aware=True)
+db = database_from_uri(client)
 
 # Collection definitions based on your project user stories
 users_collection = db.get_collection("users")

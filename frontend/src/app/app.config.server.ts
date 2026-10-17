@@ -20,11 +20,11 @@ const serverConfig: ApplicationConfig = {
         },
         {
           path: 'locations',
-          renderMode: RenderMode.Prerender,
+          renderMode: RenderMode.Client,
         },
         {
           path: 'locations/:id',
-          renderMode: RenderMode.Server,
+          renderMode: RenderMode.Client,
         },
         {
           path: 'profile',
@@ -32,7 +32,7 @@ const serverConfig: ApplicationConfig = {
         },
         {
           path: '**',
-          renderMode: RenderMode.Server,
+          renderMode: RenderMode.Client,
         },
       ]),
     ),

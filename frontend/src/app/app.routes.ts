@@ -3,8 +3,9 @@ import { Routes } from '@angular/router';
 import { LoginComponent } from './login/login';
 import { Register } from './register/register';
 import { Locations } from './locations/locations';
-import { LocationProfile} from './location-profile/location-profile';
+import { LocationProfile } from './location-profile/location-profile';
 import { Profile } from './user-profile/user-profile';
+import { FriendsComponent } from './friends/friends';
 
 export const routes: Routes = [
   {
@@ -31,6 +32,10 @@ export const routes: Routes = [
   {
     path: 'profile',
     component: Profile,
+  },
+  {
+    path: 'friends',
+    component: FriendsComponent,
   },
   {
     path: '**',
