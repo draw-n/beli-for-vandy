@@ -75,6 +75,8 @@ describe('Location review ownership menu', () => {
     component.selectedMealFilter = 'Lunch';
     expect(component.filteredReviews).toEqual([]);
     component.selectedMealFilter = 'All';
+    expect(component.hall!.image).toBeUndefined();
+    expect(fixture.nativeElement.querySelector('.cover-image')).toBeNull();
     expect(component.hall!.reviewCount).toBe(2);
     expect(component.hall!.averageRating).toBe(9);
     expect(component.hall!.photos).toEqual([
@@ -456,6 +458,42 @@ describe('Location review ownership menu', () => {
     expect(fixture.componentInstance.hall!.reviewCount).toBe(1);
     expect(fixture.componentInstance.hall!.friendRating).toBeNull();
     expect(fixture.nativeElement.textContent).toContain('Commons');
+    http.verify();
+  });
+
+  it('shows the same mapped cover asset on the dining location detail page', async () => {
+    const locationId = '650408b4-bf68-11f1-a035-00155de17b17';
+    TestBed.configureTestingModule({
+      imports: [LocationProfile],
+      providers: [
+        provideHttpClient(),
+        provideHttpClientTesting(),
+        provideRouter([]),
+        {
+          provide: ActivatedRoute,
+          useValue: {
+            snapshot: { paramMap: convertToParamMap({ id: locationId }) },
+          },
+        },
+      ],
+    });
+
+    const fixture = TestBed.createComponent(LocationProfile);
+    const http = TestBed.inject(HttpTestingController);
+    http.expectOne(`http://localhost:8000/locations/${locationId}`).flush({
+      uuid: locationId,
+      name: 'The Commons Dining Center',
+      address: 'Peabody Campus',
+    });
+    http.expectOne(`http://localhost:8000/reviews/?location_id=${locationId}`).flush([]);
+    http.expectOne('http://localhost:8000/accounts').flush([]);
+
+    fixture.detectChanges();
+    await fixture.whenStable();
+
+    expect(fixture.componentInstance.hall!.image).toBe('/assets/commons.jpg');
+    expect(fixture.nativeElement.querySelector('.cover-image')?.getAttribute('src'))
+      .toBe('/assets/commons.jpg');
     http.verify();
   });
 });

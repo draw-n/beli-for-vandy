@@ -3,6 +3,7 @@ import { AccountApi } from '../api/account.api';
 import { FollowApi } from '../api/follow.api';
 import { apiBaseUrl } from '../api/api-base-url';
 import type { LocationDetails, LocationResponse } from '../types/location';
+import { locationCoverImage } from '../types/location-cover-image';
 import type { Review, ReviewResponse } from '../types/review';
 import { HttpClient } from '@angular/common/http';
 import { ChangeDetectorRef, Component, inject, signal } from '@angular/core';
@@ -110,6 +111,7 @@ export class LocationProfile {
         next: (hall) => {
           this.hall = {
             ...hall,
+            image: locationCoverImage(hall.uuid),
             location: hall.address,
             tags: hall.tags ?? [],
             hours: (hall.hours ?? []).map(([day, openTime, closeTime]) => ({
