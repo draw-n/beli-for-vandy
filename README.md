@@ -176,35 +176,6 @@ CI never contacts MongoDB Atlas or another paid service. Its real-database test 
 isolated `beli_integration_test` database in a MongoDB service container that is discarded
 with the job. Future external integrations must use fakes or stubs by default in tests.
 
-### Integration seam map
-
-Angular component → Angular API service ✅; Angular API service → live FastAPI API ❌;
-FastAPI route → controller ✅; controller → mocked MongoDB ✅; controller → real test
-MongoDB ✅.
-
-**Integration strategy:** Sandwich because frontend-to-client and backend
-route-to-persistence seams are tested independently from both ends of the application.
-
-**Coverage:** 83.88% backend total and 68.67% frontend statement coverage versus the
-50% gate.
-
-The table includes only issue-backed user stories with a current test that crosses a
-component boundary.
-
-| Test name | Seam | What it checks | Story |
-| --- | --- | --- | --- |
-| `creates an account and clears the form` | Registration component → `AccountApi` → mocked HTTP transport | Sends the account request and updates and clears the form after a successful response. | #2 and #48 — Create an account and show whether creation succeeded |
-| `test_get_review_not_found` | Review API route → review controller → mocked MongoDB | Exercises the failure path for viewing an unavailable review and verifies `404 Not Found`. | #7 — View another user's review |
-| `test_create_review_persists_to_real_mongodb` | FastAPI review route → review controller → real MongoDB | Sends a review through the API with no mocked component in the path, queries the disposable database directly, and checks the stored result. | #8 — Upload a rating, review, date, and photo reference |
-| `shows the three-dot menu only on the signed-in user’s review` | Location profile → review API → aggregate calculations | Loads reviews and verifies the displayed review count and average after a deletion. | #9 — View aggregate ratings and reviews for a dining hall |
-| ⚠ Partially covered by `test_create_review_persists_to_real_mongodb` | Review API → real MongoDB | Verifies that a photo reference is stored, but does not upload, store, or render an actual photo. | #10 — Attach photos to reviews to evaluate food visually |
-| `test_update_review` | Review API route → review controller → mocked MongoDB | Updates rating, note, and meal type while preserving author, location, and creation date. | #15 — Edit my own rating or review |
-| `test_delete_review` | Review API route → review controller → mocked MongoDB | Deletes a review and verifies through a subsequent request that it no longer exists. | #16 — Delete my own rating or review |
-| `should filter by username` | Friends page → loaded account collection → search results | Loads mocked account and follow responses, filters by username, and verifies the matching user. | #19 — Search for another user by username |
-| `test_create_follow` | Follow API route → follow controller → mocked MongoDB | Creates a follow relationship and checks the users, mutual status, date, and generated identifier. | #20 — Add another user as a friend |
-| `should mark two-way follows as mutual friends` | Friends page → account and follow APIs → friend state | Combines mocked account and follow responses and verifies mutual-friend state and count. | #21 — View my friends list |
-| `should delete an outgoing follow` | Friends page → follow API → friend state | Sends the delete request and verifies that the removed user is no longer marked as followed. | #22 — Remove a user from my friends list |
-
 Run the same checks locally:
 
 ```bash
