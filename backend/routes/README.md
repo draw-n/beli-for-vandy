@@ -9,6 +9,10 @@ database and `CORS_ORIGINS` is a JSON array of allowed frontend origins, for exa
 
 The account API intentionally supports account creation and deletion only. It does not provide login, session, or current-user endpoints. User records are stored in the MongoDB `users` collection. Passwords are stored as Argon2 hashes and are never included in responses.
 
+## List reviews
+
+`GET /reviews/` returns reviews and accepts optional `location_id` and `user_id` query parameters. When supplied together, both filters apply.
+
 ## Account representation
 
 Successful account creation returns:

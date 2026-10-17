@@ -133,8 +133,13 @@
             <div class="person-info">
               <div class="name-row">
                 <h3>
-                  {{ socialUser.account.first_name }}
-                  {{ socialUser.account.last_name }}
+                  <a
+                    [routerLink]="['/users', socialUser.account.uuid]"
+                    class="person-profile-link"
+                  >
+                    {{ socialUser.account.first_name }}
+                    {{ socialUser.account.last_name }}
+                  </a>
                 </h3>
 
                 @if (socialUser.status === 'mutual') {

@@ -34,6 +34,10 @@ export const routes: Routes = [
     component: Profile,
   },
   {
+    path: 'users/:id',
+    component: Profile,
+  },
+  {
     path: 'profile/:id',
     component: Profile,
   },

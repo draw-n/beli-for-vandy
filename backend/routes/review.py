@@ -21,8 +21,11 @@ async def create(review: ReviewCreate):
 
 
 @router.get("/", response_model=list[ReviewResponse])
-async def get_all(location_id: str | None = Query(default=None)):
-    return await get_reviews(location_id)
+async def get_all(
+    location_id: str | None = Query(default=None),
+    user_id: str | None = Query(default=None),
+):
+    return await get_reviews(location_id, user_id)
 
 
 @router.get("/{review_id}", response_model=ReviewResponse)
