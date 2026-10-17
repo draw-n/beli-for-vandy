@@ -8,8 +8,9 @@ from controllers.user import (
     UserAlreadyExistsError,
     UserController,
 )
+from controllers.auth import AuthConfigurationError, get_signing_secret, issue_access_token
 from database import db
-from models.user import StoredUser, UserCreate, UserLogin, UserResponse
+from models.user import LoginResponse, StoredUser, UserCreate, UserLogin, UserResponse
 
 
 router = APIRouter(prefix="/accounts", tags=["Accounts"])
@@ -70,19 +71,22 @@ async def get_accounts(
 
 @router.post(
     "/login",
-    response_model=UserResponse,
+    response_model=LoginResponse,
     summary="Log in to an account",
-    description="Verify a username and password against a stored account.",
+    description="Verify credentials and issue a signed bearer token valid for 15 minutes.",
     responses={
         status.HTTP_401_UNAUTHORIZED: {
             "description": "The supplied account credentials are incorrect."
+        },
+        status.HTTP_503_SERVICE_UNAVAILABLE: {
+            "description": "Token signing is unavailable because the secret is not configured."
         },
     },
 )
 async def login(
     payload: UserLogin,
     controller: Annotated[UserController, Depends(get_user_controller)],
-) -> UserResponse:
+) -> LoginResponse:
     try:
         user = await controller.authenticate_user(payload.username, payload.password)
     except InvalidCredentialsError as error:
@@ -91,7 +95,21 @@ async def login(
             detail="Invalid username or password",
         ) from error
 
-    return user_response(user)
+    try:
+        secret = get_signing_secret()
+    except AuthConfigurationError as error:
+        raise HTTPException(
+            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+            detail="Authentication is not configured",
+        ) from error
+
+    access_token, expires_at = issue_access_token(user.uuid, secret)
+    return LoginResponse(
+        **user_response(user).model_dump(),
+        access_token=access_token,
+        token_type="bearer",
+        expires_at=expires_at,
+    )
 
 
 @router.delete(

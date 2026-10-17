@@ -7,7 +7,9 @@ database and `CORS_ORIGINS` is a JSON array of allowed frontend origins, for exa
 `["https://staging.example.com"]`. Safe local placeholders are documented in
 `backend/.env.example`; secrets must be supplied by the deployment environment.
 
-The account API intentionally supports account creation and deletion only. It does not provide login, session, or current-user endpoints. User records are stored in the MongoDB `users` collection. Passwords are stored as Argon2 hashes and are never included in responses.
+`AUTH_TOKEN_SECRET` is required to issue or verify access tokens. Set a strong random secret in the ignored `backend/.env` and in the deployment environment. The API does not provide refresh tokens or server-side sessions. The reusable bearer-token dependency is available for routes that require authentication; existing routes remain unchanged and do not require a token.
+
+User records are stored in the MongoDB `users` collection. Passwords are stored as Argon2 hashes and are never included in responses.
 
 ## List reviews
 
@@ -110,6 +112,23 @@ Request:
 curl -X DELETE http://localhost:8000/accounts \
   -H "Content-Type: application/json" \
   -d '{"email":"person@example.com","password":"example-password"}'
+```
+
+## Log in
+
+`POST /accounts/login` verifies the username and password and returns the existing
+public account fields plus a signed bearer token. The token contains the account UUID
+and expires 15 minutes after issuance. The response adds `access_token`, `token_type`
+(`bearer`), and `expires_at`; all existing account fields keep their current names.
+
+If `AUTH_TOKEN_SECRET` is missing or blank, successful credential verification returns
+`503 Service Unavailable` without issuing a token. Invalid credentials continue to
+return `401 Unauthorized`.
+
+```bash
+curl -X POST http://localhost:8000/accounts/login \
+  -H "Content-Type: application/json" \
+  -d '{"username":"commodore","password":"example-password"}'
 ```
 
 ## Health check
