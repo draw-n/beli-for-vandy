@@ -190,12 +190,34 @@ route-to-persistence seams are tested independently from both ends of the applic
 
 | Test name | Seam | What it checks | Story |
 | --- | --- | --- | --- |
-| `test_create_review_persists_to_real_mongodb` | FastAPI review route → review controller → real MongoDB | Sends a review through the API with no mocked component in the path, queries the disposable database directly, and checks the stored result. | Write review |
-| `test_get_review_not_found` | Review API route → review controller → database layer | Requests an unknown review and verifies the `404 Not Found` failure path. | View review |
-| `test_update_review` | Review API route → review controller → database layer | Updates a review while preserving its author, location, and creation date. | Edit review |
-| `test_delete_review` | Review API route → review controller → database layer | Deletes a review and verifies that a subsequent request returns `404`. | Delete review |
-| `test_create_follow` | Follow API route → follow controller → database layer | Creates a follow relationship through the API and checks the returned users, mutual status, date, and generated identifier. | Add friend |
-| `creates an account and clears the form` | Registration component → `AccountApi` → HTTP client | Sends the account request and updates the form after a successful response. | Create account |
+| `creates an account and clears the form` | Registration component → `AccountApi` → mocked HTTP transport | Sends the account request and updates and clears the form after a successful response. | #2 and #48 — Create an account and show whether creation succeeded |
+| ❌ Not covered by an integration test | Login form → account API → account state | The current login tests exercise form controls but do not cross the API seam. | #3 — Log in with username and password |
+| ❌ Not covered by an integration test | Account state → logout action → router | No integration test verifies that logout clears account state and returns to the login page. | #4 — Log out and end the session |
+| ❌ Not covered by an integration test | Locations page → locations API | The existing component smoke test sends mocked requests but does not verify the displayed dining-hall list. | #5 — View a list of Vanderbilt dining halls |
+| ❌ Not covered by an integration test | Location selection → location-details API → profile page | No integration test verifies selecting a hall and displaying its details. | #6 — Select a dining hall and view its details |
+| `test_get_review_not_found` | Review API route → review controller → mocked MongoDB | Exercises the failure path for viewing an unavailable review and verifies `404 Not Found`. | #7 — View another user's review |
+| `test_create_review_persists_to_real_mongodb` | FastAPI review route → review controller → real MongoDB | Sends a review through the API with no mocked component in the path, queries the disposable database directly, and checks the stored result. | #8 — Upload a rating, review, date, and photo reference |
+| `shows the three-dot menu only on the signed-in user’s review` | Location profile → review API → aggregate calculations | Loads reviews and verifies the displayed review count and average after a deletion. | #9 — View aggregate ratings and reviews for a dining hall |
+| ⚠ Partially covered by `test_create_review_persists_to_real_mongodb` | Review API → real MongoDB | Verifies that a photo reference is stored, but does not upload, store, or render an actual photo. | #10 — Attach photos to reviews to evaluate food visually |
+| ❌ Not covered by an integration test | Meal filter → displayed review collection | No integration test filters reviews by breakfast, lunch, or dinner. | #11 — Filter reviews by mealtime |
+| ❌ Not covered by an integration test | Favorite control → favorite-dish persistence | No favorite-dish interface or persistence integration test exists. | #12 — View and heart favorite dishes |
+| ❌ Not covered by an integration test | Review publication → refreshed location page | No integration test measures whether a published update appears within five seconds. | #13 — Reflect updated reviews on the frontend within five seconds |
+| ❌ Not covered by an integration test | Review form → review API → review display | No timed journey verifies that a first-time user can post and view reviews within two minutes. | #14 — Complete posting and view reviews within two minutes |
+| `test_update_review` | Review API route → review controller → mocked MongoDB | Updates rating, note, and meal type while preserving author, location, and creation date. | #15 — Edit my own rating or review |
+| `test_delete_review` | Review API route → review controller → mocked MongoDB | Deletes a review and verifies through a subsequent request that it no longer exists. | #16 — Delete my own rating or review |
+| ❌ Not covered by an integration test | User-profile page → account and review APIs | No integration test loads a user's profile together with that user's public dining reviews. | #17 and #25 — View a user's profile and public dining reviews |
+| ❌ Not covered by an integration test | Account-profile page → account API | No integration test verifies the signed-in user's account profile page. | #35 — View my account profile |
+| ❌ Not covered by an integration test | Account-profile page → reviews API | No integration test loads the signed-in user's previous ratings and reviews. | #18 — View my previous ratings and reviews |
+| `should filter by username` | Friends page → loaded account collection → search results | Loads mocked account and follow responses, filters by username, and verifies the matching user. | #19 — Search for another user by username |
+| `test_create_follow` | Follow API route → follow controller → mocked MongoDB | Creates a follow relationship and checks the users, mutual status, date, and generated identifier. | #20 — Add another user as a friend |
+| `should mark two-way follows as mutual friends` | Friends page → account and follow APIs → friend state | Combines mocked account and follow responses and verifies mutual-friend state and count. | #21 — View my friends list |
+| `should delete an outgoing follow` | Friends page → follow API → friend state | Sends the delete request and verifies that the removed user is no longer marked as followed. | #22 — Remove a user from my friends list |
+| ❌ Not covered by an integration test | Friend relationships → reviews API → live review display | No integration test filters and updates displayed reviews using the user's friend relationships. | #23 — View friends' reviews in real time |
+| ❌ Not covered by an integration test | Reviews API → review ordering → location page | No integration test verifies newest-first review ordering. | #24 — Sort dining-hall reviews by newest first |
+| ❌ Not covered by an integration test | Admin account → dining-hall and photo-moderation APIs | No integration test covers an AI administrator adding dining halls or filtering photos. | #33 — Use an AI admin account to add halls and filter photos |
+| ❌ Not covered by an integration test | Review/photo upload → AI moderation service | No integration test covers automatic AI filtering during uploads. | #39 — Automatically filter uploaded pictures and reviews |
+| ❌ Not covered by an integration test | Dining-hall tag → filtered search route | No integration test clicks a tag and verifies redirection to matching search results. | #41 — Redirect a clicked dining-hall tag to filtered search |
+| ❌ Not covered by an integration test | Ratings API → ranking calculation → dining-hall list | No integration test verifies dining halls ranked by their ratings. | #53 — Rank dining halls |
 
 Run the same checks locally:
 
