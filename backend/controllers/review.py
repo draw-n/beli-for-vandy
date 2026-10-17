@@ -4,12 +4,20 @@ from typing import Any
 from fastapi import HTTPException
 
 import database
-from controllers.photo_storage import PhotoNotFoundError, get_photo_owner
+from controllers.photo_storage import (
+    PhotoNotFoundError,
+    claim_photo,
+    get_photo_owner,
+    mark_photo_attached,
+    mark_photo_unreferenced,
+    release_photo_claim,
+)
 
 from models.review import ReviewCreate, ReviewUpdate
 
 
 MAX_REVIEW_PHOTOS = 3
+PHOTO_REFERENCE_CLAIM = "in_use"
 
 
 def _validate_photo_id_list(photo_ids: list[str] | None) -> list[str]:
@@ -23,6 +31,35 @@ def _validate_photo_id_list(photo_ids: list[str] | None) -> list[str]:
     if len(photo_ids) != len(set(photo_ids)):
         raise HTTPException(status_code=422, detail="Duplicate photo IDs are not allowed.")
     return photo_ids
+
+
+async def _claim_photo_ids(photo_ids: list[str], bucket: Any | None) -> list[str]:
+    """Claim photo metadata in stable order so cleanup cannot delete mid-write."""
+    claimed: list[str] = []
+    try:
+        for photo_id in sorted(set(photo_ids)):
+            if not await claim_photo(photo_id, PHOTO_REFERENCE_CLAIM, bucket=bucket):
+                try:
+                    await get_photo_owner(photo_id, bucket=bucket)
+                except PhotoNotFoundError:
+                    # Missing IDs are reported by attachment validation; stale
+                    # references can still be removed or their review deleted.
+                    continue
+                raise HTTPException(
+                    status_code=409,
+                    detail="A photo is being changed or cleaned up. Please retry.",
+                )
+            claimed.append(photo_id)
+        return claimed
+    except Exception:
+        for photo_id in reversed(claimed):
+            await release_photo_claim(photo_id, PHOTO_REFERENCE_CLAIM, bucket=bucket)
+        raise
+
+
+async def _release_photo_ids(photo_ids: list[str], bucket: Any | None) -> None:
+    for photo_id in reversed(photo_ids):
+        await release_photo_claim(photo_id, PHOTO_REFERENCE_CLAIM, bucket=bucket)
 
 
 async def _validate_photo_attachments(
@@ -72,11 +109,17 @@ async def create_review(
             raise HTTPException(status_code=401, detail="Bearer authentication is required to attach photos.")
         if review.user_id != current_user_id:
             raise HTTPException(status_code=403, detail="You can only attach photos to your own reviews.")
-        await _validate_photo_attachments(
-            photo_ids, current_user_id, bucket=bucket
-        )
-
-    await database.reviews_collection.insert_one(review_data)
+        photo_ids = _validate_photo_id_list(photo_ids)
+        claimed = await _claim_photo_ids(photo_ids, bucket)
+        try:
+            await _validate_photo_attachments(photo_ids, current_user_id, bucket=bucket)
+            await database.reviews_collection.insert_one(review_data)
+            for photo_id in photo_ids:
+                await mark_photo_attached(photo_id, bucket=bucket)
+        finally:
+            await _release_photo_ids(claimed, bucket)
+    else:
+        await database.reviews_collection.insert_one(review_data)
 
     return review_data
 
@@ -139,37 +182,59 @@ async def update_review(
             raise HTTPException(status_code=404, detail="Review not found")
         if existing_review.get("user_id") != current_user_id:
             raise HTTPException(status_code=403, detail="You can only modify photos on your own reviews.")
-        await _validate_photo_attachments(
-            update_data["photo_ids"],
-            current_user_id,
-            review_uuid=review_id,
-            bucket=bucket,
-        )
+        requested_photo_ids = update_data["photo_ids"]
+        new_photo_ids = _validate_photo_id_list(requested_photo_ids)
+        old_photo_ids = existing_review.get("photo_ids") or []
+        claimed = await _claim_photo_ids(list(set(old_photo_ids) | set(new_photo_ids)), bucket)
+        try:
+            await _validate_photo_attachments(
+                new_photo_ids,
+                current_user_id,
+                review_uuid=review_id,
+                bucket=bucket,
+            )
+            removed_photo_ids = list(set(old_photo_ids) - set(new_photo_ids))
+            # Set the grace timestamp before removing references. The review still
+            # protects these photos if the following database write fails.
+            for photo_id in removed_photo_ids:
+                await mark_photo_unreferenced(photo_id, bucket=bucket)
+            result = await database.reviews_collection.update_one(
+                {"uuid": review_id},
+                {"$set": update_data}
+            )
+            if result.matched_count == 0:
+                raise HTTPException(status_code=404, detail="Review not found")
+
+            for photo_id in new_photo_ids:
+                await mark_photo_attached(photo_id, bucket=bucket)
+            return await get_review(review_id)
+        finally:
+            await _release_photo_ids(claimed, bucket)
 
     result = await database.reviews_collection.update_one(
         {"uuid": review_id},
         {"$set": update_data}
     )
-
     if result.matched_count == 0:
-        raise HTTPException(
-            status_code=404,
-            detail="Review not found"
-        )
-
+        raise HTTPException(status_code=404, detail="Review not found")
     return await get_review(review_id)
 
 
-async def delete_review(review_id: str):
-    result = await database.reviews_collection.delete_one({
-        "uuid": review_id
-    })
+async def delete_review(review_id: str, bucket: Any | None = None):
+    review = await database.reviews_collection.find_one({"uuid": review_id})
+    if review is None:
+        raise HTTPException(status_code=404, detail="Review not found")
+    photo_ids = review.get("photo_ids") or []
+    claimed = await _claim_photo_ids(photo_ids, bucket) if photo_ids else []
+    try:
+        for photo_id in photo_ids:
+            await mark_photo_unreferenced(photo_id, bucket=bucket)
+        result = await database.reviews_collection.delete_one({"uuid": review_id})
 
-    if result.deleted_count == 0:
-        raise HTTPException(
-            status_code=404,
-            detail="Review not found"
-        )
+        if result.deleted_count == 0:
+            raise HTTPException(status_code=404, detail="Review not found")
+    finally:
+        await _release_photo_ids(claimed, bucket)
 
     return {
         "message": "Review deleted successfully"

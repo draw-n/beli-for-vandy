@@ -37,13 +37,21 @@ class FakeGridOut:
 class FakeGridFSBucket:
     def __init__(self):
         self.files = {}
+        self.files_collection = database.reviews_collection.database.get_collection("photos.files")
 
     async def upload_from_stream_with_id(self, file_id, filename, source, *, metadata):
-        self.files[file_id] = {
+        record = {
+            "_id": file_id,
             "filename": filename,
             "data": source.read(),
             "metadata": metadata,
         }
+        self.files[file_id] = record
+        await self.files_collection.insert_one({key: value for key, value in record.items() if key != "data"})
+
+    async def delete(self, file_id):
+        self.files.pop(file_id, None)
+        await self.files_collection.delete_one({"_id": file_id})
 
     async def open_download_stream(self, file_id):
         if file_id not in self.files:
@@ -352,7 +360,7 @@ async def test_photo_list_update_requires_auth_even_when_clearing(photo_api, pho
 @pytest.mark.parametrize("photo_ids", [[], None], ids=["empty-list", "null"])
 @pytest.mark.asyncio
 async def test_owner_can_explicitly_clear_photo_list(photo_api, photo_ids):
-    client, _ = photo_api
+    client, bucket = photo_api
     photo_id = await upload_owned_photo(client)
     created = await client.post(
         "/reviews/",
@@ -369,6 +377,48 @@ async def test_owner_can_explicitly_clear_photo_list(photo_api, photo_ids):
 
     assert response.status_code == 200
     assert photo_response.status_code == 404
+    metadata = (await bucket.files_collection.find_one({"_id": photo_id}))["metadata"]
+    assert metadata["unreferenced_since"] is not None
+    assert "cleanup_claim" not in metadata
+
+
+@pytest.mark.asyncio
+async def test_deleting_review_starts_photo_grace_period(photo_api):
+    client, bucket = photo_api
+    photo_id = await upload_owned_photo(client)
+    created = await client.post(
+        "/reviews/",
+        headers={"Authorization": f"Bearer {bearer_token()}"},
+        json=review_payload([photo_id]),
+    )
+
+    deleted = await client.delete(f"/reviews/{created.json()['uuid']}")
+
+    assert deleted.status_code == 200
+    metadata = (await bucket.files_collection.find_one({"_id": photo_id}))["metadata"]
+    assert metadata["unreferenced_since"] is not None
+    assert "cleanup_claim" not in metadata
+
+
+@pytest.mark.asyncio
+async def test_failed_photo_claim_releases_claims_acquired_earlier(photo_api):
+    client, bucket = photo_api
+    first = await upload_owned_photo(client)
+    second = await upload_owned_photo(client)
+    bucket.files[second]["metadata"]["cleanup_claim"] = "deleting"
+    await bucket.files_collection.update_one(
+        {"_id": second}, {"$set": {"metadata.cleanup_claim": "deleting"}}
+    )
+
+    response = await client.post(
+        "/reviews/",
+        headers={"Authorization": f"Bearer {bearer_token()}"},
+        json=review_payload([first, second]),
+    )
+
+    assert response.status_code == 409
+    first_metadata = (await bucket.files_collection.find_one({"_id": first}))["metadata"]
+    assert "cleanup_claim" not in first_metadata
 
 
 @pytest.mark.asyncio

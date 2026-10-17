@@ -236,3 +236,65 @@ async def get_photo_owner(
 
     metadata = stream.metadata or {}
     return metadata.get("owner_uuid")
+
+
+def photo_files_collection(*, bucket: Any | None = None) -> Any:
+    """Return this GridFS bucket's files collection (also injectable in tests)."""
+    collection = getattr(bucket, "files_collection", None) if bucket is not None else None
+    if collection is not None:
+        return collection
+    bucket_name = getattr(bucket, "bucket_name", "photos")
+    return database.db.get_collection(f"{bucket_name}.files")
+
+
+async def claim_photo(
+    photo_id: str,
+    claim: str,
+    *,
+    bucket: Any | None = None,
+) -> bool:
+    """Atomically reserve a pending photo for attachment or cleanup."""
+    result = await photo_files_collection(bucket=bucket).update_one(
+        {
+            "_id": photo_id,
+            "metadata.status": "pending",
+            "metadata.cleanup_claim": {"$exists": False},
+        },
+        {"$set": {"metadata.cleanup_claim": claim}},
+    )
+    return result.matched_count == 1
+
+
+async def release_photo_claim(
+    photo_id: str,
+    claim: str,
+    *,
+    bucket: Any | None = None,
+) -> None:
+    await photo_files_collection(bucket=bucket).update_one(
+        {"_id": photo_id, "metadata.cleanup_claim": claim},
+        {"$unset": {"metadata.cleanup_claim": ""}},
+    )
+
+
+async def mark_photo_attached(
+    photo_id: str,
+    *,
+    bucket: Any | None = None,
+) -> None:
+    await photo_files_collection(bucket=bucket).update_one(
+        {"_id": photo_id},
+        {"$unset": {"metadata.unreferenced_since": ""}},
+    )
+
+
+async def mark_photo_unreferenced(
+    photo_id: str,
+    *,
+    bucket: Any | None = None,
+    at: datetime | None = None,
+) -> None:
+    await photo_files_collection(bucket=bucket).update_one(
+        {"_id": photo_id},
+        {"$set": {"metadata.unreferenced_since": at or datetime.now(timezone.utc)}},
+    )

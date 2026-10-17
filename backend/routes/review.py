@@ -52,5 +52,8 @@ async def update(
 
 
 @router.delete("/{review_id}")
-async def delete(review_id: str):
-    return await delete_review(review_id)
+async def delete(
+    review_id: str,
+    bucket: Annotated[Any, Depends(get_photo_bucket)],
+):
+    return await delete_review(review_id, bucket)

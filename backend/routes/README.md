@@ -182,6 +182,24 @@ Admin roles and photo moderation are planned as a separate future feature. This
 implementation has no admin workflow or approval gate; a photo becomes retrievable
 when it is securely attached to a saved review.
 
+## Manual orphan-photo cleanup
+
+Run `python scripts/cleanup_orphan_photos.py` from `backend/` for a dry run. The
+script reports the configured database and eligible candidate count. It never
+deletes by default. Actual deletion requires both `--delete` and
+`--confirm-database <exact-database-name>`; `--grace-hours` defaults to 24.
+Candidates must be unreferenced by every saved review, have valid owner/status and
+age metadata, and be past the grace period. Detached photos age from
+`unreferenced_since`; never-attached uploads age from `uploaded_at`. Unknown states
+and future moderation states are skipped. Each file is atomically claimed and its
+review references are checked again immediately before GridFS deletion.
+
+Review photo-reference changes use the same per-file claim. If a process crashes
+while holding a claim, cleanup skips that file indefinitely; inspect and recover
+such metadata manually rather than expiring claims automatically. Cleanup is not
+scheduled or run on API startup. Never provide deletion confirmation for a shared
+Atlas database without explicit operational approval.
+
 **Authorization limitation:** photo-bearing review creation and photo-reference
 updates now check the bearer identity, review ownership, and photo ownership.
 Unauthenticated text-only review creation and editing still accept client-provided
