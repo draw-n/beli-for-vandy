@@ -169,6 +169,7 @@ export class LocationProfile {
             this.hall = {
               ...this.hall,
               reviews: mappedReviews,
+              photos: this.photoUrls(mappedReviews),
               reviewCount: mappedReviews.length,
               averageRating:
                 mappedReviews.length > 0
@@ -218,6 +219,13 @@ export class LocationProfile {
     });
   }
 
+  private photoUrls(reviews: Review[]): string[] {
+    const photoIds = new Set(reviews.flatMap((review) => review.photoIds ?? []));
+    return Array.from(photoIds, (photoId) =>
+      `${apiBaseUrl}/photos/${encodeURIComponent(photoId)}`
+    );
+  }
+
   private updateFriendRating(): void {
     if (!this.hall) return;
 
@@ -261,6 +269,7 @@ export class LocationProfile {
           this.hall = {
             ...this.hall,
             reviews,
+            photos: this.photoUrls(reviews),
             reviewCount: reviews.length,
             averageRating: reviews.length
               ? reviews.reduce((total, item) => total + item.rating, 0) / reviews.length

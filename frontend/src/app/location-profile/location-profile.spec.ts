@@ -3,6 +3,7 @@ import { provideHttpClient } from '@angular/common/http';
 import { HttpTestingController, provideHttpClientTesting } from '@angular/common/http/testing';
 import { ActivatedRoute, convertToParamMap, provideRouter } from '@angular/router';
 import { LocationProfile } from './location-profile';
+import type { ReviewResponse } from '../types/review';
 
 describe('Location review ownership menu', () => {
   afterEach(() => sessionStorage.removeItem('currentAccount'));
@@ -45,6 +46,7 @@ describe('Location review ownership menu', () => {
         meal_type: user === 'me' ? 'Breakfast' : 'Dinner',
         created_at: user === 'me' ? '2026-01-01' : '2026-01-02',
         updated_at: user === 'me' ? '2026-01-01' : '2026-01-02',
+        photo_ids: user === 'me' ? ['photo-me', 'shared-photo'] : ['photo-friend', 'shared-photo'],
       }))
     );
 
@@ -73,6 +75,14 @@ describe('Location review ownership menu', () => {
     component.selectedMealFilter = 'All';
     expect(component.hall!.reviewCount).toBe(2);
     expect(component.hall!.averageRating).toBe(9);
+    expect(component.hall!.photos).toEqual([
+      'http://localhost:8000/photos/photo-me',
+      'http://localhost:8000/photos/shared-photo',
+      'http://localhost:8000/photos/photo-friend',
+    ]);
+    const galleryImages = fixture.nativeElement.querySelectorAll('.photo-row img') as NodeListOf<HTMLImageElement>;
+    expect(galleryImages).toHaveLength(3);
+    expect(Array.from(galleryImages).every(image => image.getAttribute('loading') === 'lazy')).toBe(true);
     expect(component.hall!.friendRating).toBeNull();
     expect(component.ratingDistribution.map(({ count }) => count)).toEqual([
       0, 0, 0, 1, 1,
@@ -113,9 +123,15 @@ describe('Location review ownership menu', () => {
     ]);
     expect(component.hall!.reviewCount).toBe(1);
     expect(component.hall!.averageRating).toBe(10);
+    expect(component.hall!.photos).toEqual([
+      'http://localhost:8000/photos/photo-friend',
+      'http://localhost:8000/photos/shared-photo',
+    ]);
     expect(component.ratingDistribution.map(({ count }) => count)).toEqual([
       0, 0, 0, 0, 1,
     ]);
+    fixture.detectChanges();
+    expect(fixture.nativeElement.querySelectorAll('.photo-row img')).toHaveLength(2);
 
     sessionStorage.removeItem('currentAccount');
     fixture.changeDetectorRef.markForCheck();
@@ -162,6 +178,7 @@ describe('Location review ownership menu', () => {
     const component = fixture.componentInstance;
     expect(component.hall!.averageRating).toBe(0);
     expect(component.hall!.reviewCount).toBe(0);
+    expect(component.hall!.photos).toEqual([]);
     expect(component.ratingDistribution.every(({ count, percentage }) =>
       count === 0 && percentage === 0
     )).toBe(true);
@@ -169,6 +186,7 @@ describe('Location review ownership menu', () => {
     expect(fixture.nativeElement.textContent).toContain('No reviews yet');
     expect(fixture.nativeElement.textContent).toContain('—');
     expect(fixture.nativeElement.querySelectorAll('.rating-row').length).toBe(0);
+    expect(fixture.nativeElement.querySelector('.photo-row')).toBeNull();
 
     const refreshReviews = component as unknown as {
       loadReviews: (locationId: string) => void;
@@ -199,6 +217,46 @@ describe('Location review ownership menu', () => {
         '[aria-label="1 reviews rated 1–2 out of 10"]'
       )
     ).not.toBeNull();
+    http.verify();
+  });
+
+  it('refreshes gallery photos after review creation and editing', async () => {
+    TestBed.configureTestingModule({
+      imports: [LocationProfile],
+      providers: [
+        provideHttpClient(),
+        provideHttpClientTesting(),
+        provideRouter([]),
+        {
+          provide: ActivatedRoute,
+          useValue: { snapshot: { paramMap: convertToParamMap({ id: 'hall' }) } },
+        },
+      ],
+    });
+
+    const fixture = TestBed.createComponent(LocationProfile);
+    const http = TestBed.inject(HttpTestingController);
+    http.expectOne('http://localhost:8000/locations/hall').flush({
+      uuid: 'hall', name: 'Commons', address: 'Campus',
+    });
+    http.expectOne('http://localhost:8000/reviews/?location_id=hall').flush([]);
+    http.expectOne('http://localhost:8000/accounts').flush([]);
+
+    const created: ReviewResponse = {
+      uuid: 'new-review', user_id: 'user', location_id: 'hall', rating: 9,
+      note: 'Great', meal_type: 'Lunch', created_at: '2026-01-01', updated_at: '2026-01-01',
+      photo_ids: ['created-photo'],
+    };
+    const edited: ReviewResponse = { ...created, photo_ids: ['edited-photo'] };
+    const component = fixture.componentInstance;
+    const refreshReviews = component as unknown as { loadReviews: (locationId: string) => void };
+    refreshReviews.loadReviews('hall');
+    http.expectOne('http://localhost:8000/reviews/?location_id=hall').flush([created]);
+    expect(component.hall!.photos).toEqual(['http://localhost:8000/photos/created-photo']);
+
+    refreshReviews.loadReviews('hall');
+    http.expectOne('http://localhost:8000/reviews/?location_id=hall').flush([edited]);
+    expect(component.hall!.photos).toEqual(['http://localhost:8000/photos/edited-photo']);
     http.verify();
   });
 
@@ -273,6 +331,7 @@ describe('Location review ownership menu', () => {
 
     const component = fixture.componentInstance;
     expect(component.hall!.friendRating).toBe(9.5);
+    expect(component.hall!.photos).toEqual([]);
 
     const refreshReviews = component as unknown as {
       loadReviews: (locationId: string) => void;

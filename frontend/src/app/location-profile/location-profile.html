@@ -124,7 +124,7 @@
     <h2>Photos</h2>
 
     <div class="photo-row">
-      <img *ngFor="let photo of hall.photos" [src]="photo" [alt]="hall.name" />
+      <img *ngFor="let photo of hall.photos" [src]="photo" [alt]="hall.name" loading="lazy" />
     </div>
   </section>
 
