@@ -17,6 +17,8 @@ import { MatDialog, MatDialogModule } from '@angular/material/dialog';
 
 import { ReviewDialog } from '../components/review-dialog/review-dialog';
 
+type MealFilter = 'All' | 'Breakfast' | 'Lunch' | 'Dinner';
+
 @Component({
   selector: 'app-location-profile',
   standalone: true,
@@ -36,11 +38,27 @@ import { ReviewDialog } from '../components/review-dialog/review-dialog';
 })
 export class LocationProfile {
   hall?: LocationDetails;
+  readonly mealFilters: MealFilter[] = ['All', 'Breakfast', 'Lunch', 'Dinner'];
+  selectedMealFilter: MealFilter = 'All';
   readonly deletingId = signal<string | null>(null);
   readonly reviewError = signal('');
   private readonly reviewApi = inject(ReviewApi);
   private readonly http = inject(HttpClient);
   private readonly changeDetector = inject(ChangeDetectorRef);
+
+  get filteredReviews(): Review[] {
+    const reviews = this.hall?.reviews ?? [];
+    const filteredReviews =
+      this.selectedMealFilter === 'All'
+        ? reviews
+        : reviews.filter(
+            (review) => review.mealType.toLowerCase() === this.selectedMealFilter.toLowerCase(),
+          );
+
+    return [...filteredReviews].sort(
+      (a, b) => b.createdAt.getTime() - a.createdAt.getTime(),
+    );
+  }
 
   constructor(
     private route: ActivatedRoute,

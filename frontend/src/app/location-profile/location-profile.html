@@ -114,18 +114,31 @@
       <h2>Reviews</h2>
 
       <span>
-        {{ hall.reviewCount }}
+        {{ filteredReviews.length }}
       </span>
     </div>
 
     <mat-divider></mat-divider>
 
+    <div class="review-filters" role="group" aria-label="Filter reviews by meal">
+      <button
+        *ngFor="let meal of mealFilters"
+        mat-button
+        type="button"
+        [class.selected]="selectedMealFilter === meal"
+        [attr.aria-pressed]="selectedMealFilter === meal"
+        (click)="selectedMealFilter = meal"
+      >
+        {{ meal }}
+      </button>
+    </div>
+
     @if (reviewError()) {
       <p role="alert">{{ reviewError() }}</p>
     }
-    <div class="reviews" *ngIf="hall.reviews.length > 0; else noReviews">
+    <div class="reviews" *ngIf="filteredReviews.length > 0; else noFilteredReviews">
       <app-review-item
-        *ngFor="let review of hall.reviews"
+        *ngFor="let review of filteredReviews"
         [review]="review"
         [canEdit]="isOwnReview(review)"
         [busy]="deletingId() !== null"
@@ -134,14 +147,23 @@
       />
     </div>
 
-    <ng-template #noReviews>
-      <div class="empty-reviews">
+    <ng-template #noFilteredReviews>
+      <div class="empty-reviews" *ngIf="hall.reviews.length === 0; else noMatchingMealReviews">
         <mat-icon> rate_review </mat-icon>
 
         <h3>No reviews yet</h3>
 
         <p>Be the first to review this dining spot.</p>
       </div>
+      <ng-template #noMatchingMealReviews>
+        <div class="empty-reviews">
+          <mat-icon> rate_review </mat-icon>
+
+          <h3>No {{ selectedMealFilter.toLowerCase() }} reviews yet</h3>
+
+          <p>Try another meal filter or be the first to review this dining spot for this meal.</p>
+        </div>
+      </ng-template>
     </ng-template>
   </section>
 </div>

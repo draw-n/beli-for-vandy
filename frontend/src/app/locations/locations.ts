@@ -14,6 +14,7 @@ import { MatIconModule } from '@angular/material/icon';
 import { MatChipsModule } from '@angular/material/chips';
 import { MatButtonModule } from '@angular/material/button';
 import { MatToolbarModule } from '@angular/material/toolbar';
+import { MatSelectModule } from '@angular/material/select';
 
 @Component({
   selector: 'app-locations',
@@ -29,12 +30,14 @@ import { MatToolbarModule } from '@angular/material/toolbar';
     MatChipsModule,
     MatButtonModule,
     MatToolbarModule,
+    MatSelectModule,
   ],
   templateUrl: './locations.html',
   styleUrl: './locations.css',
 })
 export class Locations {
   searchTerm = '';
+  selectedTag = '';
   readonly locations = signal<LocationDetails[]>([]);
   private readonly http = inject(HttpClient);
   private readonly router = inject(Router);
@@ -94,16 +97,24 @@ export class Locations {
     });
   }
 
+  get availableTags(): string[] {
+    return [...new Set(this.locations().flatMap((hall) => hall.tags))].sort((a, b) =>
+      a.localeCompare(b),
+    );
+  }
+
   get filteredDiningHalls(): LocationDetails[] {
     const search = this.searchTerm.toLowerCase().trim();
 
     return this.locations()
       .filter((hall) => {
-        return (
+        const matchesSearch =
           hall.name.toLowerCase().includes(search) ||
           hall.location.toLowerCase().includes(search) ||
-          hall.tags.some((tag) => tag.toLowerCase().includes(search))
-        );
+          hall.tags.some((tag) => tag.toLowerCase().includes(search));
+        const matchesTag = !this.selectedTag || hall.tags.includes(this.selectedTag);
+
+        return matchesSearch && matchesTag;
       })
       .sort((a, b) => b.averageRating - a.averageRating);
   }

@@ -17,16 +17,30 @@ describe('Location review ownership menu', () => {
     const fixture = TestBed.createComponent(LocationProfile);
     const http = TestBed.inject(HttpTestingController);
     http.expectOne('http://localhost:8000/locations/hall').flush({ uuid: 'hall', name: 'Commons', address: 'Campus' });
-    http.expectOne('http://localhost:8000/reviews/?location_id=hall').flush(['me', 'someone-else'].map(user => ({
-      uuid: user, user_id: user, location_id: 'hall', rating: 8,
-      note: 'Lunch review', meal_type: 'Lunch', created_at: '2026-01-01', updated_at: '2026-01-01',
-    })));
+    http.expectOne('http://localhost:8000/reviews/?location_id=hall').flush([
+      {
+        uuid: 'me', user_id: 'me', location_id: 'hall', rating: 8,
+        note: 'Breakfast review', meal_type: 'Breakfast', created_at: '2026-01-01', updated_at: '2026-01-01',
+      },
+      {
+        uuid: 'someone-else', user_id: 'someone-else', location_id: 'hall', rating: 8,
+        note: 'Dinner review', meal_type: 'Dinner', created_at: '2026-01-02', updated_at: '2026-01-02',
+      },
+    ]);
     fixture.detectChanges();
     await fixture.whenStable();
     expect(fixture.nativeElement.querySelectorAll('[aria-label="Options for your review"]').length).toBe(1);
     const component = fixture.componentInstance;
-    const ownReview = component.hall!.reviews[0];
-    component.deleteReview(component.hall!.reviews[1]);
+    expect(component.filteredReviews.length).toBe(2);
+    expect(component.filteredReviews.map(review => review.userId)).toEqual(['someone-else', 'me']);
+    component.selectedMealFilter = 'Breakfast';
+    expect(component.filteredReviews.map(review => review.mealType)).toEqual(['Breakfast']);
+    component.selectedMealFilter = 'Lunch';
+    expect(component.filteredReviews).toEqual([]);
+    component.selectedMealFilter = 'All';
+    const ownReview = component.hall!.reviews.find(review => review.userId === 'me')!;
+    const otherReview = component.hall!.reviews.find(review => review.userId === 'someone-else')!;
+    component.deleteReview(otherReview);
     http.expectNone(request => request.method === 'DELETE');
     component.deleteReview(ownReview);
     component.deleteReview(ownReview);

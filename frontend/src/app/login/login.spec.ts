@@ -1,5 +1,6 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { By } from '@angular/platform-browser';
+import { provideRouter } from '@angular/router';
 import { LoginComponent } from './login';
 
 describe('LoginComponent', () => {
@@ -8,7 +9,8 @@ describe('LoginComponent', () => {
 
   beforeEach(async () => {
     await TestBed.configureTestingModule({
-      imports: [LoginComponent]
+      imports: [LoginComponent],
+      providers: [provideRouter([])],
     }).compileComponents();
 
     fixture = TestBed.createComponent(LoginComponent);
@@ -18,6 +20,13 @@ describe('LoginComponent', () => {
 
   it('should create the login component', () => {
     expect(component).toBeTruthy();
+  });
+
+  it('should provide a link to sign up', () => {
+    const signupLink = fixture.debugElement.query(By.css('a[routerLink="/register"]'));
+
+    expect(signupLink).toBeTruthy();
+    expect(signupLink.nativeElement.textContent).toContain('Sign up');
   });
 
   it('should display a username input', () => {
