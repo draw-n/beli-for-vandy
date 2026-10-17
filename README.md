@@ -192,9 +192,9 @@ route-to-persistence seams are tested independently from both ends of the applic
 | --- | --- | --- | --- |
 | `test_create_review_persists_to_real_mongodb` | FastAPI review route → review controller → real MongoDB | Sends a review through the API with no mocked component in the path, queries the disposable database directly, and checks the stored result. | Write review |
 | `test_get_review_not_found` | Review API route → review controller → database layer | Requests an unknown review and verifies the `404 Not Found` failure path. | View review |
-| `test_get_reviews` | Review API route → review controller → database layer | Creates reviews and retrieves the stored results through the API. | View reviews |
 | `test_update_review` | Review API route → review controller → database layer | Updates a review while preserving its author, location, and creation date. | Edit review |
 | `test_delete_review` | Review API route → review controller → database layer | Deletes a review and verifies that a subsequent request returns `404`. | Delete review |
+| `test_create_follow` | Follow API route → follow controller → database layer | Creates a follow relationship through the API and checks the returned users, mutual status, date, and generated identifier. | Add friend |
 | `creates an account and clears the form` | Registration component → `AccountApi` → HTTP client | Sends the account request and updates the form after a successful response. | Create account |
 
 Run the same checks locally:
