@@ -161,16 +161,41 @@ failure:
 3. Type-check the frontend with `tsc --noEmit`.
 4. Run backend and frontend unit tests as separately named steps.
 5. Run FastAPI route/database integration tests with `mongomock-motor`.
-6. Generate backend and frontend coverage reports and enforce a 50% gate.
-7. Build the production Angular application.
+6. Run the review API integration test against a disposable MongoDB service container.
+7. Generate backend and frontend coverage reports and enforce a 50% gate.
+8. Build the production Angular application.
 
 The backend test layers are currently divided as follows:
 
 - Unit: user models, controller behavior, and account route behavior with a fake controller.
-- Integration: review, location, and follow HTTP routes backed by asynchronous fake MongoDB.
+- Integration: review, location, and follow HTTP routes backed by asynchronous fake MongoDB,
+  plus a review creation test that traverses the real FastAPI route and controller and then
+  verifies the stored document in a disposable MongoDB database.
 
-CI never contacts MongoDB Atlas or another paid service. Future external integrations must
-use fakes or stubs by default in tests.
+CI never contacts MongoDB Atlas or another paid service. Its real-database test uses an
+isolated `beli_integration_test` database in a MongoDB service container that is discarded
+with the job. Future external integrations must use fakes or stubs by default in tests.
+
+### Integration seam map
+
+Angular component → Angular API service ✅; Angular API service → live FastAPI API ❌;
+FastAPI route → controller ✅; controller → mocked MongoDB ✅; controller → real test
+MongoDB ✅.
+
+**Integration strategy:** Sandwich because frontend-to-client and backend
+route-to-persistence seams are tested independently from both ends of the application.
+
+**Coverage:** 83.88% backend total and 68.67% frontend statement coverage versus the
+50% gate.
+
+| Test name | Seam | What it checks | Story |
+| --- | --- | --- | --- |
+| `test_create_review_persists_to_real_mongodb` | FastAPI review route → review controller → real MongoDB | Sends a review through the API with no mocked component in the path, queries the disposable database directly, and checks the stored result. | Write review |
+| `test_get_review_not_found` | Review API route → review controller → database layer | Requests an unknown review and verifies the `404 Not Found` failure path. | View review |
+| `test_get_reviews` | Review API route → review controller → database layer | Creates reviews and retrieves the stored results through the API. | View reviews |
+| `test_update_review` | Review API route → review controller → database layer | Updates a review while preserving its author, location, and creation date. | Edit review |
+| `test_delete_review` | Review API route → review controller → database layer | Deletes a review and verifies that a subsequent request returns `404`. | Delete review |
+| `creates an account and clears the form` | Registration component → `AccountApi` → HTTP client | Sends the account request and updates the form after a successful response. | Create account |
 
 Run the same checks locally:
 
@@ -186,6 +211,8 @@ backend/.venv/bin/python -m pytest \
   backend/tests/test_reviews.py \
   backend/tests/test_locations.py \
   backend/tests/test_follows.py
+REAL_MONGODB_URI=mongodb://localhost:27017/beli_integration_test \
+  backend/.venv/bin/python -m pytest backend/tests/test_review_real_database.py
 backend/.venv/bin/python -m pytest --cov=backend --cov-config=.coveragerc \
   --cov-report=term-missing --cov-fail-under=50
 cd frontend && npm run test:coverage && npm run build
