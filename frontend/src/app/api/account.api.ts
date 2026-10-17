@@ -4,6 +4,7 @@ import { Observable } from 'rxjs';
 
 import {
   Account,
+  AccountLoginResponse,
   AccountCreateRequest,
   AccountDeleteRequest,
   AccountLoginRequest,
@@ -25,8 +26,8 @@ export class AccountApi {
     return this.http.post<Account>(this.accountsUrl, request);
   }
 
-  login(request: AccountLoginRequest): Observable<Account> {
-    return this.http.post<Account>(`${this.accountsUrl}/login`, request);
+  login(request: AccountLoginRequest): Observable<AccountLoginResponse> {
+    return this.http.post<AccountLoginResponse>(`${this.accountsUrl}/login`, request);
   }
 
   delete(request: AccountDeleteRequest): Observable<void> {

@@ -1,6 +1,6 @@
 from datetime import datetime
 from enum import Enum
-from typing import Annotated
+from typing import Annotated, Literal
 
 from pydantic import BaseModel, EmailStr, Field, StringConstraints
 
@@ -52,3 +52,9 @@ class UserUpdate(BaseModel):
 class UserResponse(UserBase):
     uuid: str
     created_at: datetime
+
+
+class LoginResponse(UserResponse):
+    access_token: str
+    token_type: Literal["bearer"] = "bearer"
+    expires_at: datetime

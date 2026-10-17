@@ -14,9 +14,16 @@
 }
 
 .review-user {
+  color: inherit;
+  text-decoration: none;
+  cursor: pointer;
   display: flex;
   align-items: center;
   gap: 10px;
+}
+
+.review-user:hover strong {
+  text-decoration: underline;
 }
 
 .review-user > mat-icon {
@@ -49,5 +56,41 @@
 .review p {
   margin: 16px 0 20px;
   line-height: 1.5;
+}
+
+.review-photos {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  margin: 12px 0 20px;
+}
+
+.review-photos .photo-thumbnail {
+  width: 140px;
+  height: 140px;
+  max-width: 100%;
+  padding: 0;
+  overflow: hidden;
+  border: 0;
+  border-radius: 12px;
+  background: transparent;
+  cursor: pointer;
+}
+
+.review-photos .photo-thumbnail img {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  transition: transform 120ms ease;
+}
+
+.review-photos .photo-thumbnail:hover img {
+  transform: scale(1.04);
+}
+
+.review-photos .photo-thumbnail:focus-visible {
+  outline: 2px solid currentColor;
+  outline-offset: 3px;
 }
 

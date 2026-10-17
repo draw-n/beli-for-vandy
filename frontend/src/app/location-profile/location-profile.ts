@@ -1,6 +1,9 @@
 import { ReviewApi } from '../api/review.api';
+import { AccountApi } from '../api/account.api';
+import { FollowApi } from '../api/follow.api';
 import { apiBaseUrl } from '../api/api-base-url';
 import type { LocationDetails, LocationResponse } from '../types/location';
+import { locationCoverImage } from '../types/location-cover-image';
 import type { Review, ReviewResponse } from '../types/review';
 import { HttpClient } from '@angular/common/http';
 import { ChangeDetectorRef, Component, inject, signal } from '@angular/core';
@@ -12,10 +15,12 @@ import { MatCardModule } from '@angular/material/card';
 import { MatChipsModule } from '@angular/material/chips';
 import { MatDividerModule } from '@angular/material/divider';
 import { MatIconModule } from '@angular/material/icon';
+import { MatProgressBarModule } from '@angular/material/progress-bar';
 import { ReviewItem } from '../components/review-item/review-item';
 import { MatDialog, MatDialogModule } from '@angular/material/dialog';
 
 import { ReviewDialog } from '../components/review-dialog/review-dialog';
+import { PhotoViewerDialog } from '../components/photo-viewer-dialog/photo-viewer-dialog';
 
 type MealFilter = 'All' | 'Breakfast' | 'Lunch' | 'Dinner';
 
@@ -30,6 +35,7 @@ type MealFilter = 'All' | 'Breakfast' | 'Lunch' | 'Dinner';
     MatChipsModule,
     MatDividerModule,
     MatIconModule,
+    MatProgressBarModule,
     MatDialogModule,
     ReviewItem,
   ],
@@ -45,6 +51,13 @@ export class LocationProfile {
   private readonly reviewApi = inject(ReviewApi);
   private readonly http = inject(HttpClient);
   private readonly changeDetector = inject(ChangeDetectorRef);
+  private readonly accountApi = inject(AccountApi);
+  private readonly followApi = inject(FollowApi);
+  private currentUserId: string | null = null;
+  private followedUserIds = new Set<string>();
+  private followsLoaded = false;
+
+  authorNames: Record<string, string> = {};
 
   get filteredReviews(): Review[] {
     const reviews = this.hall?.reviews ?? [];
@@ -60,17 +73,45 @@ export class LocationProfile {
     );
   }
 
+  get ratingDistribution(): { label: string; count: number; percentage: number }[] {
+    const reviews = this.hall?.reviews ?? [];
+    const buckets = [
+      { label: '1–2', min: 1, max: 2, count: 0 },
+      { label: '3–4', min: 3, max: 4, count: 0 },
+      { label: '5–6', min: 5, max: 6, count: 0 },
+      { label: '7–8', min: 7, max: 8, count: 0 },
+      { label: '9–10', min: 9, max: 10, count: 0 },
+    ];
+
+    for (const review of reviews) {
+      const bucket = buckets.find(
+        (item) => review.rating >= item.min && review.rating <= item.max
+      );
+      if (bucket) bucket.count++;
+    }
+
+    return buckets.map(({ label, count }) => ({
+      label,
+      count,
+      percentage: reviews.length ? (count / reviews.length) * 100 : 0,
+    }));
+  }
+
   constructor(
     private route: ActivatedRoute,
     private dialog: MatDialog,
   ) {
+    this.currentUserId = this.readCurrentUserId();
+    this.loadFollowRelationships();
     const uuid = this.route.snapshot.paramMap.get('id');
+    this.loadAuthorNames();
 
     if (uuid) {
       this.http.get<LocationResponse>(`${apiBaseUrl}/locations/${encodeURIComponent(uuid)}`).subscribe({
         next: (hall) => {
           this.hall = {
             ...hall,
+            image: locationCoverImage(hall.uuid),
             location: hall.address,
             tags: hall.tags ?? [],
             hours: (hall.hours ?? []).map(([day, openTime, closeTime]) => ({
@@ -95,6 +136,21 @@ export class LocationProfile {
     }
   }
 
+  private loadAuthorNames(): void {
+    this.accountApi.getAll().subscribe({
+      next: (accounts) => {
+        this.authorNames = Object.fromEntries(
+          accounts.map(account => [
+            account.uuid,
+            `${account.first_name} ${account.last_name}`
+          ])
+        );
+
+        this.changeDetector.markForCheck();
+      }
+    });
+  }
+
   private loadReviews(locationId: string): void {
     this.http
       .get<ReviewResponse[]>(`${apiBaseUrl}/reviews/?location_id=${encodeURIComponent(locationId)}`)
@@ -116,6 +172,7 @@ export class LocationProfile {
             this.hall = {
               ...this.hall,
               reviews: mappedReviews,
+              photos: this.photoUrls(mappedReviews),
               reviewCount: mappedReviews.length,
               averageRating:
                 mappedReviews.length > 0
@@ -123,10 +180,85 @@ export class LocationProfile {
                     mappedReviews.length
                   : 0,
             };
-            this.changeDetector.markForCheck();
+            this.updateFriendRating();
           }
         },
       });
+  }
+
+  private readCurrentUserId(): string | null {
+    try {
+      const account = JSON.parse(sessionStorage.getItem('currentAccount') ?? 'null');
+      return typeof account?.uuid === 'string' && account.uuid.length > 0
+        ? account.uuid
+        : null;
+    } catch {
+      return null;
+    }
+  }
+
+  private loadFollowRelationships(): void {
+    if (!this.currentUserId) {
+      this.followsLoaded = true;
+      this.updateFriendRating();
+      return;
+    }
+
+    this.followApi.getAll().subscribe({
+      next: (follows) => {
+        this.followedUserIds = new Set(
+          follows
+            .filter((follow) => follow.from_user_id === this.currentUserId)
+            .map((follow) => follow.to_user_id)
+        );
+        this.followsLoaded = true;
+        this.updateFriendRating();
+      },
+      error: () => {
+        this.followedUserIds.clear();
+        this.followsLoaded = true;
+        this.updateFriendRating();
+      },
+    });
+  }
+
+  private photoUrls(reviews: Review[]): string[] {
+    const photoIds = new Set(reviews.flatMap((review) => review.photoIds ?? []));
+    return Array.from(photoIds, (photoId) =>
+      `${apiBaseUrl}/photos/${encodeURIComponent(photoId)}`
+    );
+  }
+
+  openPhotoViewer(imageUrl: string, description: string): void {
+    if (!imageUrl) return;
+
+    this.dialog.open(PhotoViewerDialog, {
+      data: { imageUrl, description },
+      maxWidth: '95vw',
+      maxHeight: '95vh',
+      ariaLabel: description,
+    });
+  }
+
+  private updateFriendRating(): void {
+    if (!this.hall) return;
+
+    const friendReviews = this.followsLoaded && this.currentUserId
+      ? this.hall.reviews.filter(
+          (review) =>
+            review.userId !== this.currentUserId &&
+            this.followedUserIds.has(review.userId)
+        )
+      : [];
+
+    this.hall = {
+      ...this.hall,
+      friendRating: friendReviews.length
+        ? friendReviews.reduce((total, review) => total + review.rating, 0) /
+          friendReviews.length
+        : null,
+    };
+    this.changeDetector.markForCheck();
   }
 
   isOwnReview(review: Review): boolean {
@@ -151,12 +283,13 @@ export class LocationProfile {
           this.hall = {
             ...this.hall,
             reviews,
+            photos: this.photoUrls(reviews),
             reviewCount: reviews.length,
             averageRating: reviews.length
               ? reviews.reduce((total, item) => total + item.rating, 0) / reviews.length
               : 0,
           };
-          this.changeDetector.markForCheck();
+          this.updateFriendRating();
         }
       },
       error: () => {

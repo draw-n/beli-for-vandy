@@ -31,6 +31,7 @@ describe('ReviewDialog submission', () => {
   afterEach(() => {
     http.verify();
     sessionStorage.removeItem('currentAccount');
+    sessionStorage.removeItem('accessToken');
   });
 
   it('maps form fields, prevents duplicate submissions and closes only after success', () => {
@@ -107,6 +108,133 @@ describe('ReviewDialog submission', () => {
     http.expectNone(() => true);
     expect(component.errorMessage()).toBe('You can only edit your own reviews.');
     expect(dialog.close).not.toHaveBeenCalled();
+  });
+
+  it('validates supported image type, size, and the three-photo limit', () => {
+    const createFile = (name: string, type: string, size = 10) => new File([new Uint8Array(size)], name, { type });
+    vi.spyOn(URL, 'createObjectURL').mockReturnValue('blob:preview');
+    component.selectPhotos({ target: { files: [createFile('bad.gif', 'image/gif')] } } as unknown as Event);
+    expect(component.selectedPhotos).toHaveLength(0);
+    expect(component.errorMessage()).toContain('JPEG, PNG, or WebP');
+    component.selectPhotos({ target: { files: [createFile('large.jpg', 'image/jpeg', 5 * 1024 * 1024 + 1)] } } as unknown as Event);
+    expect(component.selectedPhotos).toHaveLength(0);
+    expect(component.errorMessage()).toContain('5 MB');
+    component.keptPhotoIds.push('old-1', 'old-2', 'old-3');
+    component.selectPhotos({ target: { files: [createFile('ok.webp', 'image/webp')] } } as unknown as Event);
+    expect(component.selectedPhotos).toHaveLength(0);
+    expect(component.errorMessage()).toContain('up to 3 photos');
+    vi.restoreAllMocks();
+  });
+
+  it('creates a preview for an accepted photo and allows removing it', () => {
+    vi.spyOn(URL, 'createObjectURL').mockReturnValue('blob:preview');
+    vi.spyOn(URL, 'revokeObjectURL').mockImplementation(() => undefined);
+    const file = new File(['food'], 'food.png', { type: 'image/png' });
+    component.selectPhotos({ target: { files: [file] } } as unknown as Event);
+    expect(component.selectedPhotos[0].previewUrl).toBe('blob:preview');
+    expect(component.photoCount).toBe(1);
+    component.removeSelectedPhoto(0);
+    expect(component.selectedPhotos).toHaveLength(0);
+    vi.restoreAllMocks();
+  });
+
+  it('sends the bearer token, uploads once, and reuses the photo id after review save failure', () => {
+    sessionStorage.setItem('accessToken', 'signed-token');
+    vi.spyOn(URL, 'createObjectURL').mockReturnValue('blob:retry');
+    component.selectPhotos({ target: { files: [new File(['image'], 'food.jpg', { type: 'image/jpeg' })] } } as unknown as Event);
+    component.submitReview();
+    const upload = http.expectOne('http://localhost:8000/photos/');
+    expect(upload.request.headers.get('Authorization')).toBe('Bearer signed-token');
+    expect(upload.request.method).toBe('POST');
+    upload.flush({ uuid: 'photo-1' });
+    const failedSave = http.expectOne('http://localhost:8000/reviews/');
+    expect(failedSave.request.headers.get('Authorization')).toBe('Bearer signed-token');
+    expect(failedSave.request.body.photo_ids).toEqual(['photo-1']);
+    failedSave.flush({}, { status: 500, statusText: 'Error' });
+    expect(component.errorMessage()).toContain('remain pending');
+
+    component.submitReview();
+    http.expectNone('http://localhost:8000/photos/');
+    const retrySave = http.expectOne('http://localhost:8000/reviews/');
+    expect(retrySave.request.body.photo_ids).toEqual(['photo-1']);
+    retrySave.flush({ uuid: 'review-1' });
+    expect(dialog.close).toHaveBeenCalledWith({ uuid: 'review-1' });
+    vi.restoreAllMocks();
+  });
+
+  it('retries only photos that failed after earlier uploads succeeded', () => {
+    sessionStorage.setItem('accessToken', 'signed-token');
+    vi.spyOn(URL, 'createObjectURL').mockReturnValue('blob:retry');
+    component.selectPhotos({ target: { files: [
+      new File(['1'], 'one.png', { type: 'image/png' }),
+      new File(['2'], 'two.png', { type: 'image/png' }),
+    ] } } as unknown as Event);
+    component.submitReview();
+    http.expectOne('http://localhost:8000/photos/').flush({ uuid: 'photo-1' });
+    http.expectOne('http://localhost:8000/photos/').flush({}, { status: 500, statusText: 'Error' });
+    expect(component.selectedPhotos[0].uploadedId).toBe('photo-1');
+    component.submitReview();
+    const retriedPhoto = http.expectOne('http://localhost:8000/photos/');
+    expect(retriedPhoto.request.body.get('file')?.name).toBe('two.png');
+    retriedPhoto.flush({ uuid: 'photo-2' });
+    const review = http.expectOne('http://localhost:8000/reviews/');
+    expect(review.request.body.photo_ids).toEqual(['photo-1', 'photo-2']);
+    review.flush({ uuid: 'review-1' });
+    vi.restoreAllMocks();
+  });
+
+  it('preserves existing photo ids without uploading when photo selection is unchanged', () => {
+    sessionStorage.setItem('accessToken', 'signed-token');
+    component.data.review = {
+      uuid: 'review-1', userId: 'user-1', locationId: 'location-1', rating: 7,
+      reviewText: 'Original', mealType: 'Dinner', createdAt: new Date(), updatedAt: new Date(), photoIds: ['existing-photo'],
+    };
+    const editor = TestBed.createComponent(ReviewDialog).componentInstance;
+    editor.rating = 8;
+    editor.mealType = 'Dinner';
+    editor.submitReview();
+    http.expectNone('http://localhost:8000/photos/');
+    const update = http.expectOne('http://localhost:8000/reviews/review-1');
+    expect(update.request.body).not.toHaveProperty('photo_ids');
+    expect(update.request.headers.has('Authorization')).toBe(false);
+    update.flush({ uuid: 'review-1' });
+  });
+
+  it('sends a token when editing photo references and displays an expired-token message', () => {
+    sessionStorage.setItem('accessToken', 'expired-token');
+    component.data.review = {
+      uuid: 'review-1', userId: 'user-1', locationId: 'location-1', rating: 7,
+      reviewText: 'Original', mealType: 'Dinner', createdAt: new Date(), updatedAt: new Date(), photoIds: ['existing-photo'],
+    };
+    const editor = TestBed.createComponent(ReviewDialog).componentInstance;
+    editor.removeKeptPhoto('existing-photo');
+    editor.submitReview();
+    const update = http.expectOne('http://localhost:8000/reviews/review-1');
+    expect(update.request.body.photo_ids).toEqual([]);
+    expect(update.request.headers.get('Authorization')).toBe('Bearer expired-token');
+    update.flush({}, { status: 401, statusText: 'Unauthorized' });
+    expect(editor.errorMessage()).toContain('session has expired');
+    expect(dialog.close).not.toHaveBeenCalled();
+  });
+
+  it('keeps text-only review submission available without a bearer token', () => {
+    sessionStorage.removeItem('accessToken');
+    component.submitReview();
+    const request = http.expectOne('http://localhost:8000/reviews/');
+    expect(request.request.headers.has('Authorization')).toBe(false);
+    expect(request.request.body.photo_ids).toEqual([]);
+    request.flush({ uuid: 'review-text-only' });
+  });
+
+  it('requires a bearer token before photo changes but leaves the dialog open', () => {
+    vi.spyOn(URL, 'createObjectURL').mockReturnValue('blob:needs-login');
+    component.selectPhotos({ target: { files: [new File(['food'], 'food.webp', { type: 'image/webp' })] } } as unknown as Event);
+    component.submitReview();
+    expect(component.errorMessage()).toContain('log in again');
+    http.expectNone('http://localhost:8000/photos/');
+    http.expectNone('http://localhost:8000/reviews/');
+    expect(dialog.close).not.toHaveBeenCalled();
+    vi.restoreAllMocks();
   });
 
 });

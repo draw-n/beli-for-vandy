@@ -6,6 +6,7 @@ import { FormsModule } from '@angular/forms';
 import { RouterLink, Router } from '@angular/router';
 import { apiBaseUrl } from '../api/api-base-url';
 import type { LocationDetails, LocationHours, LocationResponse } from '../types/location';
+import { locationCoverImage } from '../types/location-cover-image';
 
 import { MatCardModule } from '@angular/material/card';
 import { MatFormFieldModule } from '@angular/material/form-field';
@@ -49,6 +50,7 @@ export class Locations {
           locations.map((location) => ({
             uuid: location.uuid,
             name: location.name,
+            image: locationCoverImage(location.uuid),
             location: location.address,
             tags: location.tags ?? [],
             hours: (location.hours ?? []).map(([day, openTime, closeTime]) => ({
@@ -130,6 +132,7 @@ export class Locations {
   logout(): void {
     document.cookie = 'mockAuth=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;';
     sessionStorage.removeItem('currentAccount');
+    sessionStorage.removeItem('accessToken');
 
     this.router.navigate(['/login']);
   }

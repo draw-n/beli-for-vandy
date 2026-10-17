@@ -7,6 +7,7 @@ import uvicorn
 from routes.review import router as review_router
 from routes.location import router as location_router
 from routes.follow import router as follow_router
+from routes.photo import router as photo_router
 
 from routes.user import router as user_router
 from controllers.user import UserController
@@ -42,6 +43,7 @@ app.include_router(user_router)
 app.include_router(review_router)
 app.include_router(location_router)
 app.include_router(follow_router)
+app.include_router(photo_router)
 
 
 @app.get("/", tags=["System"], summary="Check API health")

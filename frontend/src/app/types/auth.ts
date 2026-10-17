@@ -28,3 +28,9 @@ export interface Account extends AccountBase {
   uuid: string;
   created_at: string;
 }
+
+export interface AccountLoginResponse extends Account {
+  access_token: string;
+  token_type: string;
+  expires_at: string;
+}

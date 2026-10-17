@@ -1,0 +1,36 @@
+:host {
+  display: block;
+  max-width: 90vw;
+  max-height: 90vh;
+}
+
+.photo-viewer {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  max-width: 90vw;
+  max-height: 90vh;
+  background: #202020;
+}
+
+.photo-viewer img {
+  display: block;
+  max-width: 90vw;
+  max-height: 85vh;
+  object-fit: contain;
+}
+
+.close-button {
+  position: absolute;
+  z-index: 1;
+  top: 8px;
+  right: 8px;
+  color: white;
+  background: rgba(0, 0, 0, 0.55);
+}
+
+.close-button:focus-visible {
+  outline: 2px solid white;
+  outline-offset: 2px;
+}

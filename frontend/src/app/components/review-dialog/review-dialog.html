@@ -42,7 +42,51 @@
       ></textarea>
     </mat-form-field>
 
-    <p>Photo uploads are not available yet.</p>
+    <section class="photo-section">
+      <div class="photo-heading">
+        <div>
+          <strong>Photos</strong>
+          <span>{{ photoCount }} of {{ maxPhotos }} selected</span>
+        </div>
+        <label class="photo-upload-button mat-mdc-button-base">
+          <mat-icon>add_a_photo</mat-icon>
+          <span>Add photos</span>
+          <input
+            type="file"
+            accept="image/jpeg,image/png,image/webp"
+            multiple
+            [disabled]="saving() || photoCount >= maxPhotos"
+            (change)="selectPhotos($event)"
+            hidden
+          />
+        </label>
+      </div>
+
+      @if (saving()) {
+        <mat-spinner diameter="24" aria-label="Uploading photos and saving review"></mat-spinner>
+      }
+
+      @if (keptPhotoIds.length || selectedPhotos.length) {
+        <div class="photo-previews">
+          @for (photoId of keptPhotoIds; track photoId) {
+            <div class="photo-preview">
+              <img [src]="apiBaseUrl + '/photos/' + photoId" alt="Review photo preview" />
+              <button mat-icon-button class="remove-photo" type="button" aria-label="Remove photo" (click)="removeKeptPhoto(photoId)" [disabled]="saving()">
+                <mat-icon>close</mat-icon>
+              </button>
+            </div>
+          }
+          @for (photo of selectedPhotos; track photo.previewUrl; let index = $index) {
+            <div class="photo-preview">
+              <img [src]="photo.previewUrl" alt="Selected food photo preview" />
+              <button mat-icon-button class="remove-photo" type="button" aria-label="Remove photo" (click)="removeSelectedPhoto(index)" [disabled]="saving()">
+                <mat-icon>close</mat-icon>
+              </button>
+            </div>
+          }
+        </div>
+      }
+    </section>
   </div>
 </mat-dialog-content>
 
