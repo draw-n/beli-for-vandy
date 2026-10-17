@@ -44,6 +44,8 @@ describe('Locations', () => {
       reviews: [],
     });
     component.locations.set([hall('late-night-hall', ['Late Night']), hall('other-hall', ['Coffee'])]);
+    expect(component.filteredDiningHalls).toHaveLength(2);
+
     component.selectedTag = 'Late Night';
 
     expect(component.availableTags).toEqual(['Coffee', 'Late Night']);

@@ -31,6 +31,16 @@
 
       <input matInput type="text" [(ngModel)]="searchTerm" placeholder="Name, location, or tag" />
     </mat-form-field>
+
+    <div class="filters">
+      <mat-form-field appearance="outline" class="tag-filter">
+        <mat-label>Filter by tag</mat-label>
+        <mat-select [(ngModel)]="selectedTag">
+          <mat-option value="">All tags</mat-option>
+          <mat-option *ngFor="let tag of availableTags" [value]="tag">{{ tag }}</mat-option>
+        </mat-select>
+      </mat-form-field>
+    </div>
   </header>
 
   <main>
@@ -72,16 +82,7 @@
 
         <mat-card-content>
           <mat-chip-set>
-            <mat-chip
-              *ngFor="let tag of hall.tags"
-              role="button"
-              tabindex="0"
-              (click)="searchByTag($event, tag)"
-              (keydown.enter)="searchByTag($event, tag)"
-              (keydown.space)="searchByTag($event, tag); $event.preventDefault()"
-            >
-              {{ tag }}
-            </mat-chip>
+            <mat-chip *ngFor="let tag of hall.tags">{{ tag }}</mat-chip>
           </mat-chip-set>
 
           <!-- Today's hours -->

@@ -42,6 +42,15 @@ h1 {
   width: 100%;
 }
 
+.filters {
+  display: flex;
+  margin-top: 8px;
+}
+
+.tag-filter {
+  width: min(100%, 300px);
+}
+
 /* Section heading */
 
 .section-header {

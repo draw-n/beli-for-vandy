@@ -37,7 +37,7 @@ import { MatSelectModule } from '@angular/material/select';
 })
 export class Locations {
   searchTerm = '';
-  selectedTag = 'All tags';
+  selectedTag = '';
   readonly locations = signal<LocationDetails[]>([]);
   private readonly http = inject(HttpClient);
   private readonly router = inject(Router);
@@ -112,7 +112,7 @@ export class Locations {
           hall.name.toLowerCase().includes(search) ||
           hall.location.toLowerCase().includes(search) ||
           hall.tags.some((tag) => tag.toLowerCase().includes(search));
-        const matchesTag = this.selectedTag === 'All tags' || hall.tags.includes(this.selectedTag);
+        const matchesTag = !this.selectedTag || hall.tags.includes(this.selectedTag);
 
         return matchesSearch && matchesTag;
       })
