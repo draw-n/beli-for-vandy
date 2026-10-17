@@ -87,14 +87,21 @@
     {{ review.reviewText }}
   </p>
 
-  @if (review.photoIds?.length) {
+  @if (validPhotoIds.length) {
     <div class="review-photos">
-      @for (photoId of review.photoIds; track photoId) {
-        <img
-          [src]="photoUrl(photoId)"
-          alt="Food photo attached to review"
-          loading="lazy"
-        />
+      @for (photoId of validPhotoIds; track $index) {
+        <button
+          type="button"
+          class="photo-thumbnail"
+          aria-label="View larger food photo"
+          (click)="openPhoto(photoId)"
+        >
+          <img
+            [src]="photoUrl(photoId)"
+            alt="Food photo attached to review"
+            loading="lazy"
+          />
+        </button>
       }
     </div>
   }

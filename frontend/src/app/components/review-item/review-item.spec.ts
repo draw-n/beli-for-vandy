@@ -3,6 +3,8 @@ import { provideRouter } from '@angular/router';
 import { ReviewItem } from './review-item';
 import type { Review } from '../../types/review';
 import { apiBaseUrl } from '../../api/api-base-url';
+import { MatDialog } from '@angular/material/dialog';
+import { PhotoViewerDialog } from '../photo-viewer-dialog/photo-viewer-dialog';
 
 const review: Review = {
   uuid: 'review-1',
@@ -73,6 +75,48 @@ describe('Reusable review item', () => {
       expect(fixture.nativeElement.querySelector('.review-photos')).toBeNull();
       expect(fixture.nativeElement.textContent).toContain('Great lunch');
       expect(fixture.nativeElement.textContent).toContain('8.0');
+    }
+  });
+
+  it('opens the photo viewer with the selected review photo URL', () => {
+    const fixture = TestBed.createComponent(ReviewItem);
+    fixture.componentRef.setInput('review', { ...review, photoIds: ['food-photo'] });
+    fixture.detectChanges();
+    const openDialog = vi.spyOn(
+      (fixture.componentInstance as unknown as { dialog: MatDialog }).dialog,
+      'open'
+    );
+
+    const thumbnail = fixture.nativeElement.querySelector('.photo-thumbnail') as HTMLButtonElement;
+    expect(thumbnail.tagName).toBe('BUTTON');
+    expect(thumbnail.getAttribute('aria-label')).toBe('View larger food photo');
+    thumbnail.click();
+
+    expect(openDialog).toHaveBeenCalledWith(PhotoViewerDialog, expect.objectContaining({
+      data: {
+        imageUrl: `${apiBaseUrl}/photos/food-photo`,
+        description: 'Food photo attached to review',
+      },
+    }));
+    expect(openDialog.mock.calls[0][1]?.disableClose).toBeUndefined();
+  });
+
+  it('ignores empty or invalid photo IDs', () => {
+    for (const photoIds of [
+      ['', null, undefined] as unknown as string[],
+      'not-an-array' as unknown as string[],
+    ]) {
+      const fixture = TestBed.createComponent(ReviewItem);
+      fixture.componentRef.setInput('review', { ...review, photoIds });
+      fixture.detectChanges();
+      const openDialog = vi.spyOn(
+        (fixture.componentInstance as unknown as { dialog: MatDialog }).dialog,
+        'open'
+      );
+
+      expect(fixture.nativeElement.querySelector('.review-photos')).toBeNull();
+      fixture.componentInstance.openPhoto('');
+      expect(openDialog).not.toHaveBeenCalled();
     }
   });
 

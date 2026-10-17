@@ -124,7 +124,15 @@
     <h2>Photos</h2>
 
     <div class="photo-row">
-      <img *ngFor="let photo of hall.photos" [src]="photo" [alt]="hall.name" loading="lazy" />
+      <button
+        *ngFor="let photo of hall.photos"
+        type="button"
+        class="photo-thumbnail"
+        [attr.aria-label]="'View larger photo of ' + hall.name"
+        (click)="openPhotoViewer(photo, hall.name)"
+      >
+        <img [src]="photo" [alt]="hall.name" loading="lazy" />
+      </button>
     </div>
   </section>
 

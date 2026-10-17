@@ -4,6 +4,8 @@ import { HttpTestingController, provideHttpClientTesting } from '@angular/common
 import { ActivatedRoute, convertToParamMap, provideRouter } from '@angular/router';
 import { LocationProfile } from './location-profile';
 import type { ReviewResponse } from '../types/review';
+import { MatDialog } from '@angular/material/dialog';
+import { PhotoViewerDialog } from '../components/photo-viewer-dialog/photo-viewer-dialog';
 
 describe('Location review ownership menu', () => {
   afterEach(() => sessionStorage.removeItem('currentAccount'));
@@ -83,6 +85,21 @@ describe('Location review ownership menu', () => {
     const galleryImages = fixture.nativeElement.querySelectorAll('.photo-row img') as NodeListOf<HTMLImageElement>;
     expect(galleryImages).toHaveLength(3);
     expect(Array.from(galleryImages).every(image => image.getAttribute('loading') === 'lazy')).toBe(true);
+    const openDialog = vi.spyOn(
+      (component as unknown as { dialog: MatDialog }).dialog,
+      'open'
+    );
+    const galleryThumbnail = fixture.nativeElement.querySelector('.photo-row .photo-thumbnail') as HTMLButtonElement;
+    expect(galleryThumbnail.tagName).toBe('BUTTON');
+    expect(galleryThumbnail.getAttribute('aria-label')).toBe('View larger photo of Commons');
+    galleryThumbnail.click();
+    expect(openDialog).toHaveBeenCalledWith(PhotoViewerDialog, expect.objectContaining({
+      data: {
+        imageUrl: 'http://localhost:8000/photos/photo-me',
+        description: 'Commons',
+      },
+    }));
+    expect(openDialog.mock.calls[0][1]?.disableClose).toBeUndefined();
     expect(component.hall!.friendRating).toBeNull();
     expect(component.ratingDistribution.map(({ count }) => count)).toEqual([
       0, 0, 0, 1, 1,

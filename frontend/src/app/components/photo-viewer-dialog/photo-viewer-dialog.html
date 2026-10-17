@@ -1,0 +1,13 @@
+<div class="photo-viewer">
+  <button
+    mat-icon-button
+    type="button"
+    class="close-button"
+    aria-label="Close photo viewer"
+    (click)="dialogRef.close()"
+  >
+    <mat-icon>close</mat-icon>
+  </button>
+
+  <img [src]="data.imageUrl" [alt]="data.description || 'Enlarged food photo'" />
+</div>

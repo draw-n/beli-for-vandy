@@ -19,6 +19,7 @@ import { ReviewItem } from '../components/review-item/review-item';
 import { MatDialog, MatDialogModule } from '@angular/material/dialog';
 
 import { ReviewDialog } from '../components/review-dialog/review-dialog';
+import { PhotoViewerDialog } from '../components/photo-viewer-dialog/photo-viewer-dialog';
 
 type MealFilter = 'All' | 'Breakfast' | 'Lunch' | 'Dinner';
 
@@ -224,6 +225,17 @@ export class LocationProfile {
     return Array.from(photoIds, (photoId) =>
       `${apiBaseUrl}/photos/${encodeURIComponent(photoId)}`
     );
+  }
+
+  openPhotoViewer(imageUrl: string, description: string): void {
+    if (!imageUrl) return;
+
+    this.dialog.open(PhotoViewerDialog, {
+      data: { imageUrl, description },
+      maxWidth: '95vw',
+      maxHeight: '95vh',
+      ariaLabel: description,
+    });
   }
 
   private updateFriendRating(): void {
