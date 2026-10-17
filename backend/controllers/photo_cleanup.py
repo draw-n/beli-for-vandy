@@ -3,7 +3,7 @@
 from datetime import datetime, timedelta, timezone
 from typing import Any
 
-from controllers.photo_storage import claim_photo, photo_files_collection, release_photo_claim
+from controllers.photo_storage import claim_photo, release_photo_claim
 
 
 async def find_orphan_candidates(
