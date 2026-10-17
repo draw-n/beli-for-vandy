@@ -36,6 +36,7 @@
             <strong>
               {{ hall.reviewCount > 0 ? (hall.averageRating | number: '1.1-1') : '—' }}
             </strong>
+            <span class="score-scale" *ngIf="hall.reviewCount > 0">/ 10</span>
           </div>
 
           <span>Overall</span>
@@ -70,6 +71,25 @@
 
           <span>Reviews</span>
         </div>
+      </div>
+
+      <mat-divider class="rating-breakdown-divider"></mat-divider>
+
+      <div class="rating-breakdown" aria-label="Rating distribution">
+        <ng-container *ngIf="hall.reviewCount > 0; else noRatingDistribution">
+          <div class="rating-row" *ngFor="let bucket of ratingDistribution">
+            <span class="rating-range">{{ bucket.label }}</span>
+            <mat-progress-bar
+              mode="determinate"
+              [value]="bucket.percentage"
+              [attr.aria-label]="bucket.count + ' reviews rated ' + bucket.label + ' out of 10'"
+            ></mat-progress-bar>
+            <span class="rating-count">{{ bucket.count }}</span>
+          </div>
+        </ng-container>
+        <ng-template #noRatingDistribution>
+          <p class="no-rating-distribution">No ratings yet</p>
+        </ng-template>
       </div>
     </mat-card-content>
   </mat-card>

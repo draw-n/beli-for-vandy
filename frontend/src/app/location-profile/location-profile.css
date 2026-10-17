@@ -88,8 +88,50 @@
   font-size: 24px;
 }
 
+.score-scale {
+  font-size: 13px;
+  color: rgba(0, 0, 0, 0.6);
+}
+
 .score > span {
   font-size: 13px;
+}
+
+.rating-breakdown-divider {
+  margin: 20px 0 16px;
+}
+
+.rating-breakdown {
+  display: grid;
+  gap: 9px;
+  max-width: 520px;
+  margin: 0 auto;
+}
+
+.rating-row {
+  display: grid;
+  grid-template-columns: 48px minmax(0, 1fr) 28px;
+  align-items: center;
+  gap: 12px;
+  font-size: 13px;
+}
+
+.rating-row mat-progress-bar {
+  --mdc-linear-progress-active-indicator-color: #6b8e7b;
+  --mdc-linear-progress-track-color: #e8ece9;
+}
+
+.rating-count {
+  text-align: right;
+  color: rgba(0, 0, 0, 0.65);
+}
+
+.no-rating-distribution {
+  margin: 0;
+  padding: 4px 0;
+  text-align: center;
+  color: rgba(0, 0, 0, 0.6);
+  font-size: 14px;
 }
 
 /* Rate button */
@@ -237,6 +279,10 @@
 
   .score-value strong {
     font-size: 20px;
+  }
+
+  .rating-row {
+    gap: 8px;
   }
 
   .score-value mat-icon {
