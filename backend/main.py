@@ -9,7 +9,7 @@ from routes.location import router as location_router
 from routes.follow import router as follow_router
 from routes.photo import router as photo_router
 
-from routes.user import router as user_router
+from routes.user import admin_router, router as user_router
 from controllers.user import UserController
 from database import client, db
 from settings import get_settings
@@ -18,7 +18,11 @@ from settings import get_settings
 @asynccontextmanager
 async def lifespan(_: FastAPI):
     await client.admin.command("ping")
-    await UserController(db).ensure_indexes()
+    user_controller = UserController(db)
+    await user_controller.ensure_indexes()
+    await user_controller.bootstrap_first_admin(
+        get_settings().bootstrap_admin_identifier
+    )
     try:
         yield
     finally:
@@ -39,6 +43,7 @@ app.add_middleware(
     allow_headers=["*"],
 )
 app.include_router(user_router)
+app.include_router(admin_router)
 
 app.include_router(review_router)
 app.include_router(location_router)

@@ -7,10 +7,11 @@ import jwt
 from fastapi import Depends, FastAPI
 from fastapi.testclient import TestClient
 
-from controllers.auth import get_current_user_id
+import database
+from controllers.auth import get_current_user, get_current_user_id
 from routes.user import get_user_controller, router
 from controllers.user import InvalidCredentialsError
-from models.user import StoredUser, UserCreate, UserType
+from models.user import AccountStatus, StoredUser, UserCreate, UserRole, UserType
 from settings import Settings, get_settings
 
 
@@ -32,6 +33,9 @@ class FakeUserController:
                 type=UserType.STUDENT,
                 created_at=datetime.now(timezone.utc),
                 home_city="Nashville",
+                role=UserRole.ADMIN,
+                status=AccountStatus.ACTIVE,
+                security_version=0,
             )
         ]
 
@@ -47,9 +51,12 @@ class FakeUserController:
             type=payload.type,
             created_at=datetime.now(timezone.utc),
             home_city=payload.home_city,
+            role=UserRole.USER,
+            status=AccountStatus.ACTIVE,
+            security_version=0,
         )
 
-    async def delete_user(self, email: str, password: str) -> None:
+    async def delete_user(self, user_uuid: str, email: str, password: str) -> None:
         if email != "person@example.com" or password != "abc":
             raise InvalidCredentialsError
         self.deleted_credentials = (email, password)
@@ -69,10 +76,20 @@ class FakeUserController:
             type=UserType.STUDENT,
             created_at=datetime.now(timezone.utc),
             home_city="Nashville",
+            role=UserRole.ADMIN,
+            status=AccountStatus.ACTIVE,
+            security_version=0,
         )
 
     async def get_users(self) -> list[StoredUser]:
         return self.users
+
+    async def find_one(self, query: dict[str, str]) -> dict[str, object] | None:
+        user = next(
+            (user for user in self.users if user.uuid == query.get("uuid")),
+            None,
+        )
+        return user.model_dump(mode="python") if user is not None else None
 
 
 class AccountApiTestCase(unittest.TestCase):
@@ -85,6 +102,9 @@ class AccountApiTestCase(unittest.TestCase):
         app.get("/test-auth")(self.protected_endpoint)
         self.controller = FakeUserController()
         app.dependency_overrides[get_user_controller] = lambda: self.controller
+        app.dependency_overrides[get_current_user] = lambda: self.controller.users[0]
+        self.original_users_collection = database.users_collection
+        database.users_collection = self.controller  # type: ignore[assignment]
         self.client = TestClient(app)
 
     def tearDown(self) -> None:
@@ -92,6 +112,7 @@ class AccountApiTestCase(unittest.TestCase):
             os.environ.pop("AUTH_TOKEN_SECRET", None)
         else:
             os.environ["AUTH_TOKEN_SECRET"] = self.original_token_secret
+        database.users_collection = self.original_users_collection
         get_settings.cache_clear()
 
     @staticmethod
@@ -126,15 +147,26 @@ class AccountApiTestCase(unittest.TestCase):
                 "type": UserType.STUDENT.value,
                 "created_at": response.json()["created_at"],
                 "home_city": "Nashville",
+                "role": UserRole.USER.value,
+                "status": AccountStatus.ACTIVE.value,
             },
         )
 
-    def test_anyone_can_load_public_accounts(self) -> None:
+    def test_administrator_can_load_accounts(self) -> None:
         response = self.client.get("/accounts")
 
         self.assertEqual(response.status_code, 200)
         self.assertEqual(response.json()[0]["uuid"], "d08f600f-d60e-49b1-b762-f05f42935796")
         self.assertNotIn("password_hash", response.json()[0])
+
+    def test_regular_user_cannot_load_accounts(self) -> None:
+        regular_user = self.controller.users[0].model_copy(update={"role": UserRole.USER})
+        self.client.app.dependency_overrides[get_current_user] = lambda: regular_user
+
+        response = self.client.get("/accounts")
+
+        self.assertEqual(response.status_code, 403)
+        self.assertEqual(response.json(), {"detail": "Administrator access required"})
 
     def test_graduation_year_is_optional_and_user_type_is_constrained(self) -> None:
         payload = {
@@ -210,8 +242,12 @@ class AccountApiTestCase(unittest.TestCase):
             "type",
             "created_at",
             "home_city",
+            "role",
+            "status",
         ):
             self.assertIn(field, response.json())
+        self.assertEqual(response.json()["role"], UserRole.ADMIN.value)
+        self.assertEqual(response.json()["status"], AccountStatus.ACTIVE.value)
         self.assertEqual(response.json()["token_type"], "bearer")
 
         claims = jwt.decode(
@@ -222,6 +258,7 @@ class AccountApiTestCase(unittest.TestCase):
         self.assertEqual(claims["sub"], "d08f600f-d60e-49b1-b762-f05f42935796")
         self.assertIn("iat", claims)
         self.assertIn("exp", claims)
+        self.assertEqual(claims["security_version"], 0)
         self.assertEqual(claims["exp"] - claims["iat"], 15 * 60)
         self.assertEqual(
             int(datetime.fromisoformat(response.json()["expires_at"]).timestamp()),

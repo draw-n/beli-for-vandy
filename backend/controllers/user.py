@@ -4,6 +4,7 @@ from uuid import uuid4
 
 from fastapi.concurrency import run_in_threadpool
 from motor.motor_asyncio import AsyncIOMotorDatabase
+from pymongo import ReturnDocument
 from pymongo.errors import DuplicateKeyError
 
 from controllers.security import (
@@ -22,6 +23,10 @@ class InvalidCredentialsError(Exception):
     pass
 
 
+class InvalidRoleChangeError(Exception):
+    pass
+
+
 class UserController:
     def __init__(self, database: AsyncIOMotorDatabase) -> None:
         self._users = database.get_collection("users")
@@ -30,6 +35,97 @@ class UserController:
         await self._users.create_index("email", unique=True)
         await self._users.create_index("username", unique=True)
         await self._users.create_index("uuid", unique=True)
+        await self.backfill_account_fields()
+
+    async def backfill_account_fields(self) -> None:
+        """Populate fields introduced after the initial user schema."""
+        await self._users.update_many(
+            {"role": {"$exists": False}},
+            {"$set": {"role": "user"}},
+        )
+        await self._users.update_many(
+            {"status": {"$exists": False}},
+            {"$set": {"status": "active"}},
+        )
+        await self._users.update_many(
+            {"security_version": {"$exists": False}},
+            {"$set": {"security_version": 0}},
+        )
+
+    async def bootstrap_first_admin(self, identifier: str | None) -> bool:
+        """Promote one configured account, but only while no admin exists."""
+        if not identifier or await self._users.count_documents({"role": "admin"}) > 0:
+            return False
+
+        normalized_identifier = identifier.strip().lower()
+        user = await self._users.find_one(
+            {
+                "$or": [
+                    {"email": normalized_identifier},
+                    {"username": identifier.strip()},
+                ]
+            }
+        )
+        if user is None:
+            return False
+
+        result = await self._users.update_one(
+            {"uuid": user["uuid"], "role": {"$ne": "admin"}},
+            {"$set": {"role": "admin"}, "$inc": {"security_version": 1}},
+        )
+        return result.modified_count == 1
+
+    async def activate_expired_suspension(self, user_uuid: str) -> bool:
+        """Reactivate an expired suspension and invalidate existing tokens."""
+        now = datetime.now(timezone.utc)
+        result = await self._users.update_one(
+            {
+                "uuid": user_uuid,
+                "status": "suspended",
+                "suspended_until": {"$ne": None, "$lte": now},
+            },
+            {
+                "$set": {"status": "active"},
+                "$unset": {"suspended_until": "", "suspension_reason": ""},
+                "$inc": {"security_version": 1},
+            },
+        )
+        return result.modified_count == 1
+
+    async def change_role(
+        self,
+        target_uuid: str,
+        role: str,
+        actor_uuid: str,
+        actor_password: str,
+    ) -> StoredUser:
+        target = self._to_user(await self._users.find_one({"uuid": target_uuid}))
+        actor = self._to_user(await self._users.find_one({"uuid": actor_uuid}))
+        if target is None or actor is None:
+            raise InvalidRoleChangeError
+
+        if not await run_in_threadpool(
+            verify_password, actor_password, actor.password_hash
+        ):
+            raise InvalidRoleChangeError
+
+        if role not in {"user", "moderator", "admin"}:
+            raise InvalidRoleChangeError
+        if target.role == role:
+            return target
+        if target.role == "admin" and role != "admin":
+            admin_count = await self._users.count_documents({"role": "admin"})
+            if admin_count <= 1:
+                raise InvalidRoleChangeError
+
+        updated = await self._users.find_one_and_update(
+            {"uuid": target_uuid, "role": target.role},
+            {"$set": {"role": role}, "$inc": {"security_version": 1}},
+            return_document=ReturnDocument.AFTER,
+        )
+        if updated is None:
+            raise InvalidRoleChangeError
+        return StoredUser.model_validate(updated)
 
     async def create_user(self, payload: UserCreate) -> StoredUser:
         normalized_email = self._normalize_email(str(payload.email))
@@ -60,6 +156,11 @@ class UserController:
 
     async def authenticate_user(self, username: str, password: str) -> StoredUser:
         user = self._to_user(await self._users.find_one({"username": username.strip()}))
+        if user is not None and user.status == "suspended":
+            await self.activate_expired_suspension(user.uuid)
+            user = self._to_user(
+                await self._users.find_one({"username": username.strip()})
+            )
         encoded_password = user.password_hash if user is not None else DUMMY_PASSWORD_HASH
         password_is_valid = await run_in_threadpool(
             verify_password,

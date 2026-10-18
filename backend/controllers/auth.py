@@ -118,6 +118,25 @@ async def get_current_user_id(
     document = await database.users_collection.find_one({"uuid": user_id})
     if document is None:
         raise _unauthorized()
+    if document.get("status") == AccountStatus.SUSPENDED.value:
+        suspended_until = document.get("suspended_until")
+        if (
+            suspended_until is not None
+            and suspended_until <= datetime.now(timezone.utc)
+        ):
+            await database.users_collection.update_one(
+                {
+                    "uuid": user_id,
+                    "status": AccountStatus.SUSPENDED.value,
+                    "suspended_until": {"$ne": None, "$lte": datetime.now(timezone.utc)},
+                },
+                {
+                    "$set": {"status": AccountStatus.ACTIVE.value},
+                    "$unset": {"suspended_until": "", "suspension_reason": ""},
+                    "$inc": {"security_version": 1},
+                },
+            )
+            raise _unauthorized()
     token_version = claims.get("security_version", 0)
     current_version = document.get("security_version", 0)
     if token_version != current_version:

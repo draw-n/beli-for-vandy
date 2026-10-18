@@ -55,6 +55,10 @@ class UserLogin(BaseModel):
     password: str = Field(min_length=1)
 
 
+class PrivilegeChange(BaseModel):
+    password: str = Field(min_length=1)
+
+
 class UserUpdate(BaseModel):
     username: NonEmptyString | None = None
     first_name: NonEmptyString | None = None

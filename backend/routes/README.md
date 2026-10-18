@@ -33,10 +33,30 @@ Review updates and deletion require the review owner, moderator, or administrato
 Photo attachments remain limited to the authenticated review owner. Suspended or
 deleted accounts cannot mutate application resources.
 
-`GET /accounts` returns public account information and does not require authentication.
+`GET /accounts` returns account information to administrators only.
 Account creation always assigns
 `role: "user"`, `status: "active"`, and `security_version: 0`; callers cannot
 select privileged values.
+
+At startup, missing role, status, and security-version fields on existing user
+documents are backfilled. To bootstrap the first administrator, set
+`BOOTSTRAP_ADMIN_IDENTIFIER` to an existing account's email or username in the
+backend deployment environment. The promotion runs only when no administrator
+exists; remove the setting after bootstrap.
+
+## Administrator privilege management
+
+The following routes require an administrator bearer token and a JSON body
+containing the current administrator password:
+
+- `POST /admin/accounts/{user_uuid}/promote-moderator`
+- `POST /admin/accounts/{user_uuid}/demote-moderator`
+- `POST /admin/accounts/{user_uuid}/promote-admin`
+- `POST /admin/accounts/{user_uuid}/demote-admin`
+
+Role changes increment the target account's `security_version`, invalidating
+its existing bearer tokens. The final administrator cannot be demoted, and an
+invalid confirmation or state transition returns `409 Conflict`.
 
 ## Account representation
 

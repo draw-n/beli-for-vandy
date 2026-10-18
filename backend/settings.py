@@ -12,6 +12,7 @@ class Settings(BaseSettings):
     port: int = 8000
     cors_origins: list[str] = ["http://localhost:4200"]
     auth_token_secret: SecretStr | None = None
+    bootstrap_admin_identifier: str | None = None
 
 
 @lru_cache
