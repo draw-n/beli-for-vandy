@@ -74,6 +74,24 @@ describe('ReviewDialog submission', () => {
     expect(component.errorMessage()).toContain('Please log in');
     http.expectNone('http://localhost:8000/reviews/');
   });
+
+  it('accepts the current 1–10 rating endpoints and rejects values outside them', () => {
+    for (const rating of [0, 11, 1.5, null]) {
+      component.rating = rating;
+      component.submitReview();
+      http.expectNone('http://localhost:8000/reviews/');
+    }
+
+    for (const rating of [1, 10]) {
+      const boundaryComponent = TestBed.createComponent(ReviewDialog).componentInstance;
+      boundaryComponent.rating = rating;
+      boundaryComponent.mealType = 'Lunch';
+      boundaryComponent.submitReview();
+      const request = http.expectOne('http://localhost:8000/reviews/');
+      expect(request.request.body.rating).toBe(rating);
+      request.flush({ uuid: `review-${rating}` });
+    }
+  });
   it('prefills an existing review and updates only editable fields', () => {
     const data = TestBed.inject(MAT_DIALOG_DATA);
     data.review = {
@@ -122,6 +140,37 @@ describe('ReviewDialog submission', () => {
     component.keptPhotoIds.push('old-1', 'old-2', 'old-3');
     component.selectPhotos({ target: { files: [createFile('ok.webp', 'image/webp')] } } as unknown as Event);
     expect(component.selectedPhotos).toHaveLength(0);
+    expect(component.errorMessage()).toContain('up to 3 photos');
+    vi.restoreAllMocks();
+  });
+
+  it('accepts images just below and exactly at 5 MiB, but rejects one byte above', () => {
+    vi.spyOn(URL, 'createObjectURL').mockReturnValue('blob:size-boundary');
+    vi.spyOn(URL, 'revokeObjectURL').mockImplementation(() => undefined);
+    const select = (size: number) => component.selectPhotos({
+      target: { files: [new File([new Uint8Array(size)], 'food.jpg', { type: 'image/jpeg' })] },
+    } as unknown as Event);
+
+    select(5 * 1024 * 1024 - 1);
+    select(5 * 1024 * 1024);
+    expect(component.selectedPhotos).toHaveLength(2);
+    select(5 * 1024 * 1024 + 1);
+    expect(component.selectedPhotos).toHaveLength(2);
+    expect(component.errorMessage()).toContain('5 MB');
+    vi.restoreAllMocks();
+  });
+
+  it('allows photo counts from one through three and rejects the fourth selection', () => {
+    vi.spyOn(URL, 'createObjectURL').mockReturnValue('blob:count-boundary');
+    vi.spyOn(URL, 'revokeObjectURL').mockImplementation(() => undefined);
+    const files = (count: number) => Array.from(
+      { length: count }, (_, index) => new File([`photo-${index}`], `${index}.jpg`, { type: 'image/jpeg' }),
+    );
+
+    component.selectPhotos({ target: { files: files(3) } } as unknown as Event);
+    expect(component.photoCount).toBe(3);
+    component.selectPhotos({ target: { files: files(1) } } as unknown as Event);
+    expect(component.photoCount).toBe(3);
     expect(component.errorMessage()).toContain('up to 3 photos');
     vi.restoreAllMocks();
   });

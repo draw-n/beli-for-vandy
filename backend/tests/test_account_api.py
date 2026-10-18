@@ -1,5 +1,5 @@
 import unittest
-from datetime import datetime, timezone
+from datetime import datetime, timedelta, timezone
 import os
 from unittest.mock import patch
 
@@ -9,7 +9,7 @@ from fastapi.testclient import TestClient
 
 from controllers.auth import get_current_user_id
 from routes.user import get_user_controller, router
-from controllers.user import InvalidCredentialsError
+from controllers.user import InvalidCredentialsError, UserAlreadyExistsError
 from models.user import StoredUser, UserCreate, UserType
 from settings import Settings, get_settings
 
@@ -20,8 +20,13 @@ TEST_TOKEN_SECRET = "test-only-signing-secret-with-sufficient-entropy"
 class FakeUserController:
     def __init__(self) -> None:
         self.deleted_credentials: tuple[str, str] | None = None
+        self.accounts: list[tuple[str, str]] = []
 
     async def create_user(self, payload: UserCreate) -> StoredUser:
+        identity = (payload.username, str(payload.email).lower())
+        if any(username == identity[0] or email == identity[1] for username, email in self.accounts):
+            raise UserAlreadyExistsError
+        self.accounts.append(identity)
         return StoredUser(
             username=payload.username,
             first_name=payload.first_name,
@@ -134,6 +139,49 @@ class AccountApiTestCase(unittest.TestCase):
         self.assertEqual(response.json()["type"], "faculty")
         self.assertEqual(invalid_response.status_code, 422)
 
+    def test_registration_rejects_duplicate_username_and_email(self) -> None:
+        payload = {
+            "username": "commodore",
+            "first_name": "Cornelius",
+            "last_name": "Vanderbilt",
+            "email": "person@example.com",
+            "password": "abc",
+            "type": "student",
+            "home_city": "Nashville",
+        }
+        self.assertEqual(self.client.post("/accounts", json=payload).status_code, 201)
+
+        duplicate_username = self.client.post(
+            "/accounts", json={**payload, "email": "another@example.com"}
+        )
+        duplicate_email = self.client.post(
+            "/accounts", json={**payload, "username": "another-user"}
+        )
+
+        self.assertEqual(duplicate_username.status_code, 409)
+        self.assertEqual(duplicate_email.status_code, 409)
+
+    def test_registration_rejects_invalid_fields_and_password_below_minimum(self) -> None:
+        payload = {
+            "username": "commodore",
+            "first_name": "Cornelius",
+            "last_name": "Vanderbilt",
+            "email": "person@example.com",
+            "password": "abc",
+            "type": "student",
+            "home_city": "Nashville",
+        }
+        invalid_payloads = (
+            {**payload, "password": "ab"},
+            {**payload, "email": "not-an-email"},
+            {**payload, "username": "   "},
+            {key: value for key, value in payload.items() if key != "username"},
+        )
+
+        for invalid in invalid_payloads:
+            with self.subTest(invalid=invalid):
+                self.assertEqual(self.client.post("/accounts", json=invalid).status_code, 422)
+
     def test_user_can_delete_an_account_with_valid_credentials(self) -> None:
         response = self.client.request(
             "DELETE",
@@ -224,6 +272,16 @@ class AccountApiTestCase(unittest.TestCase):
         self.assertEqual(response.json(), {"detail": "Invalid username or password"})
         self.assertNotIn("access_token", response.json())
 
+    def test_login_rejects_empty_or_whitespace_required_fields(self) -> None:
+        for payload in (
+            {"username": "", "password": "abc"},
+            {"username": "   ", "password": "abc"},
+            {"username": "commodore", "password": ""},
+            {"username": "commodore"},
+        ):
+            with self.subTest(payload=payload):
+                self.assertEqual(self.client.post("/accounts/login", json=payload).status_code, 422)
+
     def test_authentication_rejects_expired_tokens(self) -> None:
         expired = jwt.encode(
             {
@@ -240,6 +298,37 @@ class AccountApiTestCase(unittest.TestCase):
         )
 
         self.assertEqual(response.status_code, 401)
+
+    def test_jwt_expiration_boundary_is_valid_before_and_invalid_at_or_after(self) -> None:
+        expires_at = datetime(2026, 10, 18, 12, 0, tzinfo=timezone.utc)
+        token = jwt.encode(
+            {
+                "sub": "user-123",
+                "iat": int((expires_at - timedelta(minutes=1)).timestamp()),
+                "exp": int(expires_at.timestamp()),
+            },
+            TEST_TOKEN_SECRET,
+            algorithm="HS256",
+        )
+
+        class FrozenDateTime(datetime):
+            current = expires_at
+
+            @classmethod
+            def now(cls, tz=None):
+                return cls.current if tz else cls.current.replace(tzinfo=None)
+
+        results = []
+        for offset in (-1, 0, 1):
+            FrozenDateTime.current = expires_at + timedelta(seconds=offset)
+            with patch("jwt.api_jwt.datetime", FrozenDateTime):
+                results.append(
+                    self.client.get(
+                        "/test-auth", headers={"Authorization": f"Bearer {token}"}
+                    ).status_code
+                )
+
+        self.assertEqual(results, [200, 401, 401])
 
     def test_authentication_rejects_tampered_tokens(self) -> None:
         login = self.client.post(

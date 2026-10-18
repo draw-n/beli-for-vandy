@@ -1,5 +1,5 @@
 import { HttpErrorResponse } from '@angular/common/http';
-import { Component, inject } from '@angular/core';
+import { ChangeDetectorRef, Component, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { Router, RouterLink } from '@angular/router';
@@ -27,6 +27,7 @@ import { MatInputModule } from '@angular/material/input';
 export class LoginComponent {
   private readonly router = inject(Router);
   private readonly accountApi = inject(AccountApi);
+  private readonly changeDetector = inject(ChangeDetectorRef);
 
   username = '';
   password = '';
@@ -54,11 +55,13 @@ export class LoginComponent {
         );
         sessionStorage.setItem('currentAccount', JSON.stringify(currentAccount));
         sessionStorage.setItem('accessToken', account.access_token);
+        this.changeDetector.markForCheck();
         this.router.navigate(['/locations']);
       },
       error: (error: HttpErrorResponse) => {
         this.loginMessage = error.error?.detail ?? 'Could not log in.';
         this.loggingIn = false;
+        this.changeDetector.markForCheck();
       },
     });
   }
