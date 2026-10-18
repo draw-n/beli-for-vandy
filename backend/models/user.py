@@ -43,6 +43,7 @@ class StoredUser(UserBase):
     status: AccountStatus = AccountStatus.ACTIVE
     suspended_until: datetime | None = None
     suspension_reason: str | None = None
+    appeal_notes: str | None = None
     security_version: int = 0
 
 
@@ -75,6 +76,12 @@ class UserResponse(UserBase):
     created_at: datetime
     role: UserRole = UserRole.USER
     status: AccountStatus = AccountStatus.ACTIVE
+
+
+class PublicUserResponse(BaseModel):
+    uuid: str
+    first_name: str
+    last_name: str
 
 
 class LoginResponse(UserResponse):

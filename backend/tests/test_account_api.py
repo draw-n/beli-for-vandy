@@ -159,6 +159,19 @@ class AccountApiTestCase(unittest.TestCase):
         self.assertEqual(response.json()[0]["uuid"], "d08f600f-d60e-49b1-b762-f05f42935796")
         self.assertNotIn("password_hash", response.json()[0])
 
+    def test_anyone_can_load_public_account_names(self) -> None:
+        response = self.client.get("/accounts/public")
+
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(
+            response.json(),
+            [{
+                "uuid": "d08f600f-d60e-49b1-b762-f05f42935796",
+                "first_name": "Cornelius",
+                "last_name": "Vanderbilt",
+            }],
+        )
+
     def test_regular_user_cannot_load_accounts(self) -> None:
         regular_user = self.controller.users[0].model_copy(update={"role": UserRole.USER})
         self.client.app.dependency_overrides[get_current_user] = lambda: regular_user

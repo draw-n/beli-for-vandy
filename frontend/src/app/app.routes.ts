@@ -6,6 +6,8 @@ import { Locations } from './locations/locations';
 import { LocationProfile } from './location-profile/location-profile';
 import { Profile } from './user-profile/user-profile';
 import { FriendsComponent } from './friends/friends';
+import { moderatorGuard, adminGuard } from './auth.guards';
+import { ModerationDashboard } from './moderation/moderation';
 
 export const routes: Routes = [
   {
@@ -44,6 +46,16 @@ export const routes: Routes = [
   {
     path: 'friends',
     component: FriendsComponent,
+  },
+  {
+    path: 'moderation',
+    component: ModerationDashboard,
+    canActivate: [moderatorGuard],
+  },
+  {
+    path: 'admin',
+    component: ModerationDashboard,
+    canActivate: [adminGuard],
   },
   {
     path: '**',

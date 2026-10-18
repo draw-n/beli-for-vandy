@@ -24,6 +24,7 @@ from models.user import (
     UserCreate,
     UserLogin,
     UserResponse,
+    PublicUserResponse,
 )
 
 
@@ -31,7 +32,7 @@ router = APIRouter(prefix="/accounts", tags=["Accounts"])
 
 
 def get_user_controller() -> UserController:
-    return UserController(db)
+    return UserController(db, db.get_collection("account_blocks"))
 
 
 def user_response(user: StoredUser) -> UserResponse:
@@ -63,6 +64,27 @@ async def create_account(
         ) from error
 
     return user_response(user)
+
+@router.get(
+    "/public",
+    response_model=list[PublicUserResponse],
+    summary="Get public account names",
+    description="Return the names needed to display public user-generated content.",
+)
+async def get_public_accounts(
+    controller: Annotated[UserController, Depends(get_user_controller)],
+) -> list[PublicUserResponse]:
+    users = await controller.get_users()
+
+    return [
+        PublicUserResponse(
+            uuid=user.uuid,
+            first_name=user.first_name,
+            last_name=user.last_name,
+        )
+        for user in users
+    ]
+
 
 @router.get(
     "",

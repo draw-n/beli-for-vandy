@@ -13,6 +13,7 @@ from controllers.security import (
     verify_password,
 )
 from models.user import StoredUser, UserCreate
+from controllers.moderation import ModerationController
 
 
 class UserAlreadyExistsError(Exception):
@@ -28,8 +29,14 @@ class InvalidRoleChangeError(Exception):
 
 
 class UserController:
-    def __init__(self, database: AsyncIOMotorDatabase) -> None:
+    def __init__(
+        self,
+        database: AsyncIOMotorDatabase,
+        account_blocks_collection: Any | None = None,
+    ) -> None:
+        self._database = database
         self._users = database.get_collection("users")
+        self._account_blocks = account_blocks_collection
 
     async def ensure_indexes(self) -> None:
         await self._users.create_index("email", unique=True)
@@ -125,10 +132,26 @@ class UserController:
         )
         if updated is None:
             raise InvalidRoleChangeError
+        await self._database.get_collection("moderation_audit").insert_one(
+            {
+                "uuid": str(uuid4()),
+                "action": "change_role",
+                "actor_user_id": actor_uuid,
+                "target_type": "account",
+                "target_id": target_uuid,
+                "reason": "Privilege change confirmed by administrator",
+                "metadata": {"from": target.role, "to": role},
+                "created_at": datetime.now(timezone.utc),
+            }
+        )
         return StoredUser.model_validate(updated)
 
     async def create_user(self, payload: UserCreate) -> StoredUser:
         normalized_email = self._normalize_email(str(payload.email))
+        if self._account_blocks is not None and await ModerationController(
+            self._database, account_blocks_collection=self._account_blocks
+        ).registration_blocked(normalized_email, payload.username):
+            raise UserAlreadyExistsError
         password_hash = await run_in_threadpool(hash_password, payload.password)
         created_at = datetime.now(timezone.utc)
         document = {
@@ -193,10 +216,9 @@ class UserController:
         result = await self._users.delete_one({"uuid": user.uuid})
         if result.deleted_count != 1:
             raise InvalidCredentialsError
-        
+
     async def get_users(self) -> list[StoredUser]:
         users: list[StoredUser] = []
-
         cursor = self._users.find()
 
         async for document in cursor:
@@ -215,4 +237,3 @@ class UserController:
 
         return StoredUser.model_validate(document)
 
-    

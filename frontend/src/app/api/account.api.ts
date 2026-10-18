@@ -22,6 +22,12 @@ export class AccountApi {
     return this.http.get<Account[]>(this.accountsUrl);
   }
 
+  getPublic(): Observable<Pick<Account, 'uuid' | 'first_name' | 'last_name'>[]> {
+    return this.http.get<Pick<Account, 'uuid' | 'first_name' | 'last_name'>[]>(
+      `${this.accountsUrl}/public`
+    );
+  }
+
   create(request: AccountCreateRequest): Observable<Account> {
     return this.http.post<Account>(this.accountsUrl, request);
   }

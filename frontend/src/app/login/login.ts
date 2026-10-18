@@ -4,6 +4,7 @@ import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { Router, RouterLink } from '@angular/router';
 import { AccountApi } from '../api/account.api';
+import { AuthService } from '../auth.service';
 import { MatButtonModule } from '@angular/material/button';
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatIconModule } from '@angular/material/icon';
@@ -27,6 +28,7 @@ import { MatInputModule } from '@angular/material/input';
 export class LoginComponent {
   private readonly router = inject(Router);
   private readonly accountApi = inject(AccountApi);
+  private readonly auth = inject(AuthService);
 
   username = '';
   password = '';
@@ -47,13 +49,7 @@ export class LoginComponent {
     }).subscribe({
       next: (account) => {
         document.cookie = `mockAuth=${account.uuid}; path=/; SameSite=Lax`;
-        const currentAccount = Object.fromEntries(
-          Object.entries(account).filter(([key]) =>
-            !['access_token', 'token_type', 'expires_at'].includes(key)
-          )
-        );
-        sessionStorage.setItem('currentAccount', JSON.stringify(currentAccount));
-        sessionStorage.setItem('accessToken', account.access_token);
+        this.auth.setSession(account);
         this.router.navigate(['/locations']);
       },
       error: (error: HttpErrorResponse) => {

@@ -223,6 +223,16 @@ for local development. The staging database uses the existing `users`, `location
 `reviews`, and `follows` collections and the application models documented in
 `backend/routes/README.md`; do not create a separate staging schema.
 
+### Administrator bootstrap
+
+Set `BOOTSTRAP_ADMIN_IDENTIFIER` in the backend environment to the email address or
+username of an already-created account before the first deployment. During startup, the
+backend backfills missing role, status, and security-version fields, then promotes the
+configured account only when no administrator exists. The setting is intentionally not a
+password or a public registration field; remove it after the first administrator is
+created. Subsequent role changes are administrator-only, require password re-entry, and
+invalidate the changed account's existing bearer tokens.
+
 ## Main branch protection
 
 The `main` ruleset must require pull requests, one approving review, and the

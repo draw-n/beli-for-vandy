@@ -71,7 +71,7 @@ async def get_public_photo(
         },
         {"_id": 1},
     )
-    if review is None:
+    if review is None or photo.status in {"hidden", "removed"}:
         raise HTTPException(status_code=404, detail="Photo not found")
 
     return Response(content=photo.data, media_type=photo.content_type)

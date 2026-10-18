@@ -246,3 +246,28 @@ active bearer account, and review authorship is always taken from that account.
    To verify public retrieval, create a review through `POST /reviews/` with the
    the photo ID in `photo_ids`, and the same bearer token. Then use GET to retrieve
    the photo. The server derives `user_id` from the bearer identity.
+
+## Moderation and account controls
+
+Authenticated users can report reviews, photos, or accounts with
+`POST /reports`. Moderators can use `GET /moderation/queue`,
+`GET /moderation/reports/{report_id}`, and
+`POST /moderation/reports/{report_id}/resolve`. Review and photo hide, restore,
+remove, and bulk-review routes require moderator authorization. Moderation photo
+retrieval is authenticated at `GET /moderation/photos/{photo_id}` and never
+exposes pending or unrelated uploads through the public photo route.
+
+Administrators can suspend or unsuspend accounts, manage email/domain/username
+registration blocks, and permanently delete explicitly targeted content:
+
+- `POST /moderation/accounts/{user_id}/suspend`
+- `POST /moderation/accounts/{user_id}/unsuspend`
+- `POST /moderation/account-blocks`
+- `DELETE /moderation/account-blocks/{block_id}`
+- `POST /moderation/content/{content_id}/delete?target_type=review|photo|account`
+
+Suspension and privilege changes increment `security_version`, invalidating
+existing tokens. The final administrator cannot be suspended or demoted.
+`GET /admin/audit-log` is available to moderators and administrators; audit
+records are append-only and include the actor, target, action, reason, and time.
+Destructive moderation and permanent deletion require a non-empty reason.

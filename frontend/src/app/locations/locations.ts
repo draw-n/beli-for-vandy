@@ -16,6 +16,7 @@ import { MatChipsModule } from '@angular/material/chips';
 import { MatButtonModule } from '@angular/material/button';
 import { MatToolbarModule } from '@angular/material/toolbar';
 import { MatSelectModule } from '@angular/material/select';
+import { AuthService } from '../auth.service';
 
 @Component({
   selector: 'app-locations',
@@ -42,6 +43,7 @@ export class Locations {
   readonly locations = signal<LocationDetails[]>([]);
   private readonly http = inject(HttpClient);
   private readonly router = inject(Router);
+  readonly auth = inject(AuthService);
 
   constructor() {
     this.http.get<LocationResponse[]>(`${apiBaseUrl}/locations/`).subscribe({

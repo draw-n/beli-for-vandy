@@ -9,6 +9,9 @@ import { MatDialog, MatDialogModule } from '@angular/material/dialog';
 import type { Review } from '../../types/review';
 import { apiBaseUrl } from '../../api/api-base-url';
 import { PhotoViewerDialog } from '../photo-viewer-dialog/photo-viewer-dialog';
+import { ReportReviewDialog } from '../report-review-dialog/report-review-dialog';
+import { ModerationApi } from '../../api/moderation.api';
+import { AuthService } from '../../auth.service';
 
 @Component({
   selector: 'app-review-item',
@@ -19,6 +22,8 @@ import { PhotoViewerDialog } from '../photo-viewer-dialog/photo-viewer-dialog';
 })
 export class ReviewItem {
   private readonly dialog = inject(MatDialog);
+  private readonly moderationApi = inject(ModerationApi, { optional: true });
+  private readonly auth = inject(AuthService);
   @Input({ required: true }) review!: Review;
   @Input() authorName = '';
   @Input() locationName = '';
@@ -27,6 +32,11 @@ export class ReviewItem {
   @Input() busy = false;
   @Output() deleteRequested = new EventEmitter<Review>();
   @Output() editRequested = new EventEmitter<Review>();
+  reportMessage = '';
+
+  get canReport(): boolean {
+    return this.auth.isAuthenticated;
+  }
 
   photoUrl(photoId: string): string {
     return `${apiBaseUrl}/photos/${encodeURIComponent(photoId)}`;
@@ -48,6 +58,27 @@ export class ReviewItem {
       maxWidth: '95vw',
       maxHeight: '95vh',
       ariaLabel: description,
+    });
+  }
+
+  reportReview(): void {
+    if (!this.moderationApi) {
+      this.reportMessage = 'Please sign in before reporting a review.';
+      return;
+    }
+    const reportDialog = this.dialog.open(ReportReviewDialog, {
+      width: 'min(92vw, 480px)',
+      data: { reviewId: this.review.uuid },
+    });
+    reportDialog.afterClosed().subscribe((reason: string | undefined) => {
+      if (!reason) return;
+      this.reportMessage = '';
+      this.moderationApi?.createReport('review', this.review.uuid, reason).subscribe({
+        next: () => { this.reportMessage = 'Report submitted.'; },
+        error: (error: { error?: { detail?: string } }) => {
+          this.reportMessage = error.error?.detail ?? 'Could not submit report.';
+        },
+      });
     });
   }
 }

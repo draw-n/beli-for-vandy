@@ -1,6 +1,20 @@
 from datetime import datetime
 from pydantic import BaseModel
+from enum import Enum
 from typing import Optional
+
+
+class ContentVisibility(str, Enum):
+    PUBLIC = "public"
+    HIDDEN = "hidden"
+    REMOVED = "removed"
+
+
+class ModerationStatus(str, Enum):
+    PENDING = "pending"
+    APPROVED = "approved"
+    FLAGGED = "flagged"
+    REJECTED = "rejected"
 
 
 class ReviewBase(BaseModel):
@@ -12,8 +26,8 @@ class ReviewBase(BaseModel):
     created_at: datetime
     updated_at: datetime
     photo_ids: Optional[list[str]] = None
-    visibility: str = "public"
-    moderation_status: str = "approved"
+    visibility: ContentVisibility = ContentVisibility.PUBLIC
+    moderation_status: ModerationStatus = ModerationStatus.APPROVED
 
 
 class ReviewCreate(ReviewBase):

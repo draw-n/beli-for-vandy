@@ -1,0 +1,91 @@
+<mat-toolbar>
+  <a mat-button routerLink="/locations">Beli</a>
+  <span>Moderation</span>
+  <span class="spacer"></span>
+  <button mat-button type="button" (click)="logout()">Sign out</button>
+</mat-toolbar>
+
+<main>
+  @if (errorMessage()) {
+    <p class="error" role="alert">{{ errorMessage() }}</p>
+  }
+
+  <section>
+    <h1>Moderation queue</h1>
+    <div class="filters">
+      <mat-form-field>
+        <mat-label>Content type</mat-label>
+        <mat-select [(ngModel)]="targetType" (selectionChange)="loadQueue()">
+          <mat-option value="">All</mat-option>
+          <mat-option value="review">Reviews</mat-option>
+          <mat-option value="photo">Photos</mat-option>
+          <mat-option value="account">Accounts</mat-option>
+        </mat-select>
+      </mat-form-field>
+      <mat-form-field>
+        <mat-label>Reason</mat-label>
+        <input matInput [(ngModel)]="reasonFilter" (keyup.enter)="loadQueue()">
+      </mat-form-field>
+      <button mat-flat-button type="button" (click)="loadQueue()" [disabled]="loading()">Refresh</button>
+    </div>
+
+    @for (report of reports(); track report.uuid) {
+      <article class="report">
+        <header><strong>{{ report.target_type }}</strong><span>{{ report.created_at | date:'medium' }}</span></header>
+        <p>{{ report.reason }}</p>
+        <pre>{{ report.target | json }}</pre>
+        @if (report.target_type !== 'account') {
+          <button mat-button type="button" (click)="moderate(report, 'hide')">Hide</button>
+          <button mat-button type="button" (click)="moderate(report, 'restore')">Restore</button>
+          <button mat-button type="button" (click)="moderate(report, 'remove')">Remove</button>
+        }
+        <mat-form-field>
+          <mat-label>Resolution</mat-label>
+          <input matInput [(ngModel)]="resolution">
+        </mat-form-field>
+        <mat-select [(ngModel)]="selectedAction" aria-label="Report resolution">
+          <mat-option value="dismissed">Dismiss</mat-option>
+          <mat-option value="resolved">Resolve</mat-option>
+          <mat-option value="skipped">Skip</mat-option>
+          <mat-option value="escalated">Escalate</mat-option>
+        </mat-select>
+        <button mat-flat-button type="button" (click)="resolve(report)">Save resolution</button>
+      </article>
+    } @empty {
+      <p>No open reports match these filters.</p>
+    }
+  </section>
+
+  @if (isAdmin) {
+    <section>
+      <h2>Account controls</h2>
+      @for (account of accounts(); track account.uuid) {
+        <div class="account-row">
+          <span>{{ account.username }} ({{ account.role }})</span>
+          @if (account.status === 'suspended') {
+            <button mat-button type="button" (click)="suspend(account.uuid, false)">Unsuspend</button>
+          } @else {
+            <button mat-button type="button" (click)="suspend(account.uuid, true)">Suspend</button>
+          }
+        </div>
+      }
+      <h2>Block account creation</h2>
+      <div class="block-form">
+        <input aria-label="Blocked email" placeholder="Email" [(ngModel)]="blockEmail">
+        <input aria-label="Blocked domain" placeholder="Domain" [(ngModel)]="blockDomain">
+        <input aria-label="Blocked username" placeholder="Username" [(ngModel)]="blockUsername">
+        <input aria-label="Block reason" placeholder="Reason" [(ngModel)]="blockReason">
+        <button mat-flat-button type="button" (click)="createBlock()">Add block</button>
+      </div>
+    </section>
+  }
+
+  <section>
+    <h2>Audit history</h2>
+    @for (entry of audit(); track entry.uuid) {
+      <p class="audit-entry"><strong>{{ entry.action }}</strong> {{ entry.target_type }}/{{ entry.target_id }} — {{ entry.reason || 'No reason' }} ({{ entry.created_at | date:'short' }})</p>
+    } @empty {
+      <p>No audit records available.</p>
+    }
+  </section>
+</main>

@@ -49,7 +49,7 @@
         {{ review.rating | number: '1.1-1' }}
       </strong>
 
-      @if (canEdit) {
+      @if (canEdit || canReport) {
         <button
           mat-icon-button
           [disabled]="busy"
@@ -58,27 +58,28 @@
         >
           <mat-icon>more_vert</mat-icon>
         </button>
+      }
 
-        <mat-menu #reviewMenu="matMenu">
-          <button
-            mat-menu-item
-            [disabled]="busy"
-            (click)="editRequested.emit(review)"
-          >
+      <mat-menu #reviewMenu="matMenu">
+        @if (canEdit) {
+          <button mat-menu-item [disabled]="busy" (click)="editRequested.emit(review)">
             <mat-icon>edit</mat-icon>
             <span>Edit</span>
           </button>
 
-          <button
-            mat-menu-item
-            [disabled]="busy"
-            (click)="deleteRequested.emit(review)"
-          >
+          <button mat-menu-item [disabled]="busy" (click)="deleteRequested.emit(review)">
             <mat-icon>delete</mat-icon>
             <span>Delete</span>
           </button>
-        </mat-menu>
-      }
+        }
+
+        @if (canReport) {
+          <button mat-menu-item (click)="reportReview()">
+            <mat-icon>flag</mat-icon>
+            <span>Report review</span>
+          </button>
+        }
+      </mat-menu>
     </div>
 
   </div>
@@ -86,6 +87,9 @@
   <p>
     {{ review.reviewText }}
   </p>
+  @if (reportMessage) {
+    <small role="status">{{ reportMessage }}</small>
+  }
 
   @if (validPhotoIds.length) {
     <div class="review-photos">

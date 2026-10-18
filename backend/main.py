@@ -8,9 +8,11 @@ from routes.review import router as review_router
 from routes.location import router as location_router
 from routes.follow import router as follow_router
 from routes.photo import router as photo_router
+from routes.moderation import router as moderation_router
 
 from routes.user import admin_router, router as user_router
 from controllers.user import UserController
+from controllers.moderation import ModerationController
 from database import client, db
 from settings import get_settings
 
@@ -20,6 +22,7 @@ async def lifespan(_: FastAPI):
     await client.admin.command("ping")
     user_controller = UserController(db)
     await user_controller.ensure_indexes()
+    await ModerationController(db).ensure_indexes()
     await user_controller.bootstrap_first_admin(
         get_settings().bootstrap_admin_identifier
     )
@@ -44,6 +47,7 @@ app.add_middleware(
 )
 app.include_router(user_router)
 app.include_router(admin_router)
+app.include_router(moderation_router)
 
 app.include_router(review_router)
 app.include_router(location_router)
