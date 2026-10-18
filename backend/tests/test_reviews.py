@@ -259,3 +259,30 @@ async def test_create_review_invalid_rating(client):
     )
 
     assert response.status_code == 422
+
+
+@pytest.mark.parametrize("rating", [0, 1, 10, 11], ids=["below-ui-min", "ui-min", "ui-max", "above-ui-max"])
+@pytest.mark.asyncio
+async def test_backend_currently_accepts_integer_ratings_without_range_validation(client, rating):
+    response = await client.post("/reviews/", json={**REVIEW_DATA, "rating": rating})
+
+    # The backend model currently requires an integer but defines no 1-10 (or 1-5) bound.
+    assert response.status_code == 200
+    assert response.json()["rating"] == rating
+
+
+@pytest.mark.asyncio
+async def test_review_text_update_and_delete_are_currently_unauthenticated(client):
+    created = await client.post("/reviews/", json=REVIEW_DATA)
+    review_id = created.json()["uuid"]
+
+    updated = await client.put(
+        f"/reviews/{review_id}",
+        json={"note": "Updated without bearer authentication"},
+    )
+    deleted = await client.delete(f"/reviews/{review_id}")
+
+    assert updated.status_code == 200
+    assert updated.json()["note"] == "Updated without bearer authentication"
+    assert deleted.status_code == 200
+    assert (await client.get(f"/reviews/{review_id}")).status_code == 404

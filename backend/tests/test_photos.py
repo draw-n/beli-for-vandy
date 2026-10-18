@@ -274,6 +274,22 @@ async def test_review_rejects_duplicate_and_more_than_three_photo_ids(photo_api)
     assert excessive.status_code == 422
 
 
+@pytest.mark.parametrize("photo_count", [1, 2, 3], ids=["one", "two", "maximum-three"])
+@pytest.mark.asyncio
+async def test_review_accepts_each_supported_photo_count(photo_api, photo_count):
+    client, _ = photo_api
+    photo_ids = [await upload_owned_photo(client) for _ in range(photo_count)]
+
+    response = await client.post(
+        "/reviews/",
+        headers={"Authorization": f"Bearer {bearer_token()}"},
+        json=review_payload(photo_ids),
+    )
+
+    assert response.status_code == 200
+    assert response.json()["photo_ids"] == photo_ids
+
+
 @pytest.mark.asyncio
 async def test_review_rejects_missing_or_other_users_photo(photo_api):
     client, _ = photo_api

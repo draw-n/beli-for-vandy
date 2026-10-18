@@ -1,5 +1,5 @@
 import { HttpErrorResponse } from '@angular/common/http';
-import { Component, inject } from '@angular/core';
+import { ChangeDetectorRef, Component, inject } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 
 import { AccountApi } from '../api/account.api';
@@ -13,6 +13,7 @@ import { AccountCreateRequest, AccountDeleteRequest } from '../types/auth';
 })
 export class Register {
   private readonly accountApi = inject(AccountApi);
+  private readonly changeDetector = inject(ChangeDetectorRef);
 
   createRequest: AccountCreateRequest = this.emptyCreateRequest();
 
@@ -41,11 +42,13 @@ export class Register {
         this.createMessage = `Account created for ${account.username}.`;
         this.createRequest = this.emptyCreateRequest();
         this.creating = false;
+        this.changeDetector.markForCheck();
       },
 
       error: (error: HttpErrorResponse) => {
         this.createMessage = this.errorMessage(error, 'Could not create the account.');
         this.creating = false;
+        this.changeDetector.markForCheck();
       },
     });
   }
@@ -64,11 +67,13 @@ export class Register {
         };
 
         this.deleting = false;
+        this.changeDetector.markForCheck();
       },
 
       error: (error: HttpErrorResponse) => {
         this.deleteMessage = this.errorMessage(error, 'Could not delete the account.');
         this.deleting = false;
+        this.changeDetector.markForCheck();
       },
     });
   }

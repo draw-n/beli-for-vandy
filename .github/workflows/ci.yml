@@ -46,6 +46,10 @@ jobs:
         working-directory: frontend
         run: npm ci
 
+      - name: Install Playwright Chromium
+        working-directory: frontend
+        run: npx playwright install --with-deps chromium
+
       - name: Lint backend
         run: ruff check backend
 
@@ -88,11 +92,25 @@ jobs:
         working-directory: frontend
         run: npm run test:coverage
 
-      - name: Build frontend
+      - name: Build frontend for production and integration tests
         working-directory: frontend
         env:
-          API_BASE_URL: http://localhost:8000
+          API_BASE_URL: http://127.0.0.1:18000
         run: npm run build
+
+      - name: Run Angular-FastAPI Playwright integration test
+        working-directory: frontend
+        env:
+          PLAYWRIGHT_REUSE_BUILD: '1'
+        run: npm run test:integration
+
+      - name: Upload Playwright failure artifacts
+        if: failure()
+        uses: actions/upload-artifact@v7
+        with:
+          name: playwright-failure-artifacts
+          path: frontend/tmp/playwright-results/
+          if-no-files-found: ignore
 
       - name: Upload coverage reports
         uses: actions/upload-artifact@v7

@@ -4,8 +4,9 @@ from types import SimpleNamespace
 from typing import Any
 
 from bson import ObjectId
+from pymongo.errors import DuplicateKeyError
 
-from controllers.user import InvalidCredentialsError, UserController
+from controllers.user import InvalidCredentialsError, UserAlreadyExistsError, UserController
 from models.user import UserCreate, UserType
 
 
@@ -14,6 +15,12 @@ class FakeCollection:
         self.documents: list[dict[str, Any]] = []
 
     async def insert_one(self, document: dict[str, Any]) -> SimpleNamespace:
+        if any(
+            existing.get("username") == document.get("username")
+            or existing.get("email") == document.get("email")
+            for existing in self.documents
+        ):
+            raise DuplicateKeyError("duplicate account identity")
         stored_document = deepcopy(document)
         stored_document["_id"] = ObjectId()
         self.documents.append(stored_document)
@@ -53,12 +60,17 @@ class UserControllerTestCase(unittest.IsolatedAsyncioTestCase):
         self.controller = UserController(self.database)  # type: ignore[arg-type]
 
     @staticmethod
-    def user_payload(password: str = "abc") -> UserCreate:
+    def user_payload(
+        password: str = "abc",
+        *,
+        username: str = "commodore",
+        email: str = "Person@Example.com",
+    ) -> UserCreate:
         return UserCreate(
-            username="commodore",
+            username=username,
             first_name="Cornelius",
             last_name="Vanderbilt",
-            email="Person@Example.com",
+            email=email,
             password=password,
             year_graduation=2027,
             type=UserType.STUDENT,
@@ -121,6 +133,20 @@ class UserControllerTestCase(unittest.IsolatedAsyncioTestCase):
 
         with self.assertRaises(InvalidCredentialsError):
             await self.controller.authenticate_user("unknown", "abc")
+
+    async def test_duplicate_username_or_normalized_email_is_rejected(self) -> None:
+        await self.controller.create_user(self.user_payload())
+
+        with self.assertRaises(UserAlreadyExistsError):
+            await self.controller.create_user(
+                self.user_payload(username="commodore", email="other@example.com")
+            )
+        with self.assertRaises(UserAlreadyExistsError):
+            await self.controller.create_user(
+                self.user_payload(username="another-user", email=" PERSON@example.com ")
+            )
+
+        self.assertEqual(len(self.database.users.documents), 1)
 
 if __name__ == "__main__":
     unittest.main()
