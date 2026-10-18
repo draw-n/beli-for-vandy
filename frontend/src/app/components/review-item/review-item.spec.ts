@@ -7,7 +7,6 @@ import type { Review } from '../../types/review';
 import { apiBaseUrl } from '../../api/api-base-url';
 import { MatDialog } from '@angular/material/dialog';
 import { PhotoViewerDialog } from '../photo-viewer-dialog/photo-viewer-dialog';
-import { ReportReviewDialog } from '../report-review-dialog/report-review-dialog';
 import { of } from 'rxjs';
 import { authInterceptor } from '../../auth.interceptor';
 
