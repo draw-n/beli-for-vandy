@@ -74,6 +74,96 @@ describe('ReviewDialog submission', () => {
     expect(component.errorMessage()).toContain('Please log in');
     http.expectNone('http://localhost:8000/reviews/');
   });
+    // Boundary Value Analysis (BVA) for the valid rating range 1-10.
+
+  it('rejects rating 0 because it is below the minimum boundary', () => {
+    component.rating = 0;
+    component.mealType = 'Lunch';
+
+    component.submitReview();
+
+    http.expectNone('http://localhost:8000/reviews/');
+    expect(dialog.close).not.toHaveBeenCalled();
+  });
+
+  it('accepts rating 1 at the minimum boundary', () => {
+    component.rating = 1;
+    component.mealType = 'Lunch';
+
+    component.submitReview();
+
+    const request = http.expectOne('http://localhost:8000/reviews/');
+    expect(request.request.body.rating).toBe(1);
+
+    request.flush({ uuid: 'review-1' });
+  });
+
+  it('accepts rating 2 just above the minimum boundary', () => {
+    component.rating = 2;
+    component.mealType = 'Lunch';
+
+    component.submitReview();
+
+    const request = http.expectOne('http://localhost:8000/reviews/');
+    expect(request.request.body.rating).toBe(2);
+
+    request.flush({ uuid: 'review-2' });
+  });
+
+  it('accepts rating 9 just below the maximum boundary', () => {
+    component.rating = 9;
+    component.mealType = 'Lunch';
+
+    component.submitReview();
+
+    const request = http.expectOne('http://localhost:8000/reviews/');
+    expect(request.request.body.rating).toBe(9);
+
+    request.flush({ uuid: 'review-9' });
+  });
+
+  it('accepts rating 10 at the maximum boundary', () => {
+    component.rating = 10;
+    component.mealType = 'Lunch';
+
+    component.submitReview();
+
+    const request = http.expectOne('http://localhost:8000/reviews/');
+    expect(request.request.body.rating).toBe(10);
+
+    request.flush({ uuid: 'review-10' });
+  });
+
+  it('rejects rating 11 because it is above the maximum boundary', () => {
+    component.rating = 11;
+    component.mealType = 'Lunch';
+
+    component.submitReview();
+
+    http.expectNone('http://localhost:8000/reviews/');
+    expect(dialog.close).not.toHaveBeenCalled();
+  });
+
+    it('rejects submission when meal type is missing', () => {
+    component.rating = 5;
+    component.mealType = '';
+
+    component.submitReview();
+
+    http.expectNone('http://localhost:8000/reviews/');
+    expect(dialog.close).not.toHaveBeenCalled();
+  });
+
+  it('rejects submission when rating is missing', () => {
+    component.rating = null;
+    component.mealType = 'Lunch';
+
+    component.submitReview();
+
+    http.expectNone('http://localhost:8000/reviews/');
+    expect(dialog.close).not.toHaveBeenCalled();
+  });
+
   it('prefills an existing review and updates only editable fields', () => {
     const data = TestBed.inject(MAT_DIALOG_DATA);
     data.review = {
