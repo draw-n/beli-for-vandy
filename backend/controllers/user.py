@@ -46,6 +46,9 @@ class UserController:
             "type": payload.type.value,
             "created_at": created_at,
             "home_city": payload.home_city,
+            "role": "user",
+            "status": "active",
+            "security_version": 0,
         }
 
         try:
@@ -66,12 +69,16 @@ class UserController:
 
         if user is None or not password_is_valid:
             raise InvalidCredentialsError
+        if user.status != "active":
+            raise InvalidCredentialsError
 
         return user
 
-    async def delete_user(self, email: str, password: str) -> None:
+    async def delete_user(self, user_uuid: str, email: str, password: str) -> None:
         normalized_email = self._normalize_email(email)
-        user = self._to_user(await self._users.find_one({"email": normalized_email}))
+        user = self._to_user(
+            await self._users.find_one({"email": normalized_email, "uuid": user_uuid})
+        )
         encoded_password = user.password_hash if user is not None else DUMMY_PASSWORD_HASH
         password_is_valid = await run_in_threadpool(
             verify_password,

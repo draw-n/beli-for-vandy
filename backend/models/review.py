@@ -12,6 +12,8 @@ class ReviewBase(BaseModel):
     created_at: datetime
     updated_at: datetime
     photo_ids: Optional[list[str]] = None
+    visibility: str = "public"
+    moderation_status: str = "approved"
 
 
 class ReviewCreate(ReviewBase):

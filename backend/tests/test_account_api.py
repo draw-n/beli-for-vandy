@@ -20,6 +20,20 @@ TEST_TOKEN_SECRET = "test-only-signing-secret-with-sufficient-entropy"
 class FakeUserController:
     def __init__(self) -> None:
         self.deleted_credentials: tuple[str, str] | None = None
+        self.users = [
+            StoredUser(
+                username="commodore",
+                first_name="Cornelius",
+                last_name="Vanderbilt",
+                email="person@example.com",
+                password_hash="unused",
+                uuid="d08f600f-d60e-49b1-b762-f05f42935796",
+                year_graduation=2027,
+                type=UserType.STUDENT,
+                created_at=datetime.now(timezone.utc),
+                home_city="Nashville",
+            )
+        ]
 
     async def create_user(self, payload: UserCreate) -> StoredUser:
         return StoredUser(
@@ -56,6 +70,9 @@ class FakeUserController:
             created_at=datetime.now(timezone.utc),
             home_city="Nashville",
         )
+
+    async def get_users(self) -> list[StoredUser]:
+        return self.users
 
 
 class AccountApiTestCase(unittest.TestCase):
@@ -111,6 +128,13 @@ class AccountApiTestCase(unittest.TestCase):
                 "home_city": "Nashville",
             },
         )
+
+    def test_anyone_can_load_public_accounts(self) -> None:
+        response = self.client.get("/accounts")
+
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.json()[0]["uuid"], "d08f600f-d60e-49b1-b762-f05f42935796")
+        self.assertNotIn("password_hash", response.json()[0])
 
     def test_graduation_year_is_optional_and_user_type_is_constrained(self) -> None:
         payload = {

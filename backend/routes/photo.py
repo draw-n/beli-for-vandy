@@ -7,7 +7,8 @@ from motor.motor_asyncio import AsyncIOMotorGridFSBucket
 from starlette.responses import Response
 
 import database
-from controllers.auth import get_current_user_id
+from controllers.auth import require_user
+from models.user import StoredUser
 from controllers.photo_storage import (
     MAX_UPLOAD_BYTES,
     InvalidPhotoError,
@@ -29,7 +30,7 @@ async def get_photo_bucket() -> Any:
 @router.post("/", status_code=status.HTTP_201_CREATED)
 async def upload_photo(
     file: Annotated[UploadFile, File(...)],
-    user_id: Annotated[str, Depends(get_current_user_id)],
+    user: Annotated[StoredUser, Depends(require_user)],
     bucket: Annotated[Any, Depends(get_photo_bucket)],
 ) -> dict[str, str]:
     """Upload one optimized photo as a private pending attachment."""
@@ -39,7 +40,7 @@ async def upload_photo(
         await file.close()
 
     try:
-        photo_id = await store_photo(data, owner_uuid=user_id, bucket=bucket)
+        photo_id = await store_photo(data, owner_uuid=user.uuid, bucket=bucket)
     except PhotoTooLargeError as error:
         raise HTTPException(status_code=413, detail=str(error)) from error
     except InvalidPhotoError as error:
@@ -63,7 +64,11 @@ async def get_public_photo(
         raise HTTPException(status_code=404, detail="Photo not found")
 
     review = await database.reviews_collection.find_one(
-        {"photo_ids": photo_id, "user_id": photo.owner_uuid},
+        {
+            "photo_ids": photo_id,
+            "user_id": photo.owner_uuid,
+            "visibility": {"$nin": ["hidden", "removed"]},
+        },
         {"_id": 1},
     )
     if review is None:

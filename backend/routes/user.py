@@ -8,7 +8,12 @@ from controllers.user import (
     UserAlreadyExistsError,
     UserController,
 )
-from controllers.auth import AuthConfigurationError, get_signing_secret, issue_access_token
+from controllers.auth import (
+    AuthConfigurationError,
+    get_current_user,
+    issue_access_token,
+    get_signing_secret,
+)
 from database import db
 from models.user import LoginResponse, StoredUser, UserCreate, UserLogin, UserResponse
 
@@ -103,7 +108,11 @@ async def login(
             detail="Authentication is not configured",
         ) from error
 
-    access_token, expires_at = issue_access_token(user.uuid, secret)
+    access_token, expires_at = issue_access_token(
+        user.uuid,
+        secret,
+        user.security_version,
+    )
     return LoginResponse(
         **user_response(user).model_dump(),
         access_token=access_token,
@@ -127,9 +136,10 @@ async def delete_account(
     email: Annotated[EmailStr, Body()],
     password: Annotated[str, Body(min_length=1)],
     controller: Annotated[UserController, Depends(get_user_controller)],
+    current_user: Annotated[StoredUser, Depends(get_current_user)],
 ) -> None:
     try:
-        await controller.delete_user(str(email), password)
+        await controller.delete_user(current_user.uuid, str(email), password)
     except InvalidCredentialsError as error:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
