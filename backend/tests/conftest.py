@@ -118,4 +118,5 @@ async def client(mock_db, monkeypatch):
     await mock_follows_collection.drop()
     await mock_locations_collection.drop()
     await mock_users_collection.drop()
-    get_settings.cache_clear()    await mock_favorite_dishes_collection.drop()
+    get_settings.cache_clear()
+    await mock_favorite_dishes_collection.drop()
