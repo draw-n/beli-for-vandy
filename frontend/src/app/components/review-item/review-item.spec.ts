@@ -77,15 +77,19 @@ describe('Reusable review item', () => {
     ]);
   });
 
-  it('renders favorite dishes as a comma-separated line and omits it when empty', () => {
+  it('renders favorite dishes on separate lines without commas and omits them when empty', () => {
     const fixture = TestBed.createComponent(ReviewItem);
     fixture.componentRef.setInput('review', { ...review, favoriteDishes: ['tACos', 'bROWNies'] });
     fixture.detectChanges();
 
+    const dishes = fixture.nativeElement.querySelectorAll('.favorite-dish-name');
+    expect(Array.from(dishes, (dish: Element) => dish.textContent?.trim())).toEqual(['Tacos', 'Brownies']);
     const text = fixture.nativeElement.querySelector('.favorite-dishes')?.textContent
       .replace(/\s+/g, ' ')
       .trim();
-    expect(text).toContain('Favorite dishes: Tacos, Brownies');
+    expect(text).toBe('Favorite dishes: TacosBrownies');
+    expect(getComputedStyle(dishes[0]).display).toBe('block');
+    expect(getComputedStyle(dishes[1]).display).toBe('block');
 
     fixture.componentRef.setInput('review', { ...review, favoriteDishes: [] });
     fixture.detectChanges();

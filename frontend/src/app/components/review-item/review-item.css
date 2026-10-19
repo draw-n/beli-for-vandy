@@ -59,9 +59,9 @@
 }
 
 .favorite-dish-name {
-  display: inline-flex;
+  display: block;
   align-items: center;
-  white-space: nowrap;
+  line-height: 1.5;
 }
 
 .favorite-dish-name button {

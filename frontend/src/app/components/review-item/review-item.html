@@ -91,7 +91,7 @@
     <p class="favorite-dishes">
       <strong>Favorite dishes:</strong>&nbsp;
       @for (dish of validFavoriteDishes; track $index) {
-        <span class="favorite-dish-name">{{ dish }}{{ $index < validFavoriteDishes.length - 1 ? ', ' : '' }}@if (canFavoriteDishes) {
+        <span class="favorite-dish-name">{{ dish }}@if (canFavoriteDishes) {
             <button
               mat-icon-button
               type="button"

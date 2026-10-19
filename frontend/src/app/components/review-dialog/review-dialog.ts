@@ -1,9 +1,9 @@
-import type { Review } from '../../types/review';
+import type { Review, ReviewResponse } from '../../types/review';
 import { Component, Inject, inject, signal, OnDestroy } from '@angular/core';
 import { HttpErrorResponse } from '@angular/common/http';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
-import { concatMap, map, of, switchMap, tap, toArray } from 'rxjs';
+import { concatMap, from, map, of, switchMap, tap, toArray } from 'rxjs';
 
 import { MAT_DIALOG_DATA, MatDialogModule, MatDialogRef } from '@angular/material/dialog';
 
@@ -16,6 +16,7 @@ import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 
 import { ReviewApi } from '../../api/review.api';
 import { apiBaseUrl } from '../../api/api-base-url';
+import { FavoriteDishesStore } from '../../favorite-dishes/favorite-dishes.store';
 
 interface ReviewDialogData {
   locationId: string;
@@ -48,6 +49,9 @@ interface SelectedPhoto {
 })
 export class ReviewDialog implements OnDestroy {
   private readonly reviewApi = inject(ReviewApi);
+  private readonly favoriteDishes = inject(FavoriteDishesStore);
+  savedReview: ReviewResponse | null = null;
+  private favoriteDishesToSave: string[] = [];
   readonly saving = signal(false);
   readonly errorMessage = signal('');
   readonly selectedPhotos: SelectedPhoto[] = [];
@@ -120,7 +124,12 @@ export class ReviewDialog implements OnDestroy {
   }
 
   submitReview(): void {
-    if (this.saving() || !this.validRating || !this.mealType) return;
+    if (this.saving()) return;
+    if (this.savedReview) {
+      this.saveFavoriteDishes();
+      return;
+    }
+    if (!this.validRating || !this.mealType) return;
 
     let userId: string | undefined;
     try {
@@ -155,7 +164,7 @@ export class ReviewDialog implements OnDestroy {
       rating: this.rating!,
       note: this.reviewText.trim(),
       meal_type: this.mealType,
-      favorite_dishes: this.favoriteDishesText.split(',')
+      favorite_dishes: this.favoriteDishesText.split(/[,\r\n]+/)
         .map((dish) => dish.trim())
         .filter(Boolean)
         .map((dish) => dish.charAt(0).toUpperCase() + dish.slice(1).toLowerCase()),
@@ -179,7 +188,11 @@ export class ReviewDialog implements OnDestroy {
         });
       }),
     ).subscribe({
-      next: (review) => this.dialogRef.close(review),
+      next: (review) => {
+        this.savedReview = review;
+        this.favoriteDishesToSave = fields.favorite_dishes;
+        this.saveFavoriteDishes();
+      },
       error: (error: HttpErrorResponse) => {
         this.saving.set(false);
         this.dialogRef.disableClose = false;
@@ -190,6 +203,38 @@ export class ReviewDialog implements OnDestroy {
         } else {
           this.errorMessage.set('Could not save your review or upload photos. Please try again.');
         }
+      },
+    });
+  }
+
+  private saveFavoriteDishes(): void {
+    const review = this.savedReview;
+    if (!review) return;
+    if (!this.favoriteDishesToSave.length) {
+      this.dialogRef.close(review);
+      return;
+    }
+
+    this.saving.set(true);
+    this.errorMessage.set('');
+    this.dialogRef.disableClose = true;
+    this.favoriteDishes.ensureLoaded().pipe(
+      switchMap(() => from(this.favoriteDishesToSave).pipe(
+        concatMap((dish) => this.favoriteDishes.favoriteIfNeeded(
+          dish,
+          this.data.locationId,
+          this.data.locationName,
+        )),
+        toArray(),
+      )),
+    ).subscribe({
+      next: () => this.dialogRef.close(review),
+      error: (error: unknown) => {
+        this.saving.set(false);
+        this.dialogRef.disableClose = false;
+        this.errorMessage.set(
+          `Review saved, but could not favorite the dishes. ${this.favoriteDishes.errorMessage(error, 'save')} Submit again to retry.`,
+        );
       },
     });
   }

@@ -50,7 +50,7 @@
         [(ngModel)]="favoriteDishesText"
         placeholder="e.g. mac and cheese, roasted vegetables"
       ></textarea>
-      <mat-hint>Separate dishes with commas.</mat-hint>
+      <mat-hint>Separate dishes with commas or new lines.</mat-hint>
     </mat-form-field>
 
     <section class="photo-section">
@@ -111,8 +111,8 @@
   <button
     mat-flat-button
     (click)="submitReview()"
-    [disabled]="saving() || !validRating || !mealType"
+    [disabled]="saving() || (!savedReview && (!validRating || !mealType))"
   >
-    {{ saving() ? 'Saving…' : data.review ? 'Save changes' : 'Submit review' }}
+    {{ saving() ? 'Saving…' : savedReview ? 'Retry favorite dishes' : data.review ? 'Save changes' : 'Submit review' }}
   </button>
 </mat-dialog-actions>

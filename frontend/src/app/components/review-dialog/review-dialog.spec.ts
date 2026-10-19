@@ -117,7 +117,76 @@ describe('ReviewDialog submission', () => {
       rating: 8, note: 'Updated note', meal_type: 'Dinner', updated_at: expect.any(String),
       favorite_dishes: ['Chicken curry', 'Naan'],
     });
+    sessionStorage.setItem('accessToken', 'signed-token');
     request.flush({ uuid: 'review-1' });
+    http.expectOne('http://localhost:8000/favorite-dishes/').flush([
+      { uuid: '1', name: 'Chicken curry', location_id: 'location-1', location_name: 'Commons', created_at: '' },
+      { uuid: '2', name: 'Naan', location_id: 'location-1', location_name: 'Commons', created_at: '' },
+    ]);
+    expect(dialog.close).toHaveBeenCalledWith({ uuid: 'review-1' });
+  });
+
+  it('accepts commas and new lines as favorite dish separators', () => {
+    sessionStorage.setItem('accessToken', 'signed-token');
+    component.favoriteDishesText = 'mac and cheese, beef\r\nroasted vegetables';
+    component.submitReview();
+    const request = http.expectOne('http://localhost:8000/reviews/');
+    expect(request.request.body.favorite_dishes).toEqual([
+      'Mac and cheese',
+      'Beef',
+      'Roasted vegetables',
+    ]);
+    request.flush({ uuid: 'review-1' });
+    http.expectOne('http://localhost:8000/favorite-dishes/').flush([
+      { uuid: '1', name: 'Mac and cheese', location_id: 'location-1', location_name: 'Commons', created_at: '' },
+      { uuid: '2', name: 'Beef', location_id: 'location-1', location_name: 'Commons', created_at: '' },
+      { uuid: '3', name: 'Roasted vegetables', location_id: 'location-1', location_name: 'Commons', created_at: '' },
+    ]);
+    expect(dialog.close).toHaveBeenCalledWith({ uuid: 'review-1' });
+  });
+
+  it('keeps the saved review and explains when sign-in is needed to favorite dishes', () => {
+    component.favoriteDishesText = 'Mac and cheese';
+    component.submitReview();
+    http.expectOne('http://localhost:8000/reviews/').flush({ uuid: 'review-1' });
+
+    expect(component.savedReview?.uuid).toBe('review-1');
+    expect(component.errorMessage()).toContain('Sign in to access favorite dishes.');
+    expect(dialog.close).not.toHaveBeenCalled();
+  });
+
+  it('automatically favorites review dishes at the reviewed location', () => {
+    sessionStorage.setItem('accessToken', 'signed-token');
+    component.favoriteDishesText = 'Mac and cheese, beef';
+    component.submitReview();
+
+    const review = http.expectOne('http://localhost:8000/reviews/');
+    review.flush({ uuid: 'review-1' });
+
+    const load = http.expectOne('http://localhost:8000/favorite-dishes/');
+    expect(load.request.headers.has('Authorization')).toBe(true);
+    load.flush([{
+      uuid: 'dish-1',
+      name: 'Mac and cheese',
+      location_id: 'location-1',
+      location_name: 'Commons',
+      created_at: '2026-10-18T12:00:00Z',
+    }]);
+
+    const add = http.expectOne('http://localhost:8000/favorite-dishes/');
+    expect(add.request.body).toEqual({
+      name: 'Beef',
+      location_id: 'location-1',
+      location_name: 'Commons',
+    });
+    expect(dialog.close).not.toHaveBeenCalled();
+    add.flush({
+      uuid: 'dish-2',
+      name: 'Beef',
+      location_id: 'location-1',
+      location_name: 'Commons',
+      created_at: '2026-10-18T12:00:00Z',
+    });
     expect(dialog.close).toHaveBeenCalledWith({ uuid: 'review-1' });
   });
 

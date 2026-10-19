@@ -57,6 +57,16 @@ export class FavoriteDishesStore {
     return this.pendingNames().includes(this.pendingKey(name, locationId));
   }
 
+  favoriteIfNeeded(name: string, locationId: string, locationName: string): Observable<unknown> {
+    const normalized = this.normalize(name);
+    if (this.dishes().some((dish) =>
+      this.normalize(dish.name) === normalized && dish.location_id === locationId
+    )) {
+      return of(undefined);
+    }
+    return this.toggle(name, locationId, locationName);
+  }
+
   toggle(name: string, locationId: string, locationName: string): Observable<unknown> {
     const key = this.pendingKey(name, locationId);
     if (this.pendingNames().includes(key)) return EMPTY;
@@ -97,6 +107,9 @@ export class FavoriteDishesStore {
       if (detail) return `Could not ${action} favorite dishes: ${detail}`;
       if (error.status === 0) return 'Could not connect to the server. Check that the backend is running.';
       return `Could not ${action} favorite dishes (HTTP ${error.status}). Please try again.`;
+    }
+    if (error instanceof Error && error.message === 'Sign in to access favorite dishes.') {
+      return error.message;
     }
     return `Could not ${action} favorite dishes. Please try again.`;
   }
