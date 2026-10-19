@@ -8,6 +8,7 @@ export interface Review {
   createdAt: Date;
   updatedAt: Date;
   photoIds?: string[];
+  favoriteDishes?: string[];
 }
 
 export interface ReviewResponse {
@@ -20,4 +21,5 @@ export interface ReviewResponse {
   created_at: string;
   updated_at: string;
   photo_ids?: string[] | null;
+  favorite_dishes?: string[] | null;
 }

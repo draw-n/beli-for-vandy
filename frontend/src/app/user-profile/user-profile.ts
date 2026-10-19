@@ -87,6 +87,7 @@ export class Profile {
             createdAt: new Date(review.created_at),
             updatedAt: new Date(review.updated_at),
             photoIds: review.photo_ids ?? [],
+            favoriteDishes: review.favorite_dishes ?? [],
           }));
 
           this.loadLocationNames();

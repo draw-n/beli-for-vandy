@@ -8,7 +8,7 @@ import { ReviewApi, type ReviewCreateRequest } from './review.api';
 const reviewRequest: ReviewCreateRequest = {
   user_id: 'user-1', location_id: 'location-1', rating: 9, note: 'Great meal',
   meal_type: 'Lunch', created_at: '2026-10-18T12:00:00Z',
-  updated_at: '2026-10-18T12:00:00Z', photo_ids: [],
+  updated_at: '2026-10-18T12:00:00Z', photo_ids: [], favorite_dishes: [],
 };
 
 describe('ReviewApi HTTP contract', () => {
@@ -56,12 +56,14 @@ describe('ReviewApi HTTP contract', () => {
   it('updates encoded review IDs and omits auth when photo_ids is omitted', () => {
     api.update('review/1', {
       rating: 10, note: 'Updated', meal_type: 'Dinner', updated_at: '2026-10-18T13:00:00Z',
+      favorite_dishes: ['soup'],
     }).subscribe();
 
     const request = http.expectOne(`${apiBaseUrl}/reviews/review%2F1`);
     expect(request.request.method).toBe('PUT');
     expect(request.request.body).toEqual({
       rating: 10, note: 'Updated', meal_type: 'Dinner', updated_at: '2026-10-18T13:00:00Z',
+      favorite_dishes: ['soup'],
     });
     expect(request.request.headers.has('Authorization')).toBe(false);
     request.flush({ uuid: 'review/1' });
@@ -71,6 +73,7 @@ describe('ReviewApi HTTP contract', () => {
     sessionStorage.setItem('accessToken', 'signed-token');
     const body = {
       rating: 9, note: '', meal_type: 'Lunch', updated_at: '2026-10-18T13:00:00Z',
+      favorite_dishes: [],
       photo_ids: photoIds,
     };
     api.update('review-1', body).subscribe();
