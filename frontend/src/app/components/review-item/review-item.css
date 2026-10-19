@@ -58,6 +58,28 @@
   line-height: 1.5;
 }
 
+.favorite-dish-name {
+  display: inline-flex;
+  align-items: center;
+  white-space: nowrap;
+}
+
+.favorite-dish-name button {
+  width: 32px;
+  height: 32px;
+  padding: 4px;
+  color: #b3261e;
+  vertical-align: middle;
+}
+
+.favorite-dish-name mat-icon {
+  font-size: 20px;
+}
+
+.favorite-error {
+  color: #b3261e;
+}
+
 .review-photos {
   display: flex;
   flex-wrap: wrap;
@@ -93,4 +115,3 @@
   outline: 2px solid currentColor;
   outline-offset: 3px;
 }
-

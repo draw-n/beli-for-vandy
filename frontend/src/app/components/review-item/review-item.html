@@ -87,6 +87,29 @@
     {{ review.reviewText }}
   </p>
 
+  @if (validFavoriteDishes.length) {
+    <p class="favorite-dishes">
+      <strong>Favorite dishes:</strong>&nbsp;
+      @for (dish of validFavoriteDishes; track $index) {
+        <span class="favorite-dish-name">{{ dish }}{{ $index < validFavoriteDishes.length - 1 ? ', ' : '' }}@if (canFavoriteDishes) {
+            <button
+              mat-icon-button
+              type="button"
+              [attr.aria-label]="(favorites.isFavorite(dish, review.locationId) ? 'Remove ' : 'Add ') + dish + (favorites.isFavorite(dish, review.locationId) ? ' from' : ' to') + ' your favorite dishes'"
+              [attr.aria-pressed]="favorites.isFavorite(dish, review.locationId)"
+              [disabled]="favorites.loading() || favorites.isPending(dish, review.locationId)"
+              (click)="toggleFavorite(dish)"
+            >
+              <mat-icon>{{ favorites.isFavorite(dish, review.locationId) ? 'favorite' : 'favorite_border' }}</mat-icon>
+            </button>
+          }</span>
+      }
+    </p>
+  }
+  @if (favoriteError) {
+    <p role="alert" class="favorite-error">{{ favoriteError }}</p>
+  }
+
   @if (validPhotoIds.length) {
     <div class="review-photos">
       @for (photoId of validPhotoIds; track $index) {

@@ -12,9 +12,10 @@ export interface ReviewCreateRequest {
   created_at: string;
   updated_at: string;
   photo_ids: string[];
+  favorite_dishes: string[];
 }
 
-export type ReviewUpdateRequest = Pick<ReviewCreateRequest, 'rating' | 'note' | 'meal_type' | 'updated_at'> & {
+export type ReviewUpdateRequest = Pick<ReviewCreateRequest, 'rating' | 'note' | 'meal_type' | 'updated_at' | 'favorite_dishes'> & {
   photo_ids?: string[] | null;
 };
 

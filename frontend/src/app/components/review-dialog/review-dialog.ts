@@ -59,6 +59,7 @@ export class ReviewDialog implements OnDestroy {
   rating: number | null = null;
   reviewText = '';
   mealType = '';
+  favoriteDishesText = '';
 
   mealTypes = ['Breakfast', 'Lunch', 'Dinner', 'Snack'];
 
@@ -72,6 +73,7 @@ export class ReviewDialog implements OnDestroy {
       this.rating = data.review.rating;
       this.reviewText = data.review.reviewText;
       this.mealType = data.review.mealType;
+      this.favoriteDishesText = (data.review.favoriteDishes ?? []).join(', ');
     }
   }
 
@@ -153,6 +155,10 @@ export class ReviewDialog implements OnDestroy {
       rating: this.rating!,
       note: this.reviewText.trim(),
       meal_type: this.mealType,
+      favorite_dishes: this.favoriteDishesText.split(',')
+        .map((dish) => dish.trim())
+        .filter(Boolean)
+        .map((dish) => dish.charAt(0).toUpperCase() + dish.slice(1).toLowerCase()),
       updated_at: now,
     };
 

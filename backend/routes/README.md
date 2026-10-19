@@ -15,6 +15,19 @@ User records are stored in the MongoDB `users` collection. Passwords are stored 
 
 `GET /reviews/` returns reviews and accepts optional `location_id` and `user_id` query parameters. When supplied together, both filters apply.
 
+Review creation and updates accept an optional `favorite_dishes` array of strings.
+Omitting it on creation stores an empty array; updates that omit it preserve the
+current list. Review responses include `favorite_dishes`.
+
+## Favorite dishes
+
+Favorite dishes are a private per-account collection. All endpoints require a
+valid bearer token and scope reads, additions, and removals to the token owner.
+`GET /favorite-dishes/` lists saved dishes, `POST /favorite-dishes/` accepts
+`{"name":"Mac and cheese","location_id":"...","location_name":"Commons"}`, and
+`DELETE /favorite-dishes/{dish_id}` removes one. Dish names are whitespace-normalized
+and case-insensitive for duplicate detection within a dining hall.
+
 ## Review photo references
 
 `POST /reviews/` continues to accept text-only reviews without a bearer token.

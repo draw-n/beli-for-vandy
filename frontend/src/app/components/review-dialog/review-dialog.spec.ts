@@ -42,6 +42,7 @@ describe('ReviewDialog submission', () => {
     expect(request.request.body).toEqual({
       user_id: 'user-1', location_id: 'location-1', rating: 9,
       note: 'Great lunch', meal_type: 'Lunch', photo_ids: [],
+      favorite_dishes: [],
       created_at: expect.any(String), updated_at: expect.any(String),
     });
     expect(Number.isNaN(Date.parse(request.request.body.created_at))).toBe(false);
@@ -99,18 +100,22 @@ describe('ReviewDialog submission', () => {
       rating: 7, reviewText: 'Original note', mealType: 'Dinner',
       createdAt: new Date('2026-01-01'), updatedAt: new Date('2026-01-01'),
       photoIds: ['existing-photo'],
+      favoriteDishes: ['soup', 'pie'],
     };
     const editor = TestBed.createComponent(ReviewDialog).componentInstance;
     expect(editor.rating).toBe(7);
     expect(editor.reviewText).toBe('Original note');
     expect(editor.mealType).toBe('Dinner');
+    expect(editor.favoriteDishesText).toBe('soup, pie');
     editor.rating = 8;
     editor.reviewText = ' Updated note ';
+    editor.favoriteDishesText = '  cHicken curry,  nAAN, , ';
     editor.submitReview();
     const request = http.expectOne('http://localhost:8000/reviews/review-1');
     expect(request.request.method).toBe('PUT');
     expect(request.request.body).toEqual({
       rating: 8, note: 'Updated note', meal_type: 'Dinner', updated_at: expect.any(String),
+      favorite_dishes: ['Chicken curry', 'Naan'],
     });
     request.flush({ uuid: 'review-1' });
     expect(dialog.close).toHaveBeenCalledWith({ uuid: 'review-1' });
@@ -121,6 +126,7 @@ describe('ReviewDialog submission', () => {
       uuid: 'other-review', userId: 'other-user', locationId: 'location-1',
       rating: 7, reviewText: '', mealType: 'Lunch',
       createdAt: new Date(), updatedAt: new Date(),
+      favoriteDishes: [],
     };
     component.submitReview();
     http.expectNone(() => true);
@@ -237,6 +243,7 @@ describe('ReviewDialog submission', () => {
     component.data.review = {
       uuid: 'review-1', userId: 'user-1', locationId: 'location-1', rating: 7,
       reviewText: 'Original', mealType: 'Dinner', createdAt: new Date(), updatedAt: new Date(), photoIds: ['existing-photo'],
+      favoriteDishes: [],
     };
     const editor = TestBed.createComponent(ReviewDialog).componentInstance;
     editor.rating = 8;
@@ -254,6 +261,7 @@ describe('ReviewDialog submission', () => {
     component.data.review = {
       uuid: 'review-1', userId: 'user-1', locationId: 'location-1', rating: 7,
       reviewText: 'Original', mealType: 'Dinner', createdAt: new Date(), updatedAt: new Date(), photoIds: ['existing-photo'],
+      favoriteDishes: [],
     };
     const editor = TestBed.createComponent(ReviewDialog).componentInstance;
     editor.removeKeptPhoto('existing-photo');

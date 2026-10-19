@@ -8,9 +8,11 @@ from routes.review import router as review_router
 from routes.location import router as location_router
 from routes.follow import router as follow_router
 from routes.photo import router as photo_router
+from routes.favorite_dish import router as favorite_dish_router
 
 from routes.user import router as user_router
 from controllers.user import UserController
+from controllers.favorite_dish import ensure_favorite_dish_indexes
 from database import client, db
 from settings import get_settings
 
@@ -19,6 +21,7 @@ from settings import get_settings
 async def lifespan(_: FastAPI):
     await client.admin.command("ping")
     await UserController(db).ensure_indexes()
+    await ensure_favorite_dish_indexes()
     try:
         yield
     finally:
@@ -44,6 +47,7 @@ app.include_router(review_router)
 app.include_router(location_router)
 app.include_router(follow_router)
 app.include_router(photo_router)
+app.include_router(favorite_dish_router)
 
 
 @app.get("/", tags=["System"], summary="Check API health")

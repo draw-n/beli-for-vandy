@@ -10,6 +10,7 @@ REVIEW_DATA = {
     "created_at": "2026-09-23T18:30:00",
     "updated_at": "2026-09-23T18:30:00",
     "photo_ids": [],
+    "favorite_dishes": ["mac and cheese", "roasted vegetables"],
 }
 
 
@@ -35,6 +36,41 @@ async def test_create_review(client):
     assert data["created_at"] == REVIEW_DATA["created_at"]
     assert data["updated_at"] == REVIEW_DATA["updated_at"]
     assert data["photo_ids"] == REVIEW_DATA["photo_ids"]
+    assert data["favorite_dishes"] == ["Mac and cheese", "Roasted vegetables"]
+
+
+@pytest.mark.asyncio
+async def test_create_review_defaults_favorite_dishes_for_legacy_requests(client):
+    review_data = {key: value for key, value in REVIEW_DATA.items() if key != "favorite_dishes"}
+
+    response = await client.post("/reviews/", json=review_data)
+
+    assert response.status_code == 200
+    assert response.json()["favorite_dishes"] == []
+
+
+@pytest.mark.asyncio
+async def test_review_capitalizes_only_the_first_character_of_each_favorite_dish(client):
+    response = await client.post(
+        "/reviews/",
+        json={**REVIEW_DATA, "favorite_dishes": ["mAC and cheese", " pIZZA"]},
+    )
+
+    assert response.status_code == 200
+    assert response.json()["favorite_dishes"] == ["Mac and cheese", "Pizza"]
+
+
+@pytest.mark.asyncio
+async def test_review_update_capitalizes_only_the_first_character_of_each_favorite_dish(client):
+    created = await client.post("/reviews/", json=REVIEW_DATA)
+    response = await client.put(
+        f"/reviews/{created.json()['uuid']}",
+        json={"favorite_dishes": ["mAC and cheese", " pIZZA"]},
+    )
+
+    assert response.status_code == 200
+    assert response.json()["favorite_dishes"] == ["Mac and cheese", "Pizza"]
+
 
 @pytest.mark.asyncio
 async def test_get_reviews(client):
@@ -120,6 +156,7 @@ async def test_update_review(client):
         "rating": 3,
         "note": "It was okay.",
         "meal_type": "lunch",
+        "favorite_dishes": ["pizza", "salad"],
     }
 
     response = await client.put(
@@ -137,6 +174,7 @@ async def test_update_review(client):
     assert data["rating"] == 3
     assert data["note"] == "It was okay."
     assert data["meal_type"] == "lunch"
+    assert data["favorite_dishes"] == ["Pizza", "Salad"]
 
     # Unchanged fields
     assert data["user_id"] == REVIEW_DATA["user_id"]

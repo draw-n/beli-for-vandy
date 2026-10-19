@@ -26,6 +26,7 @@ async def client(mock_db, monkeypatch):
     mock_reviews_collection = mock_db["reviews"]
     mock_follows_collection = mock_db["follows"]
     mock_locations_collection = mock_db["locations"]
+    mock_favorite_dishes_collection = mock_db["favorite_dishes"]
 
     monkeypatch.setattr(
         database,
@@ -44,6 +45,15 @@ async def client(mock_db, monkeypatch):
         "locations_collection",
         mock_locations_collection
     )
+    monkeypatch.setattr(
+        database,
+        "favorite_dishes_collection",
+        mock_favorite_dishes_collection
+    )
+    await mock_favorite_dishes_collection.create_index(
+        [("user_id", 1), ("normalized_name", 1), ("location_id", 1)],
+        unique=True,
+    )
 
     transport = ASGITransport(app=app)
 
@@ -55,4 +65,4 @@ async def client(mock_db, monkeypatch):
 
     await mock_reviews_collection.drop()
     await mock_follows_collection.drop()
-
+    await mock_favorite_dishes_collection.drop()

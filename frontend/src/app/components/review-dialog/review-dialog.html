@@ -42,6 +42,17 @@
       ></textarea>
     </mat-form-field>
 
+    <mat-form-field appearance="outline">
+      <mat-label>Favorite dishes</mat-label>
+      <textarea
+        matInput
+        rows="2"
+        [(ngModel)]="favoriteDishesText"
+        placeholder="e.g. mac and cheese, roasted vegetables"
+      ></textarea>
+      <mat-hint>Separate dishes with commas.</mat-hint>
+    </mat-form-field>
+
     <section class="photo-section">
       <div class="photo-heading">
         <div>
