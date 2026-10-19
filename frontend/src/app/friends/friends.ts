@@ -13,7 +13,7 @@ import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { AccountApi } from '../api/account.api';
 import { FollowApi } from '../api/follow.api';
 
-import { Account } from '../types/auth';
+import { Account, PublicAccount } from '../types/auth';
 import { FollowResponse } from '../types/follow';
 
 type SocialStatus = 'not-following' | 'following' | 'follows-you' | 'mutual';
@@ -21,7 +21,7 @@ type SocialStatus = 'not-following' | 'following' | 'follows-you' | 'mutual';
 type FriendsView = 'discover' | 'friends';
 
 interface SocialUser {
-  account: Account;
+  account: PublicAccount;
   status: SocialStatus;
 
   // Logged-in user -> this user
@@ -59,7 +59,7 @@ export class FriendsComponent implements OnInit {
 
   currentAccount: Account | null = null;
 
-  accounts: Account[] = [];
+  accounts: PublicAccount[] = [];
 
   follows: FollowResponse[] = [];
 
@@ -128,7 +128,7 @@ export class FriendsComponent implements OnInit {
     /*
      * First load all accounts.
      */
-    this.accountApi.getAll().subscribe({
+    this.accountApi.getPublic().subscribe({
       next: (accounts) => {
         this.accounts = accounts ?? [];
 

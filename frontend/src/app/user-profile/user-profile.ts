@@ -11,7 +11,7 @@ import { AccountApi } from '../api/account.api';
 import { ReviewItem } from '../components/review-item/review-item';
 import { apiBaseUrl } from '../api/api-base-url';
 import { HttpClient } from '@angular/common/http';
-import type { Account } from '../types/auth';
+import type { Account, PublicAccount } from '../types/auth';
 import type { Review, ReviewResponse } from '../types/review';
 import type { LocationResponse } from '../types/location';
 
@@ -31,7 +31,7 @@ import type { LocationResponse } from '../types/location';
   styleUrl: './user-profile.css',
 })
 export class Profile {
-  account: Account | null = null;
+  account: PublicAccount | null = null;
   reviews: Review[] = [];
   locationNames: Record<string, string> = {};
 
@@ -56,7 +56,7 @@ export class Profile {
   }
 
   private loadUser(userId: string): void {
-    this.accountApi.getAll().subscribe({
+    this.accountApi.getPublic().subscribe({
       next: (accounts) => {
         this.account =
           accounts.find((account) => account.uuid === userId) ?? null;

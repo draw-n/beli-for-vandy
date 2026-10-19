@@ -36,6 +36,17 @@ export interface Account extends AccountBase {
   security_version?: number;
 }
 
+export interface PublicAccount {
+  uuid: string;
+  username: string;
+  first_name: string;
+  last_name: string;
+  year_graduation: number | null;
+  type: AccountType | null;
+  email?: string | null;
+  home_city?: string | null;
+}
+
 export interface AccountLoginResponse extends Account {
   access_token: string;
   token_type: string;

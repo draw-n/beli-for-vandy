@@ -29,6 +29,24 @@ describe('AccountApi HTTP contract', () => {
     expect(received).toEqual(accounts);
   });
 
+  it('gets public accounts without requiring account administration access', () => {
+    const accounts = [{
+      uuid: 'user-1',
+      username: 'ava',
+      first_name: 'Ava',
+      last_name: 'Martin',
+      year_graduation: 2027,
+      type: 'student' as const,
+    }];
+    let received: unknown;
+    api.getPublic().subscribe((result) => received = result);
+
+    const request = http.expectOne(`${apiBaseUrl}/accounts/public`);
+    expect(request.request.method).toBe('GET');
+    request.flush(accounts);
+    expect(received).toEqual(accounts);
+  });
+
   it('posts account registration fields and returns the created account', () => {
     const body = {
       username: 'ava', first_name: 'Ava', last_name: 'Martin', email: 'ava@example.com',

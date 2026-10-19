@@ -56,6 +56,19 @@ class ModerationController:
             {"moderation_status": {"$exists": False}},
             {"$set": {"moderation_status": "approved"}},
         )
+        # Older photo records used the attachment lifecycle field for moderation.
+        # Keep those records usable while moving moderation state to its own field.
+        await self._photo_files().update_many(
+            {"metadata.status": {"$in": ["approved", "hidden", "removed"]}},
+            [
+                {
+                    "$set": {
+                        "metadata.moderation_status": "$metadata.status",
+                        "metadata.status": "pending",
+                    }
+                }
+            ],
+        )
 
     async def _target_exists(self, target_type: ReportTargetType, target_id: str) -> bool:
         if target_type == ReportTargetType.REVIEW:
@@ -201,7 +214,13 @@ class ModerationController:
             raise InvalidModerationActionError("A reason is required.")
         result = await self._photo_files().update_one(
             {"_id": photo_id},
-            {"$set": {"metadata.status": status, "metadata.moderated_at": datetime.now(timezone.utc), "metadata.moderation_reason": reason}},
+            {
+                "$set": {
+                    "metadata.moderation_status": status,
+                    "metadata.moderated_at": datetime.now(timezone.utc),
+                    "metadata.moderation_reason": reason,
+                }
+            },
         )
         if result.matched_count == 0:
             raise TargetNotFoundError
