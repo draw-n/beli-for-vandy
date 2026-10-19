@@ -1,0 +1,61 @@
+<main class="page">
+  <header class="page-header">
+    <div class="header-top">
+      <p class="eyebrow">YOUR COLLECTION</p>
+      <nav class="header-actions" aria-label="Main navigation">
+        <a mat-button routerLink="/locations"><mat-icon>restaurant</mat-icon> Dining</a>
+        <a mat-button routerLink="/profile"><mat-icon>account_circle</mat-icon> Profile</a>
+      </nav>
+    </div>
+    <h1>Favorite dishes</h1>
+    <p class="subtitle">Dishes you’ve saved from reviews.</p>
+  </header>
+
+  <section class="favorites-list" aria-live="polite">
+    @if (favorites.loading()) {
+      <mat-spinner diameter="40" aria-label="Loading favorite dishes"></mat-spinner>
+    } @else if (favorites.dishes().length) {
+      @for (dish of favorites.dishes(); track dish.uuid) {
+        <mat-card appearance="outlined" class="favorite-dish">
+          <mat-card-content>
+            <div>
+              <strong>{{ dish.name }}</strong>
+              <a
+                class="favorite-location"
+                [routerLink]="dish.location_id ? ['/locations', dish.location_id] : ['/locations']"
+                [attr.aria-label]="'View dining hall ' + (dish.location_name || 'Unknown dining hall')"
+              >
+                <mat-icon>restaurant</mat-icon>
+                {{ dish.location_name || 'Dining hall not identified' }}
+              </a>
+              @if (!dish.location_id) {
+                <small>Heart this dish on its review to assign its dining hall.</small>
+              }
+            </div>
+            <button
+              mat-icon-button
+              type="button"
+              [attr.aria-label]="'Remove ' + dish.name + ' from favorite dishes'"
+              [disabled]="favorites.isPending(dish.name, dish.location_id || '')"
+              (click)="remove(dish.name, dish.location_id || '', dish.location_name || '')"
+            >
+              <mat-icon>favorite</mat-icon>
+            </button>
+          </mat-card-content>
+        </mat-card>
+      }
+    } @else {
+      <div class="empty-state">
+        <mat-icon>favorite_border</mat-icon>
+        <h2>No favorite dishes yet</h2>
+        <p>Heart a dish on a review to save it here.</p>
+        <a mat-flat-button routerLink="/locations">Browse dining reviews</a>
+      </div>
+    }
+  </section>
+
+  @if (errorMessage) {
+    <p role="alert" class="error-message">{{ errorMessage }}</p>
+    <button mat-button type="button" (click)="load()">Try again</button>
+  }
+</main>

@@ -166,6 +166,7 @@ export class LocationProfile {
             createdAt: new Date(review.created_at),
             updatedAt: new Date(review.updated_at),
             photoIds: review.photo_ids ?? [],
+            favoriteDishes: review.favorite_dishes ?? [],
           }));
 
           if (this.hall) {

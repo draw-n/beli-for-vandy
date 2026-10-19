@@ -51,6 +51,7 @@ async def client(mock_db, monkeypatch):
     mock_reviews_collection = mock_db["reviews"]
     mock_follows_collection = mock_db["follows"]
     mock_locations_collection = mock_db["locations"]
+    mock_favorite_dishes_collection = mock_db["favorite_dishes"]
     mock_users_collection = mock_db["users"]
 
     monkeypatch.setattr(
@@ -69,6 +70,15 @@ async def client(mock_db, monkeypatch):
         database,
         "locations_collection",
         mock_locations_collection
+    )
+    monkeypatch.setattr(
+        database,
+        "favorite_dishes_collection",
+        mock_favorite_dishes_collection
+    )
+    await mock_favorite_dishes_collection.create_index(
+        [("user_id", 1), ("normalized_name", 1), ("location_id", 1)],
+        unique=True,
     )
     monkeypatch.setattr(database, "users_collection", mock_users_collection)
     monkeypatch.setenv("AUTH_TOKEN_SECRET", TEST_TOKEN_SECRET)
@@ -108,4 +118,4 @@ async def client(mock_db, monkeypatch):
     await mock_follows_collection.drop()
     await mock_locations_collection.drop()
     await mock_users_collection.drop()
-    get_settings.cache_clear()
+    get_settings.cache_clear()    await mock_favorite_dishes_collection.drop()

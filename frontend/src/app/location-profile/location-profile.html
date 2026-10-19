@@ -4,6 +4,10 @@
     <mat-icon>arrow_back</mat-icon>
     All dining spots
   </a>
+  <a mat-button routerLink="/favorite-dishes" class="back-button">
+    <mat-icon>favorite</mat-icon>
+    Favorite dishes
+  </a>
 
   <!-- Main photo -->
   <img *ngIf="hall.image" class="cover-image" [src]="hall.image" [alt]="hall.name" />
@@ -168,6 +172,7 @@
       <app-review-item
         *ngFor="let review of filteredReviews"
         [review]="review"
+        [locationName]="hall.name"
         [canEdit]="isOwnReview(review)"
         [busy]="deletingId() !== null"
         (deleteRequested)="deleteReview($event)"

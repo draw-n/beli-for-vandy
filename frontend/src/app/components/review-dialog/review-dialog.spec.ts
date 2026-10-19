@@ -42,6 +42,7 @@ describe('ReviewDialog submission', () => {
     expect(request.request.body).toEqual({
       user_id: 'user-1', location_id: 'location-1', rating: 9,
       note: 'Great lunch', meal_type: 'Lunch', photo_ids: [],
+      favorite_dishes: [],
       created_at: expect.any(String), updated_at: expect.any(String),
     });
     expect(Number.isNaN(Date.parse(request.request.body.created_at))).toBe(false);
@@ -74,6 +75,24 @@ describe('ReviewDialog submission', () => {
     expect(component.errorMessage()).toContain('Please log in');
     http.expectNone('http://localhost:8000/reviews/');
   });
+
+  it('accepts the current 1–10 rating endpoints and rejects values outside them', () => {
+    for (const rating of [0, 11, 1.5, null]) {
+      component.rating = rating;
+      component.submitReview();
+      http.expectNone('http://localhost:8000/reviews/');
+    }
+
+    for (const rating of [1, 10]) {
+      const boundaryComponent = TestBed.createComponent(ReviewDialog).componentInstance;
+      boundaryComponent.rating = rating;
+      boundaryComponent.mealType = 'Lunch';
+      boundaryComponent.submitReview();
+      const request = http.expectOne('http://localhost:8000/reviews/');
+      expect(request.request.body.rating).toBe(rating);
+      request.flush({ uuid: `review-${rating}` });
+    }
+  });
   it('prefills an existing review and updates only editable fields', () => {
     const data = TestBed.inject(MAT_DIALOG_DATA);
     data.review = {
@@ -81,20 +100,93 @@ describe('ReviewDialog submission', () => {
       rating: 7, reviewText: 'Original note', mealType: 'Dinner',
       createdAt: new Date('2026-01-01'), updatedAt: new Date('2026-01-01'),
       photoIds: ['existing-photo'],
+      favoriteDishes: ['soup', 'pie'],
     };
     const editor = TestBed.createComponent(ReviewDialog).componentInstance;
     expect(editor.rating).toBe(7);
     expect(editor.reviewText).toBe('Original note');
     expect(editor.mealType).toBe('Dinner');
+    expect(editor.favoriteDishesText).toBe('soup, pie');
     editor.rating = 8;
     editor.reviewText = ' Updated note ';
+    editor.favoriteDishesText = '  cHicken curry,  nAAN, , ';
     editor.submitReview();
     const request = http.expectOne('http://localhost:8000/reviews/review-1');
     expect(request.request.method).toBe('PUT');
     expect(request.request.body).toEqual({
       rating: 8, note: 'Updated note', meal_type: 'Dinner', updated_at: expect.any(String),
+      favorite_dishes: ['Chicken curry', 'Naan'],
     });
+    sessionStorage.setItem('accessToken', 'signed-token');
     request.flush({ uuid: 'review-1' });
+    http.expectOne('http://localhost:8000/favorite-dishes/').flush([
+      { uuid: '1', name: 'Chicken curry', location_id: 'location-1', location_name: 'Commons', created_at: '' },
+      { uuid: '2', name: 'Naan', location_id: 'location-1', location_name: 'Commons', created_at: '' },
+    ]);
+    expect(dialog.close).toHaveBeenCalledWith({ uuid: 'review-1' });
+  });
+
+  it('accepts commas and new lines as favorite dish separators', () => {
+    sessionStorage.setItem('accessToken', 'signed-token');
+    component.favoriteDishesText = 'mac and cheese, beef\r\nroasted vegetables';
+    component.submitReview();
+    const request = http.expectOne('http://localhost:8000/reviews/');
+    expect(request.request.body.favorite_dishes).toEqual([
+      'Mac and cheese',
+      'Beef',
+      'Roasted vegetables',
+    ]);
+    request.flush({ uuid: 'review-1' });
+    http.expectOne('http://localhost:8000/favorite-dishes/').flush([
+      { uuid: '1', name: 'Mac and cheese', location_id: 'location-1', location_name: 'Commons', created_at: '' },
+      { uuid: '2', name: 'Beef', location_id: 'location-1', location_name: 'Commons', created_at: '' },
+      { uuid: '3', name: 'Roasted vegetables', location_id: 'location-1', location_name: 'Commons', created_at: '' },
+    ]);
+    expect(dialog.close).toHaveBeenCalledWith({ uuid: 'review-1' });
+  });
+
+  it('keeps the saved review and explains when sign-in is needed to favorite dishes', () => {
+    component.favoriteDishesText = 'Mac and cheese';
+    component.submitReview();
+    http.expectOne('http://localhost:8000/reviews/').flush({ uuid: 'review-1' });
+
+    expect(component.savedReview?.uuid).toBe('review-1');
+    expect(component.errorMessage()).toContain('Sign in to access favorite dishes.');
+    expect(dialog.close).not.toHaveBeenCalled();
+  });
+
+  it('automatically favorites review dishes at the reviewed location', () => {
+    sessionStorage.setItem('accessToken', 'signed-token');
+    component.favoriteDishesText = 'Mac and cheese, beef';
+    component.submitReview();
+
+    const review = http.expectOne('http://localhost:8000/reviews/');
+    review.flush({ uuid: 'review-1' });
+
+    const load = http.expectOne('http://localhost:8000/favorite-dishes/');
+    expect(load.request.headers.has('Authorization')).toBe(true);
+    load.flush([{
+      uuid: 'dish-1',
+      name: 'Mac and cheese',
+      location_id: 'location-1',
+      location_name: 'Commons',
+      created_at: '2026-10-18T12:00:00Z',
+    }]);
+
+    const add = http.expectOne('http://localhost:8000/favorite-dishes/');
+    expect(add.request.body).toEqual({
+      name: 'Beef',
+      location_id: 'location-1',
+      location_name: 'Commons',
+    });
+    expect(dialog.close).not.toHaveBeenCalled();
+    add.flush({
+      uuid: 'dish-2',
+      name: 'Beef',
+      location_id: 'location-1',
+      location_name: 'Commons',
+      created_at: '2026-10-18T12:00:00Z',
+    });
     expect(dialog.close).toHaveBeenCalledWith({ uuid: 'review-1' });
   });
 
@@ -103,6 +195,7 @@ describe('ReviewDialog submission', () => {
       uuid: 'other-review', userId: 'other-user', locationId: 'location-1',
       rating: 7, reviewText: '', mealType: 'Lunch',
       createdAt: new Date(), updatedAt: new Date(),
+      favoriteDishes: [],
     };
     component.submitReview();
     http.expectNone(() => true);
@@ -122,6 +215,37 @@ describe('ReviewDialog submission', () => {
     component.keptPhotoIds.push('old-1', 'old-2', 'old-3');
     component.selectPhotos({ target: { files: [createFile('ok.webp', 'image/webp')] } } as unknown as Event);
     expect(component.selectedPhotos).toHaveLength(0);
+    expect(component.errorMessage()).toContain('up to 3 photos');
+    vi.restoreAllMocks();
+  });
+
+  it('accepts images just below and exactly at 5 MiB, but rejects one byte above', () => {
+    vi.spyOn(URL, 'createObjectURL').mockReturnValue('blob:size-boundary');
+    vi.spyOn(URL, 'revokeObjectURL').mockImplementation(() => undefined);
+    const select = (size: number) => component.selectPhotos({
+      target: { files: [new File([new Uint8Array(size)], 'food.jpg', { type: 'image/jpeg' })] },
+    } as unknown as Event);
+
+    select(5 * 1024 * 1024 - 1);
+    select(5 * 1024 * 1024);
+    expect(component.selectedPhotos).toHaveLength(2);
+    select(5 * 1024 * 1024 + 1);
+    expect(component.selectedPhotos).toHaveLength(2);
+    expect(component.errorMessage()).toContain('5 MB');
+    vi.restoreAllMocks();
+  });
+
+  it('allows photo counts from one through three and rejects the fourth selection', () => {
+    vi.spyOn(URL, 'createObjectURL').mockReturnValue('blob:count-boundary');
+    vi.spyOn(URL, 'revokeObjectURL').mockImplementation(() => undefined);
+    const files = (count: number) => Array.from(
+      { length: count }, (_, index) => new File([`photo-${index}`], `${index}.jpg`, { type: 'image/jpeg' }),
+    );
+
+    component.selectPhotos({ target: { files: files(3) } } as unknown as Event);
+    expect(component.photoCount).toBe(3);
+    component.selectPhotos({ target: { files: files(1) } } as unknown as Event);
+    expect(component.photoCount).toBe(3);
     expect(component.errorMessage()).toContain('up to 3 photos');
     vi.restoreAllMocks();
   });
@@ -188,6 +312,7 @@ describe('ReviewDialog submission', () => {
     component.data.review = {
       uuid: 'review-1', userId: 'user-1', locationId: 'location-1', rating: 7,
       reviewText: 'Original', mealType: 'Dinner', createdAt: new Date(), updatedAt: new Date(), photoIds: ['existing-photo'],
+      favoriteDishes: [],
     };
     const editor = TestBed.createComponent(ReviewDialog).componentInstance;
     editor.rating = 8;
@@ -205,6 +330,7 @@ describe('ReviewDialog submission', () => {
     component.data.review = {
       uuid: 'review-1', userId: 'user-1', locationId: 'location-1', rating: 7,
       reviewText: 'Original', mealType: 'Dinner', createdAt: new Date(), updatedAt: new Date(), photoIds: ['existing-photo'],
+      favoriteDishes: [],
     };
     const editor = TestBed.createComponent(ReviewDialog).componentInstance;
     editor.removeKeptPhoto('existing-photo');
