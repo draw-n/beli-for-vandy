@@ -80,11 +80,8 @@ class UserResponse(UserBase):
 
 class PublicUserResponse(BaseModel):
     uuid: str
-    username: str
     first_name: str
     last_name: str
-    year_graduation: int | None = None
-    type: UserType | None = None
 
 
 class LoginResponse(UserResponse):

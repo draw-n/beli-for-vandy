@@ -15,7 +15,7 @@ def authenticated_user():
 
 @pytest.mark.asyncio
 async def test_favorite_dishes_require_authentication(client):
-    response = await client.get("/favorite-dishes/")
+    response = await client.get("/favorite-dishes/", headers={})
 
     assert response.status_code == 401
 
