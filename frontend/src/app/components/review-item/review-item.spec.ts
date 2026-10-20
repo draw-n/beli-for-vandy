@@ -333,6 +333,8 @@ describe('Reusable review item', () => {
     const fixture = TestBed.createComponent(ReviewItem);
     fixture.componentRef.setInput('review', review);
     fixture.detectChanges();
+    const http = TestBed.inject(HttpTestingController);
+    http.expectOne(`${apiBaseUrl}/favorite-dishes/`).flush([]);
     vi.spyOn(
       (fixture.componentInstance as unknown as { dialog: MatDialog }).dialog,
       'open',
@@ -342,7 +344,7 @@ describe('Reusable review item', () => {
 
     fixture.componentInstance.reportReview();
 
-    const request = TestBed.inject(HttpTestingController).expectOne(`${apiBaseUrl}/reports`);
+    const request = http.expectOne(`${apiBaseUrl}/reports`);
     expect(request.request.method).toBe('POST');
     expect(request.request.headers.get('Authorization')).toBe('Bearer signed-token');
     expect(request.request.body).toEqual({
