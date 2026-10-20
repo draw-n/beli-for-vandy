@@ -18,6 +18,19 @@ jobs:
     name: Quality gate
     runs-on: ubuntu-latest
     timeout-minutes: 20
+    env:
+      REAL_MONGODB_URI: mongodb://localhost:27017/beli_integration_test
+
+    services:
+      mongodb:
+        image: mongo:7.0
+        ports:
+          - 27017:27017
+        options: >-
+          --health-cmd "mongosh --quiet --eval 'db.runCommand({ ping: 1 }).ok'"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
 
     steps:
       - name: Check out repository
@@ -74,6 +87,9 @@ jobs:
           backend/tests/test_reviews.py
           backend/tests/test_locations.py
           backend/tests/test_follows.py
+
+      - name: Run real MongoDB integration test
+        run: python -m pytest backend/tests/test_review_real_database.py
 
       - name: Enforce backend coverage gate
         run: >-
