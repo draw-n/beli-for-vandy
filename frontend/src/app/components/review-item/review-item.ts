@@ -10,6 +10,9 @@ import { switchMap } from 'rxjs';
 import type { Review } from '../../types/review';
 import { apiBaseUrl } from '../../api/api-base-url';
 import { PhotoViewerDialog } from '../photo-viewer-dialog/photo-viewer-dialog';
+import { ReportReviewDialog } from '../report-review-dialog/report-review-dialog';
+import { ModerationApi } from '../../api/moderation.api';
+import { AuthService } from '../../auth.service';
 import { FavoriteDishesStore } from '../../favorite-dishes/favorite-dishes.store';
 
 @Component({
@@ -22,6 +25,8 @@ import { FavoriteDishesStore } from '../../favorite-dishes/favorite-dishes.store
 export class ReviewItem implements OnInit {
   private readonly dialog = inject(MatDialog);
   readonly favorites = inject(FavoriteDishesStore);
+  private readonly moderationApi = inject(ModerationApi, { optional: true });
+  private readonly auth = inject(AuthService);
   @Input({ required: true }) review!: Review;
   @Input() authorName = '';
   @Input() locationName = '';
@@ -48,6 +53,11 @@ export class ReviewItem implements OnInit {
     } catch {
       return false;
     }
+  }
+  reportMessage = '';
+
+  get canReport(): boolean {
+    return this.auth.isAuthenticated;
   }
 
   photoUrl(photoId: string): string {
@@ -93,6 +103,27 @@ export class ReviewItem implements OnInit {
       maxWidth: '95vw',
       maxHeight: '95vh',
       ariaLabel: description,
+    });
+  }
+
+  reportReview(): void {
+    if (!this.moderationApi) {
+      this.reportMessage = 'Please sign in before reporting a review.';
+      return;
+    }
+    const reportDialog = this.dialog.open(ReportReviewDialog, {
+      width: 'min(92vw, 480px)',
+      data: { reviewId: this.review.uuid },
+    });
+    reportDialog.afterClosed().subscribe((reason: string | undefined) => {
+      if (!reason) return;
+      this.reportMessage = '';
+      this.moderationApi?.createReport('review', this.review.uuid, reason).subscribe({
+        next: () => { this.reportMessage = 'Report submitted.'; },
+        error: (error: { error?: { detail?: string } }) => {
+          this.reportMessage = error.error?.detail ?? 'Could not submit report.';
+        },
+      });
     });
   }
 }

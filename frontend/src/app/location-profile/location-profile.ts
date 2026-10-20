@@ -137,7 +137,7 @@ export class LocationProfile {
   }
 
   private loadAuthorNames(): void {
-    this.accountApi.getAll().subscribe({
+    this.accountApi.getPublic().subscribe({
       next: (accounts) => {
         this.authorNames = Object.fromEntries(
           accounts.map(account => [

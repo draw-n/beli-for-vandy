@@ -35,6 +35,14 @@ describe('App routes', () => {
     expect(routes.some((route) => route.path === 'friends')).toBe(true);
   });
 
+  it('should protect moderation routes with role guards', () => {
+    const moderation = routes.find((route) => route.path === 'moderation');
+    const admin = routes.find((route) => route.path === 'admin');
+
+    expect(moderation?.canActivate).toHaveLength(1);
+    expect(admin?.canActivate).toHaveLength(1);
+  });
+
   it('should redirect unknown routes to login', () => {
     const route = routes.find((route) => route.path === '**');
 

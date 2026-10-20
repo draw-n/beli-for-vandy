@@ -1,12 +1,14 @@
 import { TestBed } from '@angular/core/testing';
-import { provideRouter } from '@angular/router';
-import { provideHttpClient } from '@angular/common/http';
+import { provideHttpClient, withInterceptors } from '@angular/common/http';
 import { HttpTestingController, provideHttpClientTesting } from '@angular/common/http/testing';
+import { provideRouter } from '@angular/router';
 import { ReviewItem } from './review-item';
 import type { Review } from '../../types/review';
 import { apiBaseUrl } from '../../api/api-base-url';
 import { MatDialog } from '@angular/material/dialog';
 import { PhotoViewerDialog } from '../photo-viewer-dialog/photo-viewer-dialog';
+import { of } from 'rxjs';
+import { authInterceptor } from '../../auth.interceptor';
 
 const review: Review = {
   uuid: 'review-1',
@@ -317,4 +319,43 @@ describe('Reusable review item', () => {
       expect(edit).toHaveBeenCalledWith(review);
     }
   );
+
+  it('submits a review report with the authenticated request', () => {
+    sessionStorage.setItem('accessToken', 'signed-token');
+    sessionStorage.setItem('currentAccount', JSON.stringify({ uuid: 'reporter' }));
+    TestBed.configureTestingModule({
+      providers: [
+        provideHttpClient(withInterceptors([authInterceptor])),
+        provideHttpClientTesting(),
+      ],
+    });
+
+    const fixture = TestBed.createComponent(ReviewItem);
+    fixture.componentRef.setInput('review', review);
+    fixture.detectChanges();
+    const http = TestBed.inject(HttpTestingController);
+    http.expectOne(`${apiBaseUrl}/favorite-dishes/`).flush([]);
+    vi.spyOn(
+      (fixture.componentInstance as unknown as { dialog: MatDialog }).dialog,
+      'open',
+    ).mockReturnValue({
+      afterClosed: () => of('Inappropriate content'),
+    } as ReturnType<MatDialog['open']>);
+
+    fixture.componentInstance.reportReview();
+
+    const request = http.expectOne(`${apiBaseUrl}/reports`);
+    expect(request.request.method).toBe('POST');
+    expect(request.request.headers.get('Authorization')).toBe('Bearer signed-token');
+    expect(request.request.body).toEqual({
+      target_type: 'review',
+      target_id: 'review-1',
+      reason: 'Inappropriate content',
+    });
+    request.flush({ uuid: 'report-1' });
+    expect(fixture.componentInstance.reportMessage).toBe('Report submitted.');
+
+    sessionStorage.removeItem('accessToken');
+    sessionStorage.removeItem('currentAccount');
+  });
 });

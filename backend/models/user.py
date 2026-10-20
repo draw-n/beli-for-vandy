@@ -13,6 +13,18 @@ class UserType(str, Enum):
     STUDENT = "student"
 
 
+class UserRole(str, Enum):
+    USER = "user"
+    MODERATOR = "moderator"
+    ADMIN = "admin"
+
+
+class AccountStatus(str, Enum):
+    ACTIVE = "active"
+    SUSPENDED = "suspended"
+    DELETED = "deleted"
+
+
 class UserBase(BaseModel):
     username: NonEmptyString
     first_name: NonEmptyString
@@ -27,6 +39,12 @@ class StoredUser(UserBase):
     password_hash: str
     uuid: str
     created_at: datetime
+    role: UserRole = UserRole.USER
+    status: AccountStatus = AccountStatus.ACTIVE
+    suspended_until: datetime | None = None
+    suspension_reason: str | None = None
+    appeal_notes: str | None = None
+    security_version: int = 0
 
 
 class UserCreate(UserBase):
@@ -35,6 +53,10 @@ class UserCreate(UserBase):
 
 class UserLogin(BaseModel):
     username: NonEmptyString
+    password: str = Field(min_length=1)
+
+
+class PrivilegeChange(BaseModel):
     password: str = Field(min_length=1)
 
 
@@ -52,6 +74,14 @@ class UserUpdate(BaseModel):
 class UserResponse(UserBase):
     uuid: str
     created_at: datetime
+    role: UserRole = UserRole.USER
+    status: AccountStatus = AccountStatus.ACTIVE
+
+
+class PublicUserResponse(BaseModel):
+    uuid: str
+    first_name: str
+    last_name: str
 
 
 class LoginResponse(UserResponse):

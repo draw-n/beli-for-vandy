@@ -1,4 +1,6 @@
 export type AccountType = 'student' | 'faculty';
+export type AccountRole = 'user' | 'moderator' | 'admin';
+export type AccountStatus = 'active' | 'suspended' | 'deleted';
 
 interface AccountBase {
   username: string;
@@ -27,6 +29,22 @@ export interface AccountLoginRequest {
 export interface Account extends AccountBase {
   uuid: string;
   created_at: string;
+  role: AccountRole;
+  status: AccountStatus;
+  suspended_until?: string | null;
+  suspension_reason?: string | null;
+  security_version?: number;
+}
+
+export interface PublicAccount {
+  uuid: string;
+  username: string;
+  first_name: string;
+  last_name: string;
+  year_graduation: number | null;
+  type: AccountType | null;
+  email?: string | null;
+  home_city?: string | null;
 }
 
 export interface AccountLoginResponse extends Account {

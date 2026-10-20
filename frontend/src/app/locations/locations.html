@@ -18,6 +18,13 @@
           Profile
         </button>
 
+        @if (auth.isModerator) {
+          <button mat-button type="button" [routerLink]="['/moderation']">
+            <mat-icon>gavel</mat-icon>
+            Moderation
+          </button>
+        }
+
         <button mat-button type="button" (click)="logout()">
           <mat-icon>logout</mat-icon>
           Logout

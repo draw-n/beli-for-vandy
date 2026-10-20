@@ -14,6 +14,7 @@ from controllers.photo_storage import (
 )
 
 from models.review import ReviewCreate, ReviewUpdate
+from models.user import StoredUser, UserRole
 
 
 MAX_REVIEW_PHOTOS = 3
@@ -97,18 +98,18 @@ async def _validate_photo_attachments(
 
 async def create_review(
     review: ReviewCreate,
-    current_user_id: str | None = None,
+    current_user: StoredUser,
     bucket: Any | None = None,
 ):
     review_data = review.model_dump()
+    current_user_id = current_user.uuid
+    review_data["user_id"] = current_user_id
     review_data["uuid"] = str(uuid4())
 
     photo_ids = review_data.get("photo_ids")
     if photo_ids:
         if current_user_id is None:
             raise HTTPException(status_code=401, detail="Bearer authentication is required to attach photos.")
-        if review.user_id != current_user_id:
-            raise HTTPException(status_code=403, detail="You can only attach photos to your own reviews.")
         photo_ids = _validate_photo_id_list(photo_ids)
         claimed = await _claim_photo_ids(photo_ids, bucket)
         try:
@@ -135,6 +136,7 @@ async def get_reviews(location_id: str | None = None, user_id: str | None = None
         )
         if value
     }
+    query["visibility"] = {"$nin": ["hidden", "removed"]}
     cursor = database.reviews_collection.find(query)
 
     async for review in cursor:
@@ -146,7 +148,8 @@ async def get_reviews(location_id: str | None = None, user_id: str | None = None
 
 async def get_review(review_id: str):
     review = await database.reviews_collection.find_one({
-        "uuid": review_id
+        "uuid": review_id,
+        "visibility": {"$nin": ["hidden", "removed"]},
     })
 
     if not review:
@@ -163,10 +166,19 @@ async def get_review(review_id: str):
 async def update_review(
     review_id: str,
     review: ReviewUpdate,
-    current_user_id: str | None = None,
+    current_user: StoredUser,
     bucket: Any | None = None,
 ):
     update_data = review.model_dump(exclude_unset=True)
+    current_user_id = current_user.uuid
+    existing_review = await database.reviews_collection.find_one({"uuid": review_id})
+    if existing_review is None:
+        raise HTTPException(status_code=404, detail="Review not found")
+    if (
+        existing_review.get("user_id") != current_user_id
+        and current_user.role not in (UserRole.MODERATOR, UserRole.ADMIN)
+    ):
+        raise HTTPException(status_code=403, detail="You can only modify your own reviews.")
 
     if not update_data:
         raise HTTPException(
@@ -177,9 +189,6 @@ async def update_review(
     if "photo_ids" in update_data:
         if current_user_id is None:
             raise HTTPException(status_code=401, detail="Bearer authentication is required to modify review photos.")
-        existing_review = await database.reviews_collection.find_one({"uuid": review_id})
-        if existing_review is None:
-            raise HTTPException(status_code=404, detail="Review not found")
         if existing_review.get("user_id") != current_user_id:
             raise HTTPException(status_code=403, detail="You can only modify photos on your own reviews.")
         requested_photo_ids = update_data["photo_ids"]
@@ -220,10 +229,19 @@ async def update_review(
     return await get_review(review_id)
 
 
-async def delete_review(review_id: str, bucket: Any | None = None):
+async def delete_review(
+    review_id: str,
+    current_user: StoredUser,
+    bucket: Any | None = None,
+):
     review = await database.reviews_collection.find_one({"uuid": review_id})
     if review is None:
         raise HTTPException(status_code=404, detail="Review not found")
+    if (
+        review.get("user_id") != current_user.uuid
+        and current_user.role not in (UserRole.MODERATOR, UserRole.ADMIN)
+    ):
+        raise HTTPException(status_code=403, detail="You can only delete your own reviews.")
     photo_ids = review.get("photo_ids") or []
     claimed = await _claim_photo_ids(photo_ids, bucket) if photo_ids else []
     try:

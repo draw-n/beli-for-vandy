@@ -7,7 +7,7 @@ database and `CORS_ORIGINS` is a JSON array of allowed frontend origins, for exa
 `["https://staging.example.com"]`. Safe local placeholders are documented in
 `backend/.env.example`; secrets must be supplied by the deployment environment.
 
-`AUTH_TOKEN_SECRET` is required to issue or verify access tokens. Set a strong random secret in the ignored `backend/.env` and in the deployment environment. The API does not provide refresh tokens or server-side sessions. The reusable bearer-token dependency is available for routes that require authentication. Existing review text operations remain compatible without a token; photo-reference changes require authentication as described below.
+`AUTH_TOKEN_SECRET` is required to issue or verify access tokens. Set a strong random secret in the ignored `backend/.env` and in the deployment environment. The API does not provide refresh tokens or server-side sessions. State-changing review, follow, photo, and account-deletion routes require a bearer token. The token subject is resolved against the current account record, including role, status, and security version.
 
 User records are stored in the MongoDB `users` collection. Passwords are stored as Argon2 hashes and are never included in responses.
 
@@ -30,9 +30,8 @@ and case-insensitive for duplicate detection within a dining hall.
 
 ## Review photo references
 
-`POST /reviews/` continues to accept text-only reviews without a bearer token.
-When `photo_ids` is nonempty, the request must include a valid bearer token, and
-the token account UUID must match the review's `user_id`. Each photo must exist,
+`POST /reviews/` requires a valid bearer token. The authenticated account UUID
+always becomes the review's `user_id`; any client-supplied value is ignored. Each photo must exist,
 belong to that account, be unique in the request, and not be referenced by another
 review. A review can include at most three photos.
 
@@ -43,10 +42,34 @@ valid bearer token for the review owner. A supplied list replaces the current li
 uniqueness, and three-photo checks. Photos already attached to this same review
 may remain in its replacement list.
 
-Unauthenticated text-only review creation and editing remain existing security
-limitations. Review deletion also remains unauthenticated. These checks secure
-photo-reference changes only; they do not make all review operations fully
-authorized or independently establish authorship for text-only reviews.
+Review updates and deletion require the review owner, moderator, or administrator.
+Photo attachments remain limited to the authenticated review owner. Suspended or
+deleted accounts cannot mutate application resources.
+
+`GET /accounts` returns account information to administrators only.
+Account creation always assigns
+`role: "user"`, `status: "active"`, and `security_version: 0`; callers cannot
+select privileged values.
+
+At startup, missing role, status, and security-version fields on existing user
+documents are backfilled. To bootstrap the first administrator, set
+`BOOTSTRAP_ADMIN_IDENTIFIER` to an existing account's email or username in the
+backend deployment environment. The promotion runs only when no administrator
+exists; remove the setting after bootstrap.
+
+## Administrator privilege management
+
+The following routes require an administrator bearer token and a JSON body
+containing the current administrator password:
+
+- `POST /admin/accounts/{user_uuid}/promote-moderator`
+- `POST /admin/accounts/{user_uuid}/demote-moderator`
+- `POST /admin/accounts/{user_uuid}/promote-admin`
+- `POST /admin/accounts/{user_uuid}/demote-admin`
+
+Role changes increment the target account's `security_version`, invalidating
+its existing bearer tokens. The final administrator cannot be demoted, and an
+invalid confirmation or state transition returns `409 Conflict`.
 
 ## Account representation
 
@@ -62,7 +85,9 @@ Successful account creation returns:
   "year_graduation": 2027,
   "type": "student",
   "created_at": "2026-09-22T14:30:00Z",
-  "home_city": "Nashville"
+  "home_city": "Nashville",
+  "role": "user",
+  "status": "active"
 }
 ```
 
@@ -81,7 +106,10 @@ MongoDB stores each record in the `users` collection with these application fiel
   "year_graduation": 2027,
   "type": "student",
   "created_at": "2026-09-22T14:30:00Z",
-  "home_city": "Nashville"
+  "home_city": "Nashville",
+  "role": "user",
+  "status": "active",
+  "security_version": 0
 }
 ```
 
@@ -124,7 +152,9 @@ curl -X POST http://localhost:8000/accounts \
 
 `DELETE /accounts`
 
-Permanently deletes the account after verifying its email and password. The error response is deliberately identical for an unknown email and an incorrect password.
+Permanently deletes the authenticated account after verifying that the bearer
+identity matches the supplied email and that the password is correct. A token
+for another account cannot be used to delete this account.
 
 Request:
 
@@ -191,9 +221,9 @@ and its `user_id` matches the GridFS photo owner. Missing, unreferenced, or
 owner-mismatched photos return `404`; pending uploads stay private until referenced
 by a saved review.
 
-Admin roles and photo moderation are planned as a separate future feature. This
-implementation has no admin workflow or approval gate; a photo becomes retrievable
-when it is securely attached to a saved review.
+Moderation metadata is represented on reviews with `visibility` and
+`moderation_status`. Public photo retrieval requires an attached review whose
+visibility is neither `hidden` nor `removed`.
 
 ## Manual orphan-photo cleanup
 
@@ -213,12 +243,9 @@ such metadata manually rather than expiring claims automatically. Cleanup is not
 scheduled or run on API startup. Never provide deletion confirmation for a shared
 Atlas database without explicit operational approval.
 
-**Authorization limitation:** photo-bearing review creation and photo-reference
-updates now check the bearer identity, review ownership, and photo ownership.
-Unauthenticated text-only review creation and editing still accept client-provided
-`user_id` values, and review deletion remains unauthenticated. These existing
-limitations mean review authorship and all review operations are not fully
-authorized. Photo deletion and orphan cleanup are not implemented yet.
+Photo-bearing review creation and photo-reference updates check the bearer
+identity, review ownership, and photo ownership. All review mutations require an
+active bearer account, and review authorship is always taken from that account.
 
 ### Test through Swagger
 
@@ -230,7 +257,30 @@ authorized. Photo deletion and orphan cleanup are not implemented yet.
    execute. A successful response is `201` with a `uuid`.
 4. A pending upload intentionally returns `404` from `GET /photos/{photo_id}`.
    To verify public retrieval, create a review through `POST /reviews/` with the
-   matching account UUID in `user_id`, the photo ID in `photo_ids`, and the same
-   bearer token. Then use GET to retrieve the photo. Photo-bearing review requests
-   validate ownership; unauthenticated text-only review requests and review deletion
-   retain the authorization limitations described above.
+   the photo ID in `photo_ids`, and the same bearer token. Then use GET to retrieve
+   the photo. The server derives `user_id` from the bearer identity.
+
+## Moderation and account controls
+
+Authenticated users can report reviews, photos, or accounts with
+`POST /reports`. Moderators can use `GET /moderation/queue`,
+`GET /moderation/reports/{report_id}`, and
+`POST /moderation/reports/{report_id}/resolve`. Review and photo hide, restore,
+remove, and bulk-review routes require moderator authorization. Moderation photo
+retrieval is authenticated at `GET /moderation/photos/{photo_id}` and never
+exposes pending or unrelated uploads through the public photo route.
+
+Administrators can suspend or unsuspend accounts, manage email/domain/username
+registration blocks, and permanently delete explicitly targeted content:
+
+- `POST /moderation/accounts/{user_id}/suspend`
+- `POST /moderation/accounts/{user_id}/unsuspend`
+- `POST /moderation/account-blocks`
+- `DELETE /moderation/account-blocks/{block_id}`
+- `POST /moderation/content/{content_id}/delete?target_type=review|photo|account`
+
+Suspension and privilege changes increment `security_version`, invalidating
+existing tokens. The final administrator cannot be suspended or demoted.
+`GET /admin/audit-log` is available to moderators and administrators; audit
+records are append-only and include the actor, target, action, reason, and time.
+Destructive moderation and permanent deletion require a non-empty reason.

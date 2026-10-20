@@ -78,7 +78,7 @@ async def test_get_follows(client):
     assert data[0]["to_user_id"] == "user-456"
     assert data[0]["is_mutual"] is False
 
-    assert data[1]["from_user_id"] == "user-789"
+    assert data[1]["from_user_id"] == "user-123"
     assert data[1]["to_user_id"] == "user-123"
     assert data[1]["is_mutual"] is True
 
@@ -155,7 +155,7 @@ async def test_update_follow(client):
     assert data["uuid"] == follow_id
 
     # Updated fields
-    assert data["from_user_id"] == "user-789"
+    assert data["from_user_id"] == "user-123"
     assert data["to_user_id"] == "user-123"
     assert data["is_mutual"] is True
 
@@ -366,7 +366,7 @@ async def test_unfollow_mutual_flow(client):
 
     assert len(follows) == 1
     assert follows[0]["uuid"] == their_id
-    assert follows[0]["from_user_id"] == "ava"
+    assert follows[0]["from_user_id"] == "user-123"
     assert follows[0]["is_mutual"] is False
 
 

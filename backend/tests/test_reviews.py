@@ -102,7 +102,7 @@ async def test_get_reviews(client):
     assert data[0]["user_id"] == "user-123"
     assert data[0]["rating"] == 5
 
-    assert data[1]["user_id"] == "user-456"
+    assert data[1]["user_id"] == "user-123"
     assert data[1]["rating"] == 4
 
 @pytest.mark.asyncio

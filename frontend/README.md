@@ -100,3 +100,18 @@ emits the selected review; the dining hall page calls `DELETE /reviews/{review_i
 The review is removed from the displayed list only after the API succeeds, and the
 count and average are recalculated. Failed deletions preserve the review and show
 an error for retry. The `busy` input disables menu actions while deletion is pending.
+
+## Moderation experience
+
+Signed-in accounts use the bearer token returned by `POST /accounts/login`. The
+HTTP interceptor adds that token to API requests and clears the local session when
+the API returns `401`. Moderator and administrator routes are protected by Angular
+guards for usability; FastAPI remains the authorization boundary and returns
+`403` for insufficient privileges.
+
+Moderators can open `/moderation` to review the queue, inspect reported targets,
+hide/restore/remove reviews or photos, resolve reports, and view append-only audit
+history. Every review exposes a **Report review** action. Administrators also see
+account suspension and registration-block controls. Destructive actions require a
+reason and are submitted only after explicit confirmation; the UI does not
+optimistically remove queue items.

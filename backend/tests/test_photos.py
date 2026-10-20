@@ -337,7 +337,9 @@ async def test_text_update_without_photo_ids_preserves_photo_and_public_access(p
     review_id = created.json()["uuid"]
 
     updated = await client.put(
-        f"/reviews/{review_id}", json={"note": "Edited without replacing photos"}
+        f"/reviews/{review_id}",
+        headers={"Authorization": f"Bearer {bearer_token(OWNER_UUID)}"},
+        json={"note": "Edited without replacing photos"},
     )
     retained = await client.put(
         f"/reviews/{review_id}",
@@ -408,7 +410,10 @@ async def test_deleting_review_starts_photo_grace_period(photo_api):
         json=review_payload([photo_id]),
     )
 
-    deleted = await client.delete(f"/reviews/{created.json()['uuid']}")
+    deleted = await client.delete(
+        f"/reviews/{created.json()['uuid']}",
+        headers={"Authorization": f"Bearer {bearer_token(OWNER_UUID)}"},
+    )
 
     assert deleted.status_code == 200
     metadata = (await bucket.files_collection.find_one({"_id": photo_id}))["metadata"]

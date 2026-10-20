@@ -1,9 +1,23 @@
 from datetime import datetime
+from enum import Enum
 from typing import Optional
 
 from pydantic import BaseModel, Field, field_validator
 
 from models.dish_name import capitalize_initial
+
+
+class ContentVisibility(str, Enum):
+    PUBLIC = "public"
+    HIDDEN = "hidden"
+    REMOVED = "removed"
+
+
+class ModerationStatus(str, Enum):
+    PENDING = "pending"
+    APPROVED = "approved"
+    FLAGGED = "flagged"
+    REJECTED = "rejected"
 
 
 class ReviewBase(BaseModel):
@@ -21,6 +35,8 @@ class ReviewBase(BaseModel):
     @classmethod
     def capitalize_favorite_dish_initials(cls, dishes: list[str]) -> list[str]:
         return [capitalize_initial(dish.strip()) for dish in dishes]
+    visibility: ContentVisibility = ContentVisibility.PUBLIC
+    moderation_status: ModerationStatus = ModerationStatus.APPROVED
 
 
 class ReviewCreate(ReviewBase):

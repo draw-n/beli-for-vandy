@@ -101,11 +101,14 @@ class UserControllerTestCase(unittest.IsolatedAsyncioTestCase):
                 "type",
                 "created_at",
                 "home_city",
+                "role",
+                "status",
+                "security_version",
             },
         )
         self.assertEqual(stored_user["type"], "student")
 
-        await self.controller.delete_user("PERSON@example.com", "abc")
+        await self.controller.delete_user(user.uuid, "PERSON@example.com", "abc")
 
         self.assertEqual(self.database.users.documents, [])
 
@@ -113,7 +116,11 @@ class UserControllerTestCase(unittest.IsolatedAsyncioTestCase):
         await self.controller.create_user(self.user_payload())
 
         with self.assertRaises(InvalidCredentialsError):
-            await self.controller.delete_user("person@example.com", "wrong")
+            await self.controller.delete_user(
+                "missing-user",
+                "person@example.com",
+                "wrong",
+            )
 
         self.assertEqual(len(self.database.users.documents), 1)
 
