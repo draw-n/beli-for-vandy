@@ -161,16 +161,20 @@ failure:
 3. Type-check the frontend with `tsc --noEmit`.
 4. Run backend and frontend unit tests as separately named steps.
 5. Run FastAPI route/database integration tests with `mongomock-motor`.
-6. Generate backend and frontend coverage reports and enforce a 50% gate.
-7. Build the production Angular application.
+6. Run the review API integration test against a disposable MongoDB service container.
+7. Generate backend and frontend coverage reports and enforce a 50% gate.
+8. Build the production Angular application.
 
 The backend test layers are currently divided as follows:
 
 - Unit: user models, controller behavior, and account route behavior with a fake controller.
-- Integration: review, location, and follow HTTP routes backed by asynchronous fake MongoDB.
+- Integration: review, location, and follow HTTP routes backed by asynchronous fake MongoDB,
+  plus a review creation test that traverses the real FastAPI route and controller and then
+  verifies the stored document in a disposable MongoDB database.
 
-CI never contacts MongoDB Atlas or another paid service. Future external integrations must
-use fakes or stubs by default in tests.
+CI never contacts MongoDB Atlas or another paid service. Its real-database test uses an
+isolated `beli_integration_test` database in a MongoDB service container that is discarded
+with the job. Future external integrations must use fakes or stubs by default in tests.
 
 Run the same checks locally:
 
@@ -186,6 +190,8 @@ backend/.venv/bin/python -m pytest \
   backend/tests/test_reviews.py \
   backend/tests/test_locations.py \
   backend/tests/test_follows.py
+REAL_MONGODB_URI=mongodb://localhost:27017/beli_integration_test \
+  backend/.venv/bin/python -m pytest backend/tests/test_review_real_database.py
 backend/.venv/bin/python -m pytest --cov=backend --cov-config=.coveragerc \
   --cov-report=term-missing --cov-fail-under=50
 cd frontend && npm run test:coverage && npm run build
