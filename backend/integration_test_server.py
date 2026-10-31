@@ -21,6 +21,7 @@ database.users_collection = database.db.get_collection("users")
 database.locations_collection = database.db.get_collection("locations")
 database.reviews_collection = database.db.get_collection("reviews")
 database.follows_collection = database.db.get_collection("follows")
+database.personal_rankings_collection = database.db.get_collection("personal_rankings")
 
 
 class _DownloadStream:
@@ -86,6 +87,7 @@ app.add_middleware(
 
 from routes.follow import router as follow_router  # noqa: E402
 from routes.location import router as location_router  # noqa: E402
+from routes.personal_ranking import router as personal_ranking_router  # noqa: E402
 from routes.photo import get_photo_bucket, router as photo_router  # noqa: E402
 from routes.review import router as review_router  # noqa: E402
 from routes.user import router as user_router  # noqa: E402
@@ -96,3 +98,4 @@ app.include_router(location_router)
 app.include_router(review_router)
 app.include_router(follow_router)
 app.include_router(photo_router)
+app.include_router(personal_ranking_router)

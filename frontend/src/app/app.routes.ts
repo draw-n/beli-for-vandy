@@ -7,6 +7,7 @@ import { LocationProfile } from './location-profile/location-profile';
 import { Profile } from './user-profile/user-profile';
 import { FriendsComponent } from './friends/friends';
 import { FavoriteDishesPage } from './favorite-dishes/favorite-dishes';
+import { RankingsPage } from './rankings/rankings';
 import { moderatorGuard, adminGuard } from './auth.guards';
 import { ModerationDashboard } from './moderation/moderation';
 
@@ -51,6 +52,10 @@ export const routes: Routes = [
   {
     path: 'favorite-dishes',
     component: FavoriteDishesPage,
+  },
+  {
+    path: 'rankings',
+    component: RankingsPage,
   },
   {
     path: 'moderation',
