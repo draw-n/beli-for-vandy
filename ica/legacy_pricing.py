@@ -52,6 +52,7 @@ def calc(t, q, u, d, c=None, w=False):
     p = _base_price(t, d)
     _validate_quantity(q)
     total = p * q * _role_multiplier(u)
+
     if q >= 5:
         if t != "workshop":
             total = total - 5.0
