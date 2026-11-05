@@ -53,9 +53,8 @@ def calc(t, q, u, d, c=None, w=False):
     _validate_quantity(q)
     total = p * q * _role_multiplier(u)
 
-    if q >= 5:
-        if t != "workshop":
-            total = total - 5.0
+    total = apply_bulk_discount(total, q, t)
+
     if c is not None:
         if c == "WELCOME10":
             if u is not None and u.get("first_purchase"):
@@ -67,10 +66,13 @@ def calc(t, q, u, d, c=None, w=False):
             pass
         else:
             raise ValueError("bad coupon")
+
     if w:
         total = total + 2.0
+
     if total < 0:
         total = 0.0
+
     fee = 0.0
     if total > 0:
         if total < 20:
@@ -79,4 +81,12 @@ def calc(t, q, u, d, c=None, w=False):
             fee = 2.5
         else:
             fee = 5.0
+
     return round(total + fee, 2)
+
+
+def apply_bulk_discount(total, q, t):
+    if q >= 5:
+        if t != "workshop":
+            total = total - 5.0
+    return total
