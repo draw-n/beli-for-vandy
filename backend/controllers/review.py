@@ -153,12 +153,21 @@ async def get_friend_feed(
 ) -> ReviewFeedResponse:
     outgoing_cursor = database.follows_collection.find(
         {"from_user_id": current_user.uuid},
-        {"to_user_id": 1, "_id": 0},
+        {"to_user_id": 1, "is_mutual": 1, "_id": 0},
     )
-    outgoing_ids = {
-        follow["to_user_id"]
+    outgoing_follows = [
+        follow
         async for follow in outgoing_cursor
         if isinstance(follow.get("to_user_id"), str)
+    ]
+    outgoing_ids = {
+        follow["to_user_id"]
+        for follow in outgoing_follows
+    }
+    flagged_mutual_ids = {
+        follow["to_user_id"]
+        for follow in outgoing_follows
+        if follow.get("is_mutual") is True
     }
 
     incoming_cursor = database.follows_collection.find(
@@ -173,7 +182,7 @@ async def get_friend_feed(
         async for follow in incoming_cursor
         if isinstance(follow.get("from_user_id"), str)
     }
-    friend_ids = list(outgoing_ids & mutual_ids)
+    friend_ids = list(flagged_mutual_ids | (outgoing_ids & mutual_ids))
 
     if not friend_ids:
         return ReviewFeedResponse(reviews=[], has_more=False)
