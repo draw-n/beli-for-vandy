@@ -52,6 +52,8 @@ class StoredPhoto:
     data: bytes
     content_type: str
     owner_uuid: str | None
+    status: str = "pending"
+    moderation_status: str = "approved"
 
 
 def _encode(image: Image.Image, image_format: str, *, quality: int = WEBP_QUALITY) -> bytes:
@@ -195,6 +197,7 @@ async def store_photo(
         "content_type": photo.content_type,
         "uploaded_at": datetime.now(timezone.utc),
         "status": "pending",
+        "moderation_status": "approved",
     }
     if owner_uuid is not None:
         metadata["owner_uuid"] = owner_uuid
@@ -222,6 +225,8 @@ async def retrieve_photo(photo_id: str, *, bucket: Any | None = None) -> StoredP
         data=data,
         content_type=metadata.get("content_type", "application/octet-stream"),
         owner_uuid=metadata.get("owner_uuid"),
+        status=metadata.get("status", "pending"),
+        moderation_status=metadata.get("moderation_status", "approved"),
     )
 
 

@@ -8,6 +8,7 @@ import {
   AccountCreateRequest,
   AccountDeleteRequest,
   AccountLoginRequest,
+  PublicAccount,
 } from '../types/auth';
 import { apiBaseUrl } from './api-base-url';
 
@@ -20,6 +21,10 @@ export class AccountApi {
 
   getAll(): Observable<Account[]> {
     return this.http.get<Account[]>(this.accountsUrl);
+  }
+
+  getPublic(): Observable<PublicAccount[]> {
+    return this.http.get<PublicAccount[]>(`${this.accountsUrl}/public`);
   }
 
   create(request: AccountCreateRequest): Observable<Account> {

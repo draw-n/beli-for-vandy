@@ -64,7 +64,7 @@ describe('FriendsComponent', () => {
 
     component = fixture.componentInstance;
 
-    // Runs ngOnInit(), which causes GET /accounts and GET /follows/.
+    // Runs ngOnInit(), which causes GET /accounts/public and GET /follows/.
     fixture.detectChanges();
   });
 
@@ -103,7 +103,7 @@ describe('FriendsComponent', () => {
   });
 
   it('should stop loading and show an error if accounts fail to load', () => {
-    const accountsRequest = httpMock.expectOne('http://localhost:8000/accounts');
+    const accountsRequest = httpMock.expectOne('http://localhost:8000/accounts/public');
 
     accountsRequest.flush('error', { status: 500, statusText: 'Server Error' });
 
@@ -525,7 +525,7 @@ describe('FriendsComponent', () => {
   });
 
   function flushAccounts(): void {
-    const accountsRequest = httpMock.expectOne('http://localhost:8000/accounts');
+    const accountsRequest = httpMock.expectOne('http://localhost:8000/accounts/public');
 
     expect(accountsRequest.request.method).toBe('GET');
 

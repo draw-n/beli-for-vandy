@@ -1,4 +1,7 @@
-from fastapi import APIRouter
+from typing import Annotated
+from fastapi import APIRouter, Depends
+from controllers.auth import require_user
+from models.user import StoredUser
 
 from models.follow import FollowCreate, FollowUpdate, FollowResponse
 from controllers.follow import (
@@ -16,8 +19,11 @@ router = APIRouter(
 
 
 @router.post("/", response_model=FollowResponse)
-async def create(follow: FollowCreate):
-    return await create_follow(follow)
+async def create(
+    follow: FollowCreate,
+    current_user: Annotated[StoredUser, Depends(require_user)],
+):
+    return await create_follow(follow, current_user)
 
 
 @router.get("/", response_model=list[FollowResponse])
@@ -31,10 +37,17 @@ async def get_one(follow_id: str):
 
 
 @router.put("/{follow_id}", response_model=FollowResponse)
-async def update(follow_id: str, follow: FollowUpdate):
-    return await update_follow(follow_id, follow)
+async def update(
+    follow_id: str,
+    follow: FollowUpdate,
+    current_user: Annotated[StoredUser, Depends(require_user)],
+):
+    return await update_follow(follow_id, follow, current_user)
 
 
 @router.delete("/{follow_id}")
-async def delete(follow_id: str):
-    return await delete_follow(follow_id)
+async def delete(
+    follow_id: str,
+    current_user: Annotated[StoredUser, Depends(require_user)],
+):
+    return await delete_follow(follow_id, current_user)

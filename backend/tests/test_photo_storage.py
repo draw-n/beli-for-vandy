@@ -99,13 +99,38 @@ def test_rejects_empty_corrupt_unsupported_and_oversized_uploads():
         process_photo(b"0" * (5 * 1024 * 1024 + 1))
 
 
-def test_rejects_images_over_decoded_pixel_limit():
-    oversized = Image.new("1", (MAX_IMAGE_PIXELS + 1, 1))
+@pytest.mark.parametrize(
+    "pixel_count",
+    [MAX_IMAGE_PIXELS - 1, MAX_IMAGE_PIXELS, MAX_IMAGE_PIXELS + 1],
+    ids=["just-below", "at-limit", "just-above"],
+)
+def test_decoded_pixel_limit_boundary(pixel_count):
+    image = Image.new("1", (pixel_count, 1), 1)
     output = BytesIO()
-    oversized.save(output, format="PNG", optimize=True)
+    image.save(output, format="PNG", optimize=True)
 
-    with pytest.raises(PhotoTooLargeError, match="dimensions"):
-        process_photo(output.getvalue())
+    if pixel_count > MAX_IMAGE_PIXELS:
+        with pytest.raises(PhotoTooLargeError, match="dimensions"):
+            process_photo(output.getvalue())
+    else:
+        with Image.open(BytesIO(process_photo(output.getvalue()).data)) as decoded:
+            assert decoded.size == (MAX_IMAGE_DIMENSION, 1)
+
+
+def test_upload_byte_limit_accepts_below_and_exact_limit_rejects_above():
+    valid_png = image_bytes("PNG")
+    assert len(valid_png) < 5 * 1024 * 1024
+
+    below = valid_png + b"\0" * (5 * 1024 * 1024 - 1 - len(valid_png))
+    exact = valid_png + b"\0" * (5 * 1024 * 1024 - len(valid_png))
+    above = exact + b"\0"
+
+    assert len(below) == 5 * 1024 * 1024 - 1
+    assert len(exact) == 5 * 1024 * 1024
+    process_photo(below)
+    process_photo(exact)
+    with pytest.raises(PhotoTooLargeError, match="5 MB"):
+        process_photo(above)
 
 
 class FakeGridFSBucket:

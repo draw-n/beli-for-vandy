@@ -1,0 +1,60 @@
+.page {
+  max-width: 960px;
+  margin: 0 auto;
+  padding: 24px;
+}
+
+.header-top,
+.header-actions,
+.favorite-dish mat-card-content {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.header-actions {
+  justify-content: flex-end;
+}
+
+.eyebrow {
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+}
+
+.subtitle {
+  color: #666;
+}
+
+.favorites-list {
+  display: grid;
+  gap: 12px;
+}
+
+.favorite-dish mat-card-content {
+  min-height: 56px;
+}
+
+.favorite-location {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  margin-top: 6px;
+  color: inherit;
+  font-size: 14px;
+  text-decoration: none;
+}
+
+.empty-state {
+  padding: 48px 16px;
+  text-align: center;
+}
+
+.empty-state mat-icon {
+  color: #b3261e;
+}
+
+.error-message {
+  color: #b3261e;
+}

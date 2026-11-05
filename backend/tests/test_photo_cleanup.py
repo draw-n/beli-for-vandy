@@ -71,6 +71,31 @@ async def test_detached_photo_grace_starts_at_unreferenced_since(mock_db):
 
 
 @pytest.mark.asyncio
+async def test_grace_period_boundary_is_ineligible_before_and_eligible_at_or_after(mock_db):
+    files = mock_db["photos.files"]
+    reviews = mock_db["reviews"]
+    await add_file(
+        files,
+        "just-before",
+        metadata={"unreferenced_since": NOW - timedelta(hours=24) + timedelta(seconds=1)},
+    )
+    await add_file(
+        files,
+        "exactly-at",
+        metadata={"unreferenced_since": NOW - timedelta(hours=24)},
+    )
+    await add_file(
+        files,
+        "just-after",
+        metadata={"unreferenced_since": NOW - timedelta(hours=24) - timedelta(seconds=1)},
+    )
+
+    candidates = await find_orphan_candidates(reviews, files, now=NOW)
+
+    assert [candidate["photo_id"] for candidate in candidates] == ["exactly-at", "just-after"]
+
+
+@pytest.mark.asyncio
 async def test_dry_run_and_explicit_cleanup_delete_only_through_gridfs(mock_db):
     files = mock_db["photos.files"]
     reviews = mock_db["reviews"]

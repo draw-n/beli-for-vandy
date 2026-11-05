@@ -7,6 +7,8 @@ import jwt
 from fastapi import Depends, HTTPException, status
 from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 
+import database
+from models.user import AccountStatus, StoredUser, UserRole
 from settings import get_settings
 
 
@@ -25,7 +27,11 @@ def get_signing_secret() -> str:
     return configured.get_secret_value()
 
 
-def issue_access_token(user_id: str, secret: str) -> tuple[str, datetime]:
+def issue_access_token(
+    user_id: str,
+    secret: str,
+    security_version: int = 0,
+) -> tuple[str, datetime]:
     issued_at = datetime.now(timezone.utc).replace(microsecond=0)
     expires_at = issued_at + ACCESS_TOKEN_TTL
     token = jwt.encode(
@@ -33,6 +39,7 @@ def issue_access_token(user_id: str, secret: str) -> tuple[str, datetime]:
             "sub": user_id,
             "iat": int(issued_at.timestamp()),
             "exp": int(expires_at.timestamp()),
+            "security_version": security_version,
         },
         secret,
         algorithm="HS256",
@@ -48,9 +55,9 @@ def _unauthorized() -> HTTPException:
     )
 
 
-def _user_id_from_credentials(
+def _claims_from_credentials(
     credentials: HTTPAuthorizationCredentials | None,
-) -> str | None:
+) -> dict[str, object] | None:
     if credentials is None:
         return None
 
@@ -72,6 +79,15 @@ def _user_id_from_credentials(
     except jwt.InvalidTokenError as error:
         raise _unauthorized() from error
 
+    return claims
+
+
+def _user_id_from_credentials(
+    credentials: HTTPAuthorizationCredentials | None,
+) -> str | None:
+    claims = _claims_from_credentials(credentials)
+    if claims is None:
+        return None
     user_id = claims.get("sub")
     if not isinstance(user_id, str) or not user_id:
         raise _unauthorized()
@@ -87,13 +103,55 @@ def get_optional_current_user_id(
     return _user_id_from_credentials(credentials)
 
 
-def get_current_user_id(
+async def get_current_user_id(
     credentials: Annotated[
         HTTPAuthorizationCredentials | None, Depends(_bearer_scheme)
     ],
 ) -> str:
     """Verify a bearer token and return its authenticated account UUID."""
-    user_id = _user_id_from_credentials(credentials)
-    if user_id is None:
+    claims = _claims_from_credentials(credentials)
+    if claims is None:
+        raise _unauthorized()
+    user_id = claims.get("sub")
+    if not isinstance(user_id, str) or not user_id:
         raise _unauthorized()
     return user_id
+
+
+async def get_current_user(
+    user_id: Annotated[str, Depends(get_current_user_id)],
+) -> StoredUser:
+    """Resolve the token subject against current account state."""
+    document = await database.users_collection.find_one({"uuid": user_id})
+    if document is None:
+        raise _unauthorized()
+
+    user = StoredUser.model_validate(document)
+    if user.status != AccountStatus.ACTIVE:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="This account is not active",
+        )
+    return user
+
+
+async def require_user(
+    user: Annotated[StoredUser, Depends(get_current_user)],
+) -> StoredUser:
+    return user
+
+
+async def require_moderator(
+    user: Annotated[StoredUser, Depends(get_current_user)],
+) -> StoredUser:
+    if user.role not in (UserRole.MODERATOR, UserRole.ADMIN):
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Moderator access required")
+    return user
+
+
+async def require_admin(
+    user: Annotated[StoredUser, Depends(get_current_user)],
+) -> StoredUser:
+    if user.role != UserRole.ADMIN:
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Administrator access required")
+    return user

@@ -10,6 +10,7 @@
     "watch": "ng build --watch --configuration development",
     "test": "ng test",
     "test:unit": "ng test --watch=false",
+    "test:integration": "playwright test",
     "test:coverage": "ng test --watch=false --coverage",
     "serve:ssr:beli-for-vandy-frontend": "node dist/beli-for-vandy-frontend/server/server.mjs"
   },
@@ -39,6 +40,7 @@
     "@angular/cli": "^21.2.25",
     "@angular/compiler-cli": "^21.2.25",
     "@eslint/js": "10.0.1",
+    "@playwright/test": "^1.64.1",
     "@types/express": "^5.0.1",
     "@types/node": "^20.17.19",
     "@vitest/coverage-v8": "4.1.11",

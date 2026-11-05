@@ -52,9 +52,9 @@ describe('Location review ownership menu', () => {
       }))
     );
 
-    http.expectOne('http://localhost:8000/accounts').flush([
-      { uuid: 'me' },
-      { uuid: 'someone-else' },
+    http.expectOne('http://localhost:8000/accounts/public').flush([
+      { uuid: 'me', first_name: 'Current', last_name: 'User' },
+      { uuid: 'someone-else', first_name: 'Ava', last_name: 'Martin' },
     ]);
     http.expectOne('http://localhost:8000/follows/').flush([]);
 
@@ -70,6 +70,7 @@ describe('Location review ownership menu', () => {
     const component = fixture.componentInstance;
     expect(component.filteredReviews.length).toBe(2);
     expect(component.filteredReviews.map(review => review.userId)).toEqual(['someone-else', 'me']);
+    expect(fixture.nativeElement.textContent).toContain('Ava Martin');
     component.selectedMealFilter = 'Breakfast';
     expect(component.filteredReviews.map(review => review.mealType)).toEqual(['Breakfast']);
     component.selectedMealFilter = 'Lunch';
@@ -189,7 +190,7 @@ describe('Location review ownership menu', () => {
       address: 'Campus',
     });
     http.expectOne('http://localhost:8000/reviews/?location_id=hall').flush([]);
-    http.expectOne('http://localhost:8000/accounts').flush([]);
+    http.expectOne('http://localhost:8000/accounts/public').flush([]);
 
     fixture.detectChanges();
     await fixture.whenStable();
@@ -259,7 +260,7 @@ describe('Location review ownership menu', () => {
       uuid: 'hall', name: 'Commons', address: 'Campus',
     });
     http.expectOne('http://localhost:8000/reviews/?location_id=hall').flush([]);
-    http.expectOne('http://localhost:8000/accounts').flush([]);
+    http.expectOne('http://localhost:8000/accounts/public').flush([]);
 
     const created: ReviewResponse = {
       uuid: 'new-review', user_id: 'user', location_id: 'hall', rating: 9,
@@ -323,7 +324,7 @@ describe('Location review ownership menu', () => {
         updated_at: '2026-01-01',
       }))
     );
-    http.expectOne('http://localhost:8000/accounts').flush([]);
+    http.expectOne('http://localhost:8000/accounts/public').flush([]);
     http.expectOne('http://localhost:8000/follows/').flush([
       {
         uuid: 'follow-mutual',
@@ -407,7 +408,7 @@ describe('Location review ownership menu', () => {
       address: 'Campus',
     });
     http.expectOne('http://localhost:8000/reviews/?location_id=hall').flush([]);
-    http.expectOne('http://localhost:8000/accounts').flush([]);
+    http.expectOne('http://localhost:8000/accounts/public').flush([]);
     http.expectNone('http://localhost:8000/follows/');
     expect(fixture.componentInstance.hall!.friendRating).toBeNull();
     http.verify();
@@ -449,7 +450,7 @@ describe('Location review ownership menu', () => {
         updated_at: '2026-01-01',
       },
     ]);
-    http.expectOne('http://localhost:8000/accounts').flush([]);
+    http.expectOne('http://localhost:8000/accounts/public').flush([]);
     http
       .expectOne('http://localhost:8000/follows/')
       .flush({}, { status: 500, statusText: 'Server Error' });
@@ -486,7 +487,7 @@ describe('Location review ownership menu', () => {
       address: 'Peabody Campus',
     });
     http.expectOne(`http://localhost:8000/reviews/?location_id=${locationId}`).flush([]);
-    http.expectOne('http://localhost:8000/accounts').flush([]);
+    http.expectOne('http://localhost:8000/accounts/public').flush([]);
 
     fixture.detectChanges();
     await fixture.whenStable();

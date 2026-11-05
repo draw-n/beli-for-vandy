@@ -1,4 +1,7 @@
-from fastapi import APIRouter
+from typing import Annotated
+from fastapi import APIRouter, Depends
+from controllers.auth import require_user
+from models.user import StoredUser
 
 from models.location import LocationCreate, LocationUpdate, LocationResponse
 from controllers.location import (
@@ -16,7 +19,10 @@ router = APIRouter(
 
 
 @router.post("/", response_model=LocationResponse)
-async def create(location: LocationCreate):
+async def create(
+    location: LocationCreate,
+    _: Annotated[StoredUser, Depends(require_user)],
+):
     return await create_location(location)
 
 
@@ -31,10 +37,17 @@ async def get_one(location_id: str):
 
 
 @router.put("/{location_id}", response_model=LocationResponse)
-async def update(location_id: str, location: LocationUpdate):
+async def update(
+    location_id: str,
+    location: LocationUpdate,
+    _: Annotated[StoredUser, Depends(require_user)],
+):
     return await update_location(location_id, location)
 
 
 @router.delete("/{location_id}")
-async def delete(location_id: str):
+async def delete(
+    location_id: str,
+    _: Annotated[StoredUser, Depends(require_user)],
+):
     return await delete_location(location_id)
