@@ -9,6 +9,7 @@ import { FriendsComponent } from './friends/friends';
 import { FavoriteDishesPage } from './favorite-dishes/favorite-dishes';
 import { moderatorGuard, adminGuard } from './auth.guards';
 import { ModerationDashboard } from './moderation/moderation';
+import { FriendFeed } from './friend-feed/friend-feed';
 
 export const routes: Routes = [
   {
@@ -47,6 +48,10 @@ export const routes: Routes = [
   {
     path: 'friends',
     component: FriendsComponent,
+  },
+  {
+    path: 'friend-feed',
+    component: FriendFeed,
   },
   {
     path: 'favorite-dishes',

@@ -23,6 +23,11 @@ export interface PhotoUploadResponse {
   uuid: string;
 }
 
+export interface ReviewFeedResponse {
+  reviews: ReviewResponse[];
+  has_more: boolean;
+}
+
 @Injectable({ providedIn: 'root' })
 export class ReviewApi {
   private readonly http = inject(HttpClient);
@@ -41,6 +46,10 @@ export class ReviewApi {
     return this.http.post<ReviewResponse>(`${apiBaseUrl}/reviews/`, request, {
       headers: this.authHeaders(request.photo_ids.length > 0),
     });
+  }
+
+  getFriendFeed(page: number) {
+    return this.http.get<ReviewFeedResponse>(`${apiBaseUrl}/reviews/friend-feed?page=${page}`);
   }
 
   uploadPhoto(file: File) {

@@ -13,7 +13,7 @@ from controllers.photo_storage import (
     release_photo_claim,
 )
 
-from models.review import ReviewCreate, ReviewUpdate
+from models.review import ReviewCreate, ReviewUpdate, ReviewFeedResponse
 from models.user import StoredUser, UserRole
 
 
@@ -144,6 +144,61 @@ async def get_reviews(location_id: str | None = None, user_id: str | None = None
         reviews.append(review)
 
     return reviews
+
+
+async def get_friend_feed(
+    current_user: StoredUser,
+    page: int = 1,
+    page_size: int = 10,
+) -> ReviewFeedResponse:
+    outgoing_cursor = database.follows_collection.find(
+        {"from_user_id": current_user.uuid},
+        {"to_user_id": 1, "_id": 0},
+    )
+    outgoing_ids = {
+        follow["to_user_id"]
+        async for follow in outgoing_cursor
+        if isinstance(follow.get("to_user_id"), str)
+    }
+
+    incoming_cursor = database.follows_collection.find(
+        {
+            "from_user_id": {"$in": list(outgoing_ids)},
+            "to_user_id": current_user.uuid,
+        },
+        {"from_user_id": 1, "_id": 0},
+    )
+    mutual_ids = {
+        follow["from_user_id"]
+        async for follow in incoming_cursor
+        if isinstance(follow.get("from_user_id"), str)
+    }
+    friend_ids = list(outgoing_ids & mutual_ids)
+
+    if not friend_ids:
+        return ReviewFeedResponse(reviews=[], has_more=False)
+
+    reviews_cursor = (
+        database.reviews_collection.find(
+            {
+                "user_id": {"$in": friend_ids},
+                "visibility": {"$nin": ["hidden", "removed"]},
+            }
+        )
+        .sort("created_at", -1)
+        .skip((page - 1) * page_size)
+        .limit(page_size + 1)
+    )
+    reviews = []
+    async for review in reviews_cursor:
+        review.pop("_id", None)
+        reviews.append(review)
+
+    has_more = len(reviews) > page_size
+    return ReviewFeedResponse(
+        reviews=reviews[:page_size],
+        has_more=has_more,
+    )
 
 
 async def get_review(review_id: str):
