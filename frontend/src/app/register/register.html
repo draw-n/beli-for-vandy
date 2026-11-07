@@ -1,98 +1,167 @@
-<main>
-  <h1>Beli for Vanderbilt</h1>
-  <p>Create an account or permanently delete an existing account.</p>
+<main class="register-page">
+  <div class="register-card">
+    <div class="register-header">
+      <h1>Beli for Vandy</h1>
+      <p>Join your campus food community.</p>
+    </div>
 
-  <section>
-    <h2>Create account</h2>
+    <section class="create-section">
+      <h2>Create your account</h2>
 
-    <form #createForm="ngForm" (ngSubmit)="createAccount()">
-      <label>
-        Username
-        <input name="username" [(ngModel)]="createRequest.username" required />
-      </label>
+      <form #createForm="ngForm" (ngSubmit)="createAccount()">
+        <div class="form-grid">
+          <mat-form-field appearance="outline">
+            <mat-label>Username</mat-label>
+            <input
+              matInput
+              name="username"
+              [(ngModel)]="createRequest.username"
+              placeholder="Choose a username"
+              required
+            />
+            <mat-icon matSuffix>person</mat-icon>
+          </mat-form-field>
 
-      <label>
-        First name
-        <input name="firstName" [(ngModel)]="createRequest.first_name" required />
-      </label>
+          <mat-form-field appearance="outline">
+            <mat-label>Email</mat-label>
+            <input
+              matInput
+              name="email"
+              type="email"
+              [(ngModel)]="createRequest.email"
+              placeholder="you@vanderbilt.edu"
+              required
+              email
+            />
+            <mat-icon matSuffix>mail</mat-icon>
+          </mat-form-field>
 
-      <label>
-        Last name
-        <input name="lastName" [(ngModel)]="createRequest.last_name" required />
-      </label>
+          <mat-form-field appearance="outline">
+            <mat-label>First name</mat-label>
+            <input
+              matInput
+              name="firstName"
+              [(ngModel)]="createRequest.first_name"
+              placeholder="Enter your first name"
+              required
+            />
+          </mat-form-field>
 
-      <label>
-        Email
-        <input name="email" type="email" [(ngModel)]="createRequest.email" required email />
-      </label>
+          <mat-form-field appearance="outline">
+            <mat-label>Last name</mat-label>
+            <input
+              matInput
+              name="lastName"
+              [(ngModel)]="createRequest.last_name"
+              placeholder="Enter your last name"
+              required
+            />
+          </mat-form-field>
 
-      <label>
-        Password
-        <input
-          name="password"
-          type="password"
-          [(ngModel)]="createRequest.password"
-          required
-          minlength="3"
-        />
-      </label>
+          <mat-form-field appearance="outline">
+            <mat-label>Password</mat-label>
+            <input
+              matInput
+              name="password"
+              type="password"
+              [(ngModel)]="createRequest.password"
+              placeholder="Create a password"
+              required
+              minlength="3"
+            />
+            <mat-icon matSuffix>lock</mat-icon>
+          </mat-form-field>
 
-      <label>
-        Account type
-        <select name="type" [(ngModel)]="createRequest.type" required>
-          <option value="student">Student</option>
-          <option value="faculty">Faculty</option>
-        </select>
-      </label>
+          <mat-form-field appearance="outline">
+            <mat-label>Account type</mat-label>
+            <mat-select name="type" [(ngModel)]="createRequest.type" required>
+              <mat-option value="student">Student</mat-option>
+              <mat-option value="faculty">Faculty</mat-option>
+            </mat-select>
+            <mat-icon matSuffix>school</mat-icon>
+          </mat-form-field>
 
-      <label>
-        Graduation year (optional)
-        <input name="graduationYear" type="number" [(ngModel)]="createRequest.year_graduation" />
-      </label>
+          <mat-form-field appearance="outline">
+            <mat-label>Graduation year</mat-label>
+            <input
+              matInput
+              name="graduationYear"
+              type="number"
+              [(ngModel)]="createRequest.year_graduation"
+              placeholder="Optional"
+            />
+          </mat-form-field>
 
-      <label>
-        Home city
-        <input name="homeCity" [(ngModel)]="createRequest.home_city" required />
-      </label>
+          <mat-form-field appearance="outline">
+            <mat-label>Home city</mat-label>
+            <input
+              matInput
+              name="homeCity"
+              [(ngModel)]="createRequest.home_city"
+              placeholder="Where are you from?"
+              required
+            />
+            <mat-icon matSuffix>location_city</mat-icon>
+          </mat-form-field>
+        </div>
 
-      <button type="submit" [disabled]="createForm.invalid || creating">
-        {{ creating ? 'Creating…' : 'Create account' }}
-      </button>
+        <button
+          mat-flat-button
+          type="submit"
+          [disabled]="createForm.invalid || creating"
+        >
+          {{ creating ? 'Creating…' : 'Create account' }}
+        </button>
 
-      @if (createMessage) {
-        <p role="status">{{ createMessage }}</p>
-      }
-    </form>
-  </section>
+        @if (createMessage) {
+          <p class="register-message" role="status">{{ createMessage }}</p>
+        }
+      </form>
+    </section>
 
-  <section>
-    <h2>Delete account</h2>
+    <p class="login-prompt">
+      Already have an account?
+      <a href="/login">Log in</a>
+    </p>
 
-    <p>This permanently deletes the account after the password is verified.</p>
+    <section class="delete-section">
+      <h2>Delete account</h2>
+      <p>This permanently deletes the account after the password is verified.</p>
 
-    <form #deleteForm="ngForm" (ngSubmit)="deleteAccount()">
-      <label>
-        Email
-        <input name="deleteEmail" type="email" [(ngModel)]="deleteRequest.email" required email />
-      </label>
+      <form #deleteForm="ngForm" (ngSubmit)="deleteAccount()">
+        <mat-form-field appearance="outline">
+          <mat-label>Email</mat-label>
+          <input
+            matInput
+            name="deleteEmail"
+            type="email"
+            [(ngModel)]="deleteRequest.email"
+            required
+            email
+          />
+          <mat-icon matSuffix>mail</mat-icon>
+        </mat-form-field>
 
-      <label>
-        Password
-        <input
-          name="deletePassword"
-          type="password"
-          [(ngModel)]="deleteRequest.password"
-          required
-        />
-      </label>
+        <mat-form-field appearance="outline">
+          <mat-label>Password</mat-label>
+          <input
+            matInput
+            name="deletePassword"
+            type="password"
+            [(ngModel)]="deleteRequest.password"
+            required
+          />
+          <mat-icon matSuffix>lock</mat-icon>
+        </mat-form-field>
 
-      <button type="submit" [disabled]="deleteForm.invalid || deleting">
-        {{ deleting ? 'Deleting…' : 'Delete account' }}
-      </button>
+        <button mat-stroked-button type="submit" [disabled]="deleteForm.invalid || deleting">
+          {{ deleting ? 'Deleting…' : 'Delete account' }}
+        </button>
 
-      @if (deleteMessage) {
-        <p role="status">{{ deleteMessage }}</p>
-      }
-    </form>
-  </section>
+        @if (deleteMessage) {
+          <p class="register-message" role="status">{{ deleteMessage }}</p>
+        }
+      </form>
+    </section>
+  </div>
 </main>
