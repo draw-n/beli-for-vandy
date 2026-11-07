@@ -162,8 +162,14 @@ failure:
 4. Run backend and frontend unit tests as separately named steps.
 5. Run FastAPI route/database integration tests with `mongomock-motor`.
 6. Run the review API integration test against a disposable MongoDB service container.
-7. Generate backend and frontend coverage reports and enforce a 50% gate.
+7. Generate coverage reports, enforcing 65% backend coverage and the configured frontend thresholds.
 8. Build the production Angular application.
+
+The parallel `Security gate` runs Semgrep SAST, pip-audit, npm audit, and full-history
+Gitleaks scanning. It fails on scanner errors and High or Critical findings; pip-audit
+fails on any advisory because its CLI does not provide a severity threshold. See
+[`docs/security/README.md`](docs/security/README.md) for severity mapping, reproduction
+commands, the measured coverage gaps, and required status-check setup.
 
 The backend test layers are currently divided as follows:
 
@@ -193,15 +199,15 @@ backend/.venv/bin/python -m pytest \
 REAL_MONGODB_URI=mongodb://localhost:27017/beli_integration_test \
   backend/.venv/bin/python -m pytest backend/tests/test_review_real_database.py
 backend/.venv/bin/python -m pytest --cov=backend --cov-config=.coveragerc \
-  --cov-report=term-missing --cov-fail-under=50
+  --cov-report=term-missing --cov-fail-under=65
 cd frontend && npm run test:coverage && npm run build
 ```
 
 ## Continuous delivery to staging
 
-After the quality gate passes on a push to `main`, GitHub Actions automatically deploys
-the backend and frontend to two staging-only Vercel projects and smoke-tests both generated
-deployment URLs. The Vercel projects use their production targets as the stable staging
+After both the quality and security gates pass on a push to `main`, GitHub Actions
+automatically deploys the backend and frontend to two staging-only Vercel projects and
+smoke-tests both generated deployment URLs. The Vercel projects use their production targets as the stable staging
 environment; this repository does not automatically deploy the public production system.
 The deploy commands run from the repository root because Vercel applies each project's
 configured Root Directory.
@@ -241,8 +247,10 @@ invalidate the changed account's existing bearer tokens.
 
 ## Main branch protection
 
-The `main` ruleset must require pull requests, one approving review, and the
-`CI / Quality gate` status check. It must block direct and force pushes, apply to repository
+The `main` ruleset must require pull requests, one approving review, and both the
+`CI / Quality gate` and `CI / Security gate` status checks. A repository administrator
+must add `CI / Security gate` to the required checks; this repository change does not
+update GitHub settings. The ruleset must block direct and force pushes, apply to repository
 administrators, and have no bypass actors. Beginning October 13, 2026, all Sprint 3 work
 must reach `main` through this reviewed pull-request path.
 
