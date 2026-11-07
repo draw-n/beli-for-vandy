@@ -45,7 +45,7 @@ async function register(page: Page, user: TestAccount): Promise<void> {
   const responseBody = await registrationResponse.json();
   expect(registrationResponse.status(), JSON.stringify(responseBody)).toBe(201);
   expect(responseBody.username).toBe(user.username);
-  await expect(page.locator('p[role="status"]')).toContainText(`Account created for ${user.username}`, { timeout: 15_000 });
+  await expect(page).toHaveURL(/\/locations$/);
 }
 
 async function login(page: Page, user: TestAccount): Promise<{ uuid: string }> {
