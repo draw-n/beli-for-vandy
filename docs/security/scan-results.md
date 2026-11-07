@@ -4,8 +4,8 @@
 
 - Repository base: `origin/main` at `eedec371c63f81f49be3c06a54897f7d9670dd59`.
 - Remediation branch base: `sara/security-scan` at `0374d6501afd4d5ef42d7967cfd95d9620fb5ef0`.
-- Scan date: 2026-11-07. Local scans completed; hosted remediation PR #73 run
-  is pending.
+- Scan date: 2026-11-07. Local scans and hosted PR #73 workflow completed on
+  2026-11-07.
 - Remediation commit: `ad53d2e6ae9a146f1faa57ae2ebb45035785a117`.
 - Semgrep 1.182.0; `p/python` and `p/typescript`; backend application code and `frontend/src`.
 - pip-audit 2.10.1; `backend/requirements-dev.txt` (includes `backend/requirements.txt`).
@@ -37,9 +37,10 @@ and narrow exception rationale.
 - Frontend ESLint and TypeScript typecheck: passed.
 - Angular unit tests: 134 passed across 17 test files.
 - Playwright integration: 1 passed against isolated local test services.
-- Production Angular build: passed under Node 22.12, matching CI. A separate
-  attempt under the environment's default Node 26.12 exited early without a
-  diagnostic; the supported Node 22.12 run completed and prerendered 4 routes.
+- Production Angular build: passed locally under Node 22.12 and in the hosted
+  PR workflow. A separate attempt under the environment's default Node 26.12
+  exited early without a diagnostic; the supported Node 22.12 run prerendered
+  4 routes.
 - Workflow YAML and staging dependency checks: passed. Semgrep synthetic gate
   checks returned High=1, Medium=0, scanner error=2, malformed JSON=2.
 - `git diff --check`: passed for the remediation implementation; documentation
@@ -55,10 +56,12 @@ repository settings were changed.
 In PR #72's latest run before remediation, Semgrep passed, pip-audit failed on
 Pillow, and npm audit and Gitleaks were skipped by GitHub Actions after the
 earlier step failure. The workflow now uses `if: !cancelled()` for scanner
-steps, which allows later scanners to run while preserving job failure. A new
-hosted remediation PR run on [#73](https://github.com/draw-n/beli-for-vandy/pull/73)
-must confirm all four steps execute and that the
-remaining Moderate npm advisories do not fail the High/Critical gate.
+steps, which allows later scanners to run while preserving job failure. The
+hosted [PR #73 run](https://github.com/draw-n/beli-for-vandy/actions/runs/42392785450)
+completed successfully: Semgrep, pip-audit, npm audit, and full-history
+Gitleaks all executed and passed; quality gate passed and staging deployment
+was skipped for this pull request. The remaining Moderate npm advisories do
+not fail the High/Critical gate.
 
 ## Preliminary triage
 

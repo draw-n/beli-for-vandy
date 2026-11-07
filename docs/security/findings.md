@@ -105,8 +105,7 @@ same file or rule.
 - Fixing PR: [#73](https://github.com/draw-n/beli-for-vandy/pull/73), targeting
   `main` from `sara/security-remediation`.
 - Fixing commit: `ad53d2e6ae9a146f1faa57ae2ebb45035785a117`.
-- Outstanding: hosted workflow must show all scanners ran; production Angular
-  build must be confirmed on CI's Node 22.12; owner may validate the synthetic
+- Outstanding: owner may validate the synthetic
   test fixture; team should triage the nine remaining Moderate/Low npm IDs and
   applicability questions above.
 - This document does not complete the manual OWASP checklist or the overall
