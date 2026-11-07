@@ -4,10 +4,11 @@
 
 The `CI / Security gate` job runs in parallel with `CI / Quality gate` for every
 pull request targeting `main` and every push to `main`. It runs Semgrep against
-backend and Angular application source, `pip-audit` against the exact-pinned
-Python requirements, `npm audit --audit-level=high` against the frontend lockfile,
-and Gitleaks across all fetched Git history. The staging deployment depends on
-both jobs and remains limited to pushes to `main`.
+backend and Angular application source, `pip-audit` against the pinned Python
+requirements, `npm audit --audit-level=high` against the frontend lockfile, and
+Gitleaks across all fetched Git history. Scanner steps use `if: !cancelled()` so
+one scanner finding does not skip later scanners; their nonzero exits still fail
+the job. Staging depends on both jobs and remains limited to pushes to `main`.
 
 The SAST scanner uses Semgrep CLI 1.182.0 and the maintained `p/python` and
 `p/typescript` rulesets. Its gate maps CVSS-like `security-severity` scores of
@@ -28,18 +29,16 @@ need reachability and impact review. Lower scanner categories are triage hints;
 the course definitions determine the team’s final classification.
 
 `pip-audit` 2.10.1 audits the pinned backend requirements and exits nonzero on
-reported vulnerable dependencies; because its CLI does not expose a reliable
-High/Critical threshold, this also blocks on lower-severity advisories. Its
-output includes advisory identifiers and fix versions; confirm the dependency
-path against the pinned requirements and dependency tree. `npm audit` uses npm
-11.7.0, prints dependency paths and available fixes, and fails at High or Critical.
-Gitleaks 8.30.1 scans full history with full redaction. No secret values are
-written to workflow output or artifacts.
+any reported vulnerable dependency; it does not expose a reliable severity
+threshold. `npm audit` uses npm 11.7.0 and fails at High or Critical. Gitleaks
+8.30.1 scans full history with full redaction. Its only ignored fingerprint is a
+reviewed synthetic mock-cookie fixture, recorded in `.gitleaksignore`; this
+does not exclude the file, rule, or commit from scanning, and other findings
+still fail. Scanner logs and artifacts must never contain matched secret values.
 
-No security scanner is configured with `continue-on-error`, ignored exit codes,
-or blanket finding suppressions. Scanner installation and execution failures
-fail the job. The PR job has `contents: read` permission and no deployment
-secrets.
+No scanner uses `continue-on-error` or ignored exit codes. Scanner installation
+and execution failures fail the job. The PR job has `contents: read` permission
+and no deployment secrets.
 
 ### Require the security status check
 
@@ -48,8 +47,9 @@ repository ruleset. A repository administrator should edit the ruleset applying
 to `main`, enable **Require status checks to pass**, and add the exact check
 **`CI / Security gate`** (workflow name `CI`, job name `Security gate`). Keep the
 existing `CI / Quality gate` requirement. This PR does not change repository
-settings. Verify the name in a completed PR check run if GitHub displays a
-different context for the repository.
+settings. Read-only inspection of the active `main` ruleset found an empty
+`required_status_checks` list, so neither gate is currently required there.
+Verify the displayed context in a completed PR check run when configuring it.
 
 ## Reproduce scans
 
