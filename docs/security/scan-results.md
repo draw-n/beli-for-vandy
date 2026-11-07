@@ -4,7 +4,9 @@
 
 - Repository base: `origin/main` at `eedec371c63f81f49be3c06a54897f7d9670dd59`.
 - Remediation branch base: `sara/security-scan` at `0374d6501afd4d5ef42d7967cfd95d9620fb5ef0`.
-- Scan date: 2026-11-07. Hosted remediation PR run pending.
+- Scan date: 2026-11-07. Local scans completed; hosted remediation PR #73 run
+  is pending.
+- Remediation commit: `ad53d2e6ae9a146f1faa57ae2ebb45035785a117`.
 - Semgrep 1.182.0; `p/python` and `p/typescript`; backend application code and `frontend/src`.
 - pip-audit 2.10.1; `backend/requirements-dev.txt` (includes `backend/requirements.txt`).
 - npm audit 11.7.0; `frontend/package-lock.json`; gate threshold remains `--audit-level=high`.
@@ -40,7 +42,8 @@ and narrow exception rationale.
   diagnostic; the supported Node 22.12 run completed and prerendered 4 routes.
 - Workflow YAML and staging dependency checks: passed. Semgrep synthetic gate
   checks returned High=1, Medium=0, scanner error=2, malformed JSON=2.
-- `git diff --check`: passed before final documentation/PR metadata review.
+- `git diff --check`: passed for the remediation implementation; documentation
+  metadata is being recorded in a follow-up commit.
 
 ## Workflow behavior and hosted status
 
@@ -53,7 +56,8 @@ In PR #72's latest run before remediation, Semgrep passed, pip-audit failed on
 Pillow, and npm audit and Gitleaks were skipped by GitHub Actions after the
 earlier step failure. The workflow now uses `if: !cancelled()` for scanner
 steps, which allows later scanners to run while preserving job failure. A new
-hosted remediation PR run must confirm all four steps execute and that the
+hosted remediation PR run on [#73](https://github.com/draw-n/beli-for-vandy/pull/73)
+must confirm all four steps execute and that the
 remaining Moderate npm advisories do not fail the High/Critical gate.
 
 ## Preliminary triage

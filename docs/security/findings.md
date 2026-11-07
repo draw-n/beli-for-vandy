@@ -102,9 +102,9 @@ same file or rule.
 
 ## Fixing PR and remaining review
 
-- Fixing PR: remediation PR from `sara/security-remediation` to `main` (URL to be
-  added after it is opened).
-- Fixing commit: pending commit creation.
+- Fixing PR: [#73](https://github.com/draw-n/beli-for-vandy/pull/73), targeting
+  `main` from `sara/security-remediation`.
+- Fixing commit: `ad53d2e6ae9a146f1faa57ae2ebb45035785a117`.
 - Outstanding: hosted workflow must show all scanners ran; production Angular
   build must be confirmed on CI's Node 22.12; owner may validate the synthetic
   test fixture; team should triage the nine remaining Moderate/Low npm IDs and
