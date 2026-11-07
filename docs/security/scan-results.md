@@ -86,6 +86,10 @@ file, but its validity has not been manually established; treat it as a
 potential credential pending owner review. The matched value is intentionally
 not recorded here or in the PR description.
 
+After commit `18ae23b`, Gitleaks was rerun across all locally available refs:
+133 commits scanned, the same single alert, exit status 1. The result was
+redacted and its matched value was not inspected or recorded.
+
 ## Successful scan
 
 Semgrep 1.182.0 completed successfully with exit status 0: 0 findings across 63 targeted source
