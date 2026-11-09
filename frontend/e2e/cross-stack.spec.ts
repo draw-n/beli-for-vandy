@@ -36,7 +36,8 @@ async function register(page: Page, user: TestAccount): Promise<void> {
   await page.getByLabel('Last name').fill(user.lastName);
   await page.locator('input[name="email"]').fill(user.email);
   await page.locator('input[name="password"]').fill(user.password);
-  await page.getByLabel('Account type').selectOption('student');
+  await page.getByRole('combobox', { name: 'Account type' }).click();
+  await page.getByRole('option', { name: 'Student', exact: true }).click();
   await page.getByLabel('Home city').fill(user.homeCity);
   const response = page.waitForResponse((r) => r.url().endsWith('/accounts') && r.request().method() === 'POST');
   await page.getByRole('button', { name: 'Create account' }).click();
@@ -44,7 +45,7 @@ async function register(page: Page, user: TestAccount): Promise<void> {
   const responseBody = await registrationResponse.json();
   expect(registrationResponse.status(), JSON.stringify(responseBody)).toBe(201);
   expect(responseBody.username).toBe(user.username);
-  await expect(page.locator('p[role="status"]')).toContainText(`Account created for ${user.username}`, { timeout: 15_000 });
+  await expect(page).toHaveURL(/\/locations$/);
 }
 
 async function login(page: Page, user: TestAccount): Promise<{ uuid: string }> {
