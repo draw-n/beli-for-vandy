@@ -81,7 +81,7 @@
               "statements": 50,
               "branches": 50,
               "functions": 50,
-              "lines": 50
+              "lines": 70
             },
             "coverageReporters": ["text", "html", "cobertura"]
           }
