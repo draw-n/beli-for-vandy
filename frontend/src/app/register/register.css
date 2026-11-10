@@ -1,0 +1,114 @@
+:host {
+  display: block;
+}
+
+.register-page {
+  min-height: 100vh;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  padding: 24px;
+  background-color: #f7f5ef;
+}
+
+.register-card {
+  width: 100%;
+  max-width: 560px;
+  padding: 40px;
+  background-color: white;
+  border-radius: 12px;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.08);
+}
+
+.register-header {
+  margin-bottom: 28px;
+  text-align: center;
+}
+
+.register-header h1 {
+  margin: 0 0 8px;
+  font-size: 32px;
+  color: #866d4b;
+}
+
+.register-header p,
+.delete-section p,
+.login-prompt {
+  color: #666;
+}
+
+.register-header p {
+  margin: 0;
+}
+
+h2 {
+  margin: 0 0 20px;
+  color: #333;
+  font-size: 20px;
+}
+
+form {
+  display: flex;
+  flex-direction: column;
+}
+
+.form-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 4px 16px;
+}
+
+mat-form-field {
+  width: 100%;
+  margin-bottom: 8px;
+}
+
+button {
+  width: 100%;
+  margin-top: 8px;
+}
+
+.login-prompt {
+  margin: 24px 0 0;
+  text-align: center;
+}
+
+.login-prompt a {
+  color: #866d4b;
+  font-weight: 600;
+}
+
+.register-message {
+  margin: 16px 0 0;
+  color: #866d4b;
+  text-align: center;
+}
+
+.delete-section {
+  margin-top: 32px;
+  padding-top: 28px;
+  border-top: 1px solid #e5e1d8;
+}
+
+.delete-section h2 {
+  margin-bottom: 8px;
+}
+
+.delete-section p {
+  margin: 0 0 20px;
+  font-size: 14px;
+}
+
+.delete-section button {
+  color: #866d4b;
+}
+
+@media (max-width: 600px) {
+  .register-card {
+    padding: 28px 20px;
+  }
+
+  .form-grid {
+    display: block;
+  }
+}
