@@ -61,9 +61,11 @@ photo_bucket = InMemoryGridFSBucket()
 
 @asynccontextmanager
 async def lifespan(_: FastAPI):
+    from controllers.personal_ranking import ensure_personal_ranking_indexes
     from controllers.user import UserController
 
     await UserController(database.db).ensure_indexes()
+    await ensure_personal_ranking_indexes()
     await database.locations_collection.insert_one({
         "uuid": "integration-commons",
         "name": "Integration Commons",

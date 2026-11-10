@@ -17,6 +17,9 @@ export class RankingsStore {
   load(): Observable<{ rated: RankedEntry[]; unrated: UnratedEntry[] }> {
     if (!sessionStorage.getItem('accessToken')) return throwError(() => new Error('Sign in to view your rankings.'));
     if (this.loadRequest) return this.loadRequest;
+    this.rated.set([]);
+    this.unrated.set([]);
+    this.loaded.set(false);
     this.loading.set(true);
     this.loadRequest = this.api.getMyRankings().pipe(
       tap((data) => { this.rated.set(data.rated); this.unrated.set(data.unrated); this.loaded.set(true); }),

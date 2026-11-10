@@ -1,9 +1,14 @@
 from datetime import datetime
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, field_validator
 
 
 class PersonalRankingUpsert(BaseModel):
     rating: float = Field(ge=1, le=10)
+
+    @field_validator('rating')
+    @classmethod
+    def round_to_one_decimal(cls, v: float) -> float:
+        return round(v, 1)
 
 
 class PersonalRankingResponse(BaseModel):

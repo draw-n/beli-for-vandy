@@ -47,6 +47,24 @@ async def test_updating_does_not_create_duplicate_rankings(client, auth):
     assert await database.personal_rankings_collection.count_documents(
         {"user_id": "user-123", "location_id": "loc-1"}
     ) == 1
+    assert second.json()["created_at"] == first.json()["created_at"], "created_at must not change on update"
+    assert second.json()["updated_at"] >= first.json()["updated_at"], "updated_at must advance after update"
+
+
+@pytest.mark.asyncio
+async def test_one_user_cannot_overwrite_another_users_ranking(client):
+    app.dependency_overrides[get_current_user_id] = lambda: "user-123"
+    try:
+        await database.locations_collection.insert_one({"uuid": "loc-1", "name": "Commons"})
+        await client.put("/personal-rankings/loc-1", json={"rating": 9})
+        app.dependency_overrides[get_current_user_id] = lambda: "user-456"
+        await client.put("/personal-rankings/loc-1", json={"rating": 3})
+        app.dependency_overrides[get_current_user_id] = lambda: "user-123"
+        resp = await client.get("/personal-rankings/")
+        assert resp.json()["rated"][0]["rating"] == 9, "user-123's rating must not be overwritten by user-456"
+        assert await database.personal_rankings_collection.count_documents({"location_id": "loc-1"}) == 2
+    finally:
+        app.dependency_overrides.pop(get_current_user_id, None)
 
 
 @pytest.mark.asyncio
