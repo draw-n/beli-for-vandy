@@ -14,6 +14,72 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
+  security-gate:
+    name: Security gate
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    permissions:
+      contents: read
+    steps:
+      - name: Check out complete Git history
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+
+      - name: Set up Python
+        uses: actions/setup-python@6d4fd22b20465ccc0f7354476588e8df7c9ca0e0 # v7.1.0
+        with:
+          python-version: '3.12'
+
+      - name: Install pinned Python scanners
+        run: python -m pip install --disable-pip-version-check semgrep==1.182.0 pip-audit==2.10.1
+
+      - name: Run Semgrep SAST
+        if: ${{ !cancelled() }}
+        env:
+          SEMGREP_SEND_METRICS: 'off'
+        run: |
+          set -euo pipefail
+          semgrep scan \
+            --config p/python \
+            --config p/typescript \
+            --metrics=off \
+            --json \
+            --exclude '*.spec.ts' \
+            --exclude '**/tests/**' \
+            --exclude '**/node_modules/**' \
+            --exclude '**/.venv/**' \
+            --exclude '**/dist/**' \
+            --exclude '**/coverage/**' \
+            --exclude '**/playwright-report/**' \
+            backend/main.py backend/settings.py backend/database.py \
+            backend/controllers backend/models backend/routes frontend/src \
+            > "$RUNNER_TEMP/semgrep-results.json"
+          python scripts/security/check_semgrep_results.py "$RUNNER_TEMP/semgrep-results.json"
+
+      - name: Audit Python dependencies
+        if: ${{ !cancelled() }}
+        run: pip-audit --requirement backend/requirements-dev.txt --format=columns
+
+      - name: Set up Node.js
+        if: ${{ !cancelled() }}
+        uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version: '22.12.0'
+          package-manager-cache: false
+
+      - name: Audit frontend dependencies
+        if: ${{ !cancelled() }}
+        working-directory: frontend
+        run: npm exec --yes --package=npm@11.7.0 -- npm audit --audit-level=high
+
+      - name: Scan complete Git history for secrets
+        if: ${{ !cancelled() }}
+        uses: docker://ghcr.io/gitleaks/gitleaks@sha256:b109bc5f8f76a38196a3e413704fc5b9e3c32360bce4e4b603bd6f45b3721dbb
+        with:
+          args: git --redact=100 --log-opts=--all .
+
   quality-gate:
     name: Quality gate
     runs-on: ubuntu-latest
@@ -34,10 +100,10 @@ jobs:
 
     steps:
       - name: Check out repository
-        uses: actions/checkout@v7
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
 
       - name: Set up Python
-        uses: actions/setup-python@v7
+        uses: actions/setup-python@6d4fd22b20465ccc0f7354476588e8df7c9ca0e0 # v7.1.0
         with:
           python-version: '3.12'
           cache: pip
@@ -46,7 +112,7 @@ jobs:
             backend/requirements-dev.txt
 
       - name: Set up Node.js
-        uses: actions/setup-node@v7
+        uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
         with:
           node-version: '22.12.0'
           cache: npm
@@ -103,7 +169,7 @@ jobs:
           --cov-config=.coveragerc
           --cov-report=term-missing
           --cov-report=xml:backend/coverage.xml
-          --cov-fail-under=50
+          --cov-fail-under=65
 
       - name: Enforce frontend coverage gate
         working-directory: frontend
@@ -123,14 +189,14 @@ jobs:
 
       - name: Upload Playwright failure artifacts
         if: failure()
-        uses: actions/upload-artifact@v7
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with:
           name: playwright-failure-artifacts
           path: frontend/tmp/playwright-results/
           if-no-files-found: ignore
 
       - name: Upload coverage reports
-        uses: actions/upload-artifact@v7
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with:
           name: coverage-reports
           path: |
@@ -141,7 +207,7 @@ jobs:
   deploy-staging:
     name: Deploy staging
     if: github.event_name == 'push' && github.ref == 'refs/heads/main'
-    needs: quality-gate
+    needs: [quality-gate, security-gate]
     runs-on: ubuntu-latest
     timeout-minutes: 20
     environment: staging
@@ -151,15 +217,15 @@ jobs:
 
     steps:
       - name: Check out repository
-        uses: actions/checkout@v7
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
 
       - name: Set up Node.js
-        uses: actions/setup-node@v7
+        uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
         with:
           node-version: '22.12.0'
 
       - name: Set up Python
-        uses: actions/setup-python@v7
+        uses: actions/setup-python@6d4fd22b20465ccc0f7354476588e8df7c9ca0e0 # v7.1.0
         with:
           python-version: '3.12'
 

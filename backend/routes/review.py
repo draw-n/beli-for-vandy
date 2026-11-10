@@ -4,13 +4,14 @@ from fastapi import APIRouter, Depends, Query
 
 from controllers.auth import require_user
 from models.user import StoredUser
-from models.review import ReviewCreate, ReviewUpdate, ReviewResponse
+from models.review import ReviewCreate, ReviewUpdate, ReviewResponse, ReviewFeedResponse
 from controllers.review import (
     create_review,
     get_reviews,
     get_review,
     update_review,
     delete_review,
+    get_friend_feed,
 )
 from routes.photo import get_photo_bucket
 
@@ -35,6 +36,19 @@ async def get_all(
     user_id: str | None = Query(default=None),
 ):
     return await get_reviews(location_id, user_id)
+
+
+@router.get(
+    "/friend-feed",
+    response_model=ReviewFeedResponse,
+    summary="Get paginated reviews from friends",
+    description="Return the authenticated user's mutual friends' visible reviews, newest first.",
+)
+async def friend_feed(
+    current_user: Annotated[StoredUser, Depends(require_user)],
+    page: int = Query(default=1, ge=1),
+):
+    return await get_friend_feed(current_user, page=page)
 
 
 @router.get("/{review_id}", response_model=ReviewResponse)

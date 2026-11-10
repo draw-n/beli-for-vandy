@@ -60,3 +60,8 @@ class ReviewUpdate(BaseModel):
 
 class ReviewResponse(ReviewBase):
     uuid: str
+
+
+class ReviewFeedResponse(BaseModel):
+    reviews: list[ReviewResponse]
+    has_more: bool

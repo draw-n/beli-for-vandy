@@ -10,7 +10,7 @@
     "watch": "ng build --watch --configuration development",
     "test": "ng test",
     "test:unit": "ng test --watch=false",
-    "test:integration": "playwright test",
+    "test:integration": "node node_modules/@playwright/test/cli.js test",
     "test:coverage": "ng test --watch=false --coverage",
     "serve:ssr:beli-for-vandy-frontend": "node dist/beli-for-vandy-frontend/server/server.mjs"
   },
@@ -51,5 +51,10 @@
     "typescript": "~5.9.2",
     "typescript-eslint": "8.71.1",
     "vitest": "^4.0.8"
+  },
+  "overrides": {
+    "node-gyp": {
+      "undici": "6.29.1"
+    }
   }
 }
