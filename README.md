@@ -12,7 +12,20 @@ Have you ever felt like you wasted a meal swipe at a Vanderbilt dining hall? Wou
 - View list of Vanderbilt dining halls with pictures to explore
 - Add/remove new friends
 - Be able to check friends' ratings and reviews
-- Write own reviews on dining halls and filter by breakfast, lunch, and dinner
+- Write dining hall reviews with integer ratings from 1 (lowest) to 10 (highest), and filter by breakfast, lunch, and dinner
+
+### Rating scale
+
+As a diner, you can rate a dining experience on a whole-number scale from 1
+(lowest) to 10 (highest). The review form accepts only integer values in this
+range. Dining hall average ratings are calculated as the arithmetic mean of the
+available reviews, and the rating distribution groups reviews into 1–2, 3–4,
+5–6, 7–8, and 9–10 buckets, showing each bucket's count and share of reviews.
+
+**API validation note:** The backend currently requires ratings to be integers
+but does not enforce the 1–10 range. Direct API requests can therefore submit
+integer values outside the range enforced by the frontend; this README describes
+the user-facing rating requirement, not a backend validation guarantee.
 
 ## Technologies
 - MongoDB: uses a JSON format which is highly compatible with HTTP requests/responses
