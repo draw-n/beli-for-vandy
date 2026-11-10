@@ -1,5 +1,6 @@
 import { HttpErrorResponse } from '@angular/common/http';
 import { TestBed } from '@angular/core/testing';
+import { firstValueFrom } from 'rxjs';
 import { of } from 'rxjs';
 import { PersonalRankingApi } from '../api/personal-ranking.api';
 import type { RankingsResponse } from '../types/personal-ranking';
@@ -25,50 +26,38 @@ describe('RankingsStore', () => {
 
   afterEach(() => sessionStorage.clear());
 
-  it('populates rated and unrated on a successful load', (done) => {
+  it('populates rated and unrated on a successful load', async () => {
     mockApi.getMyRankings.mockReturnValue(of(LOADED_RESPONSE));
-    store.load().subscribe({
-      complete: () => {
-        expect(store.rated()).toEqual(RATED);
-        expect(store.unrated()).toEqual(UNRATED);
-        expect(store.loaded()).toBe(true);
-        done();
-      },
-    });
+    await firstValueFrom(store.load());
+    expect(store.rated()).toEqual(RATED);
+    expect(store.unrated()).toEqual(UNRATED);
+    expect(store.loaded()).toBe(true);
   });
 
-  it('clears stale state before fetching so a second user does not see the first user\'s data', (done) => {
+  it('clears stale state before fetching so a second user does not see the first user\'s data', async () => {
     store.rated.set(RATED);
     store.unrated.set([]);
     store.loaded.set(true);
 
     mockApi.getMyRankings.mockReturnValue(of(EMPTY_RESPONSE));
 
-    store.load().subscribe({ complete: done });
-
+    const load$ = store.load();
     expect(store.rated()).toEqual([]);
     expect(store.loaded()).toBe(false);
+
+    await firstValueFrom(load$);
   });
 
-  it('errors immediately when no access token is present', (done) => {
+  it('errors immediately when no access token is present', async () => {
     sessionStorage.removeItem('accessToken');
-    store.load().subscribe({
-      error: (e: Error) => {
-        expect(e.message).toContain('Sign in');
-        done();
-      },
-    });
+    await expect(firstValueFrom(store.load())).rejects.toThrow('Sign in');
   });
 
-  it('calls setRating on the API and marks loaded false to trigger a reload', (done) => {
+  it('calls setRating on the API and marks loaded false to trigger a reload', async () => {
     mockApi.setRating.mockReturnValue(of({}));
-    store.setRating('loc-1', 8).subscribe({
-      complete: () => {
-        expect(mockApi.setRating).toHaveBeenCalledWith('loc-1', 8);
-        expect(store.loaded()).toBe(false);
-        done();
-      },
-    });
+    await firstValueFrom(store.setRating('loc-1', 8));
+    expect(mockApi.setRating).toHaveBeenCalledWith('loc-1', 8);
+    expect(store.loaded()).toBe(false);
   });
 
   describe('errorMessage', () => {
