@@ -257,3 +257,42 @@ must reach `main` through this reviewed pull-request path.
 For course evidence, retain the CI rollout pull request's failed run and its corrective
 commit. The first run exposed genuine pre-existing frontend type/test failures; the follow-up
 fix demonstrates the pipeline blocking the change before it became mergeable.
+
+
+## Usability Testing
+
+Usability testing was conducted with two student testers to evaluate how easily users could navigate the app and complete three common tasks: submitting a dining hall meal review, finding and following another user, and browsing friends' reviews to save a favorite dish.
+
+### Testing Results
+
+Both testers successfully completed all three tasks without assistance. Overall, users were able to navigate the app quickly and found the core features easy to use.
+
+| Task | Tester A | Tester B | Target Time |
+|---|---|---|---|
+| T1: Submit a meal review | 30 seconds | 30 seconds | 3 minutes |
+| T2: Find and follow another user | 1 minute | 30 seconds | 2 minutes |
+| T3: Browse friends' reviews and favorite a dish | 30 seconds | 45 seconds | 4 minutes |
+
+All tasks were completed within their target times. Testers also rated the usability of each task between 8 and 10 on a 10-point scale, indicating a positive overall user experience.
+
+### User Feedback and Improvements
+
+Although the testers completed every task successfully, they identified a few areas where the interface could be improved:
+
+- **Following other users:** One tester suggested adding the ability to follow someone directly from their review. This would make connecting with other students more intuitive.
+- **Discover page clarity:** Another tester was confused when users they had already followed appeared alongside people they had not yet discovered. The Discover page could better distinguish between existing friends and new users.
+- **Favorite section visibility:** One tester suggested adding a border around the favorites section to make it stand out more clearly from regular reviews.
+
+### Planned Improvements
+
+Based on the feedback, we identified the following improvements:
+
+| Improvement | Priority | GitHub Issue |
+|---|---|---|
+| Improve the ability to follow users directly from their reviews | Low Priority | #78 |
+| Clarify the Discover page. | Low Priority | #79 |
+| Add a visual border around the favorites section to make it easier to identify. | Low Priority | #80 |
+
+### Conclusion
+
+Overall, usability testing showed that the app's primary features are easy to understand and use. Both testers completed every task significantly faster than the expected completion times, with no major usability issues or points where users gave up. The feedback highlighted a few small interface improvements that could make navigation more intuitive and improve the visibility of important features. These changes will help create a smoother experience for students using the app to discover meals, share reviews, and connect with friends.
