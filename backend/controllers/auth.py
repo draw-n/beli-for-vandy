@@ -119,9 +119,23 @@ async def get_current_user_id(
 
 
 async def get_current_user(
-    user_id: Annotated[str, Depends(get_current_user_id)],
+    credentials: Annotated[
+        HTTPAuthorizationCredentials | None, Depends(_bearer_scheme)
+    ],
 ) -> StoredUser:
-    """Resolve the token subject against current account state."""
+    """Resolve the token subject against current account state.
+
+    Also validates the token's security_version claim against the stored value
+    so that suspension and privilege revocations take effect immediately.
+    """
+    claims = _claims_from_credentials(credentials)
+    if claims is None:
+        raise _unauthorized()
+    user_id = claims.get("sub")
+    if not isinstance(user_id, str) or not user_id:
+        raise _unauthorized()
+    token_security_version = claims.get("security_version", 0)
+
     document = await database.users_collection.find_one({"uuid": user_id})
     if document is None:
         raise _unauthorized()
@@ -132,6 +146,8 @@ async def get_current_user(
             status_code=status.HTTP_403_FORBIDDEN,
             detail="This account is not active",
         )
+    if user.security_version != token_security_version:
+        raise _unauthorized()
     return user
 
 

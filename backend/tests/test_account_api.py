@@ -8,7 +8,7 @@ from fastapi import Depends, FastAPI
 from fastapi.testclient import TestClient
 
 import database
-from controllers.auth import get_current_user, get_current_user_id
+from controllers.auth import get_current_user, get_current_user_id, issue_access_token
 from routes.user import get_user_controller, router
 from controllers.user import InvalidCredentialsError, UserAlreadyExistsError
 from models.user import AccountStatus, StoredUser, UserCreate, UserRole, UserType
@@ -441,6 +441,36 @@ class AccountApiTestCase(unittest.TestCase):
 
         self.assertEqual(response.status_code, 503)
         self.assertEqual(response.json(), {"detail": "Authentication is not configured"})
+
+    def test_authentication_rejects_stale_security_version(self) -> None:
+        # Remove the blanket override so the real get_current_user runs.
+        self.client.app.dependency_overrides.pop(get_current_user, None)
+
+        token, _ = issue_access_token(
+            "d08f600f-d60e-49b1-b762-f05f42935796",
+            TEST_TOKEN_SECRET,
+            security_version=0,
+        )
+
+        # Token is accepted while security_version matches the stored value.
+        self.assertEqual(
+            self.client.get(
+                "/accounts", headers={"Authorization": f"Bearer {token}"}
+            ).status_code,
+            200,
+        )
+
+        # Simulate a security event that increments security_version (e.g. suspension).
+        old = self.controller.users[0].model_dump()
+        self.controller.users[0] = StoredUser(**{**old, "security_version": 1})
+
+        # The same token is now rejected because its security_version is stale.
+        self.assertEqual(
+            self.client.get(
+                "/accounts", headers={"Authorization": f"Bearer {token}"}
+            ).status_code,
+            401,
+        )
 
 
 if __name__ == "__main__":
