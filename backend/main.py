@@ -15,6 +15,7 @@ from routes.personal_ranking import router as personal_ranking_router
 from routes.user import admin_router, router as user_router
 from controllers.user import UserController
 from controllers.favorite_dish import ensure_favorite_dish_indexes
+from controllers.login_rate_limit import LoginAttemptLimiter
 from controllers.moderation import ModerationController
 from controllers.personal_ranking import ensure_personal_ranking_indexes
 from database import client, db
@@ -27,6 +28,7 @@ async def lifespan(_: FastAPI):
     user_controller = UserController(db)
     await user_controller.ensure_indexes()
     await ModerationController(db).ensure_indexes()
+    await LoginAttemptLimiter(db.get_collection("login_attempts")).ensure_indexes()
     await ensure_favorite_dish_indexes()
     await ensure_personal_ranking_indexes()
     await user_controller.bootstrap_first_admin(

@@ -1,14 +1,4 @@
 <div class="detail-page" *ngIf="hall; else notFound">
-  <!-- Back -->
-  <a mat-button routerLink="/locations" class="back-button">
-    <mat-icon>arrow_back</mat-icon>
-    All dining spots
-  </a>
-  <a mat-button routerLink="/favorite-dishes" class="back-button">
-    <mat-icon>favorite</mat-icon>
-    Favorite dishes
-  </a>
-
   <!-- Main photo -->
   <img *ngIf="hall.image" class="cover-image" [src]="hall.image" [alt]="hall.name" />
 
@@ -210,10 +200,5 @@
     <h2>Location not found</h2>
 
     <p>We couldn't find that dining spot.</p>
-
-    <a mat-button routerLink="/locations">
-      <mat-icon>arrow_back</mat-icon>
-      Back to dining spots
-    </a>
   </div>
 </ng-template>

@@ -84,6 +84,13 @@ describe('FriendsComponent', () => {
     expect(component).toBeTruthy();
   });
 
+  it('does not render a duplicate friend feed navigation button', () => {
+    flushInitialRequests();
+    fixture.detectChanges();
+
+    expect(fixture.nativeElement.querySelector('.header-actions [routerLink="/friend-feed"]')).toBeNull();
+  });
+
   it('should load accounts', () => {
     flushInitialRequests();
 

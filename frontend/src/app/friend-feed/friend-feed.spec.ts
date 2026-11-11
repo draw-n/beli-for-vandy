@@ -1,7 +1,7 @@
 import { provideHttpClient } from '@angular/common/http';
 import { HttpTestingController, provideHttpClientTesting } from '@angular/common/http/testing';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
-import { provideRouter, Router } from '@angular/router';
+import { provideRouter } from '@angular/router';
 
 import { apiBaseUrl } from '../api/api-base-url';
 import { FriendFeed } from './friend-feed';
@@ -122,14 +122,13 @@ describe('FriendFeed', () => {
     expect(component.errorMessage).toBe('');
   });
 
-  it('navigates back to the friends page', () => {
-    const router = TestBed.inject(Router);
-    const navigate = vi.spyOn(router, 'navigate').mockResolvedValue(true);
+  it('does not render a duplicate friends navigation button', () => {
+    fixture.detectChanges();
     flushFeed([]);
     http.expectOne(`${apiBaseUrl}/accounts/public`).flush([]);
+    fixture.detectChanges();
 
-    component.goBack();
-
-    expect(navigate).toHaveBeenCalledWith(['/friends']);
+    expect(fixture.nativeElement.querySelector('.header-actions [routerLink="/friends"]')).toBeNull();
+    expect(fixture.nativeElement.querySelector('.page-header > button')).toBeNull();
   });
 });

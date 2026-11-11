@@ -104,7 +104,7 @@ test('Angular completes real account, location, review, friends, and photo HTTP 
   expect(secondRegistration.status()).toBe(201);
 
   // Angular Discover search and Follow/Unfollow mutations use the real API.
-  await page.getByRole('button', { name: 'Friends', exact: true }).click();
+  await page.getByRole('link', { name: 'Friends', exact: true }).click();
   await page.getByLabel('Search people').fill(second.firstName);
   await expect(page.getByText(`${second.firstName} ${second.lastName}`)).toBeVisible();
   await page.getByRole('button', { name: 'Follow', exact: true }).click();
@@ -116,7 +116,7 @@ test('Angular completes real account, location, review, friends, and photo HTTP 
   await page.getByRole('button', { name: 'Following', exact: true }).click();
   await expect(page.getByRole('button', { name: 'Follow', exact: true })).toBeVisible();
   expect((await (await request.get('http://127.0.0.1:18000/follows/')).json())).toHaveLength(0);
-  await page.getByRole('button', { name: 'Dining', exact: true }).click();
+  await page.getByRole('link', { name: 'Dining', exact: true }).click();
 
   // The list and detail route both request location data from the test API.
   await expect(page.locator('.dining-card')).toContainText('Integration Commons');
@@ -184,7 +184,7 @@ test('Angular completes real account, location, review, friends, and photo HTTP 
   await expect(page.getByRole('heading', { name: `${first.firstName} ${first.lastName}` })).toBeVisible();
   await expect(page.getByText('A real browser-to-API review')).toBeVisible();
   await expect(page.locator('.review-photos img')).toHaveCount(1);
-  await page.getByRole('button', { name: 'Dining spots' }).click();
+  await page.getByRole('link', { name: 'Dining', exact: true }).click();
   await page.locator('.dining-card').click();
 
   // Edit and delete are confirmed by FastAPI responses and refreshed UI state.
