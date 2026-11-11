@@ -53,6 +53,7 @@ async def client(mock_db, monkeypatch):
     mock_locations_collection = mock_db["locations"]
     mock_favorite_dishes_collection = mock_db["favorite_dishes"]
     mock_users_collection = mock_db["users"]
+    mock_personal_rankings_collection = mock_db["personal_rankings"]
 
     monkeypatch.setattr(
         database,
@@ -81,6 +82,7 @@ async def client(mock_db, monkeypatch):
         unique=True,
     )
     monkeypatch.setattr(database, "users_collection", mock_users_collection)
+    monkeypatch.setattr(database, "personal_rankings_collection", mock_personal_rankings_collection)
     monkeypatch.setenv("AUTH_TOKEN_SECRET", TEST_TOKEN_SECRET)
     get_settings.cache_clear()
 

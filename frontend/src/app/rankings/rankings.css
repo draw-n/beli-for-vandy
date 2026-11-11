@@ -1,0 +1,5 @@
+.page { max-width: 960px; margin: 0 auto; padding: 24px; }
+.rankings-list { display: grid; gap: 12px; margin-bottom: 24px; }
+.ranking-info { display: flex; align-items: center; gap: 12px; flex: 1; }
+.inline-editor { display: flex; align-items: center; gap: 8px; }
+.rating-input { width: 120px; }

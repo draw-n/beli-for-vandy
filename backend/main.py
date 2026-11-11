@@ -10,11 +10,13 @@ from routes.follow import router as follow_router
 from routes.photo import router as photo_router
 from routes.favorite_dish import router as favorite_dish_router
 from routes.moderation import router as moderation_router
+from routes.personal_ranking import router as personal_ranking_router
 
 from routes.user import admin_router, router as user_router
 from controllers.user import UserController
 from controllers.favorite_dish import ensure_favorite_dish_indexes
 from controllers.moderation import ModerationController
+from controllers.personal_ranking import ensure_personal_ranking_indexes
 from database import client, db
 from settings import get_settings
 
@@ -26,6 +28,7 @@ async def lifespan(_: FastAPI):
     await user_controller.ensure_indexes()
     await ModerationController(db).ensure_indexes()
     await ensure_favorite_dish_indexes()
+    await ensure_personal_ranking_indexes()
     await user_controller.bootstrap_first_admin(
         get_settings().bootstrap_admin_identifier
     )
@@ -57,6 +60,7 @@ app.include_router(location_router)
 app.include_router(follow_router)
 app.include_router(photo_router)
 app.include_router(favorite_dish_router)
+app.include_router(personal_ranking_router)
 
 
 @app.get("/", tags=["System"], summary="Check API health")

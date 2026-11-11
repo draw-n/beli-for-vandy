@@ -157,6 +157,7 @@ jobs:
           backend/tests/test_reviews.py
           backend/tests/test_locations.py
           backend/tests/test_follows.py
+          backend/tests/test_personal_rankings.py
 
       - name: Run real MongoDB integration test
         run: python -m pytest backend/tests/test_review_real_database.py
