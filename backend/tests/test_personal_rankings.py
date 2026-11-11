@@ -77,3 +77,66 @@ async def test_one_user_cannot_read_another_users_rankings(client):
         assert (await client.get("/personal-rankings/")).json()["rated"] == []
     finally:
         app.dependency_overrides.pop(get_current_user_id, None)
+
+
+@pytest.mark.asyncio
+async def test_get_friend_rankings_requires_authentication(client):
+    assert (await client.get("/personal-rankings/users/user-123", headers={})).status_code == 401
+
+
+@pytest.mark.asyncio
+async def test_get_friend_rankings_returns_rated_entries(client, auth):
+    await database.locations_collection.insert_many([
+        {"uuid": "loc-1", "name": "Commons"},
+        {"uuid": "loc-2", "name": "Rand"},
+    ])
+    await client.put("/personal-rankings/loc-1", json={"rating": 9})
+    await client.put("/personal-rankings/loc-2", json={"rating": 7})
+
+    resp = await client.get("/personal-rankings/users/user-123")
+    assert resp.status_code == 200
+    data = resp.json()
+    assert isinstance(data, list)
+    assert len(data) == 2
+    assert data[0]["location_name"] == "Commons"
+    assert data[0]["rating"] == 9
+    assert data[0]["rank"] == 1
+    assert data[1]["location_name"] == "Rand"
+    assert data[1]["rating"] == 7
+    assert data[1]["rank"] == 2
+
+
+@pytest.mark.asyncio
+async def test_get_friend_rankings_returns_empty_list_for_new_user(client, auth):
+    resp = await client.get("/personal-rankings/users/user-456")
+    assert resp.status_code == 200
+    assert resp.json() == []
+
+
+@pytest.mark.asyncio
+async def test_get_friend_rankings_does_not_expose_unrated_locations(client, auth):
+    await database.locations_collection.insert_many([
+        {"uuid": "loc-1", "name": "Commons"},
+        {"uuid": "loc-2", "name": "Rand"},
+    ])
+    await client.put("/personal-rankings/loc-1", json={"rating": 8})
+
+    resp = await client.get("/personal-rankings/users/user-123")
+    assert resp.status_code == 200
+    data = resp.json()
+    assert len(data) == 1
+    assert data[0]["location_id"] == "loc-1"
+
+
+@pytest.mark.asyncio
+async def test_get_friend_rankings_any_authenticated_user_can_view(client):
+    await database.locations_collection.insert_one({"uuid": "loc-1", "name": "Commons"})
+    app.dependency_overrides[get_current_user_id] = lambda: "user-123"
+    try:
+        await client.put("/personal-rankings/loc-1", json={"rating": 9})
+        app.dependency_overrides[get_current_user_id] = lambda: "user-456"
+        resp = await client.get("/personal-rankings/users/user-123")
+        assert resp.status_code == 200
+        assert resp.json()[0]["rating"] == 9
+    finally:
+        app.dependency_overrides.pop(get_current_user_id, None)

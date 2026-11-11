@@ -42,6 +42,12 @@ async def get_rankings(user_id: str) -> RankingsResponse:
     return RankingsResponse(rated=rated, unrated=unrated)
 
 
+async def get_friend_rankings(user_id: str) -> list[RankedEntry]:
+    """Return only the rated entries for a given user (no unrated list)."""
+    response = await get_rankings(user_id)
+    return response.rated
+
+
 async def upsert_ranking(
     user_id: str, location_id: str, payload: PersonalRankingUpsert,
 ) -> PersonalRankingResponse:
