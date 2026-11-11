@@ -7,5 +7,5 @@ omit =
     backend/seeds/*
 
 [report]
-fail_under = 65
+fail_under = 70
 show_missing = True
