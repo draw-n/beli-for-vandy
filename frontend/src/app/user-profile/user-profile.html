@@ -36,6 +36,38 @@
       </mat-card-content>
     </mat-card>
 
+    <section class="rankings-section" *ngIf="account">
+      <div class="section-heading">
+        <h2>Dining rankings</h2>
+      </div>
+
+      <mat-divider></mat-divider>
+
+      <div *ngIf="rankingsLoading" class="rankings-loading">
+        <mat-spinner diameter="32"></mat-spinner>
+      </div>
+
+      <div *ngIf="!rankingsLoading && friendRankings.length > 0" class="rankings-list">
+        <div class="ranking-row" *ngFor="let entry of friendRankings">
+          <span class="rank-number">#{{ entry.rank }}</span>
+          <span class="location-name">{{ entry.location_name }}</span>
+          <strong class="rating-badge">{{ entry.rating }}/10</strong>
+        </div>
+      </div>
+
+      <div *ngIf="!rankingsLoading && !rankingsError && friendRankings.length === 0" class="empty-rankings">
+        <mat-icon>leaderboard</mat-icon>
+        <h3>No rankings yet</h3>
+        <p>This user hasn't ranked any dining spots yet.</p>
+      </div>
+
+      <div *ngIf="!rankingsLoading && rankingsError" class="empty-rankings">
+        <mat-icon>error_outline</mat-icon>
+        <h3>Could not load rankings</h3>
+        <p>Rankings are only visible to signed-in users.</p>
+      </div>
+    </section>
+
     <section class="reviews-section" *ngIf="account">
       <div class="reviews-heading">
         <div>

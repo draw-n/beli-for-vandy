@@ -74,4 +74,42 @@ describe('PersonalRankingApi HTTP contract', () => {
       .flush({ detail: 'unauthorized' }, { status: 401, statusText: 'Unauthorized' });
     expect(receivedStatus).toBe(401);
   });
+
+  it('gets friend rankings with GET to /users/:userId and Authorization header', () => {
+    const response = [
+      { rank: 1, location_id: 'loc-1', location_name: 'Commons', rating: 9, uuid: 'r-1' },
+    ];
+    let received: unknown;
+    api.getFriendRankings('user-abc').subscribe((r) => (received = r));
+
+    const req = http.expectOne(`${baseUrl}/users/user-abc`);
+    expect(req.request.method).toBe('GET');
+    expect(req.request.headers.get('Authorization')).toBe('Bearer test-token');
+    req.flush(response);
+    expect(received).toEqual(response);
+  });
+
+  it('URL-encodes a user id containing special characters in getFriendRankings', () => {
+    api.getFriendRankings('user/special').subscribe();
+    http.expectOne(`${baseUrl}/users/user%2Fspecial`).flush([]);
+  });
+
+  it('omits Authorization header in getFriendRankings when no token is in sessionStorage', () => {
+    sessionStorage.removeItem('accessToken');
+    api.getFriendRankings('user-abc').subscribe();
+    const req = http.expectOne(`${baseUrl}/users/user-abc`);
+    expect(req.request.headers.has('Authorization')).toBe(false);
+    req.flush([]);
+  });
+
+  it('passes server errors through unchanged for getFriendRankings', () => {
+    let receivedStatus: number | undefined;
+    api
+      .getFriendRankings('user-abc')
+      .subscribe({ error: (e: { status: number }) => (receivedStatus = e.status) });
+    http
+      .expectOne(`${baseUrl}/users/user-abc`)
+      .flush({ detail: 'unauthorized' }, { status: 401, statusText: 'Unauthorized' });
+    expect(receivedStatus).toBe(401);
+  });
 });
