@@ -28,18 +28,16 @@ and the repository coverage configuration. Command:
 `python -m pytest --cov=backend --cov-config=.coveragerc --cov-report=term-missing --cov-fail-under=70`.
 Result: **171 passed, 1 skipped, 76.31% combined branch-aware coverage**; the
 skipped test requires a real MongoDB service. No shared Atlas connection was
-made. Ruff passed on the full backend tree. This is local branch evidence; the
-full hosted confirmation follows.
+made. Ruff passed on the full backend tree. The hosted results follow.
 
-Hosted PR #84 run [43122397715](https://github.com/draw-n/beli-for-vandy/actions/runs/43122397715)
+Latest hosted PR #84 run [43122997310](https://github.com/draw-n/beli-for-vandy/actions/runs/43122997310)
 completed successfully: Security gate and Quality gate passed, and the
 semantic-title check passed. In CI, all **172 backend tests passed** with the
-disposable MongoDB service and measured **76.21% combined branch-aware
+disposable MongoDB service and measured **76.31% combined branch-aware
 coverage**, exceeding `--cov-fail-under=70`. The Security gate completed
 Semgrep, pip-audit, npm audit, and full-history Gitleaks successfully. Staging
 deployment was skipped as expected for a pull request. This hosted result
-confirms the gate on the implementation commit; the documentation follow-up
-will trigger another hosted run.
+confirms the gate on the latest PR commit.
 
 ## PR #73 post-update results (2026-11-07)
 
