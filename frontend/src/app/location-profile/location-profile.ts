@@ -8,7 +8,7 @@ import type { Review, ReviewResponse } from '../types/review';
 import { HttpClient } from '@angular/common/http';
 import { ChangeDetectorRef, Component, inject, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { ActivatedRoute, RouterLink } from '@angular/router';
+import { ActivatedRoute } from '@angular/router';
 
 import { MatButtonModule } from '@angular/material/button';
 import { MatCardModule } from '@angular/material/card';
@@ -29,7 +29,6 @@ type MealFilter = 'All' | 'Breakfast' | 'Lunch' | 'Dinner';
   standalone: true,
   imports: [
     CommonModule,
-    RouterLink,
     MatButtonModule,
     MatCardModule,
     MatChipsModule,

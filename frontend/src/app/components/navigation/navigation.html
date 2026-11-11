@@ -1,0 +1,18 @@
+@if (auth.isAuthenticated) {
+  <header class="site-header">
+    <a class="brand" routerLink="/locations">Beli for Vanderbilt</a>
+    <nav aria-label="Main navigation">
+      <a routerLink="/locations" routerLinkActive="active" ariaCurrentWhenActive="page">Dining</a>
+      <a routerLink="/friend-feed" routerLinkActive="active" ariaCurrentWhenActive="page">Friend Feed</a>
+      <a routerLink="/friends" routerLinkActive="active" ariaCurrentWhenActive="page">Friends</a>
+      <a routerLink="/favorite-dishes" routerLinkActive="active" ariaCurrentWhenActive="page">Favorites</a>
+      <a routerLink="/profile" routerLinkActive="active" ariaCurrentWhenActive="page">Profile</a>
+      @if (auth.isModerator) {
+        <a routerLink="/moderation" routerLinkActive="active" ariaCurrentWhenActive="page">Moderation</a>
+      }
+      @if (auth.isAdmin) {
+        <a routerLink="/admin" routerLinkActive="active" ariaCurrentWhenActive="page">Admin</a>
+      }
+    </nav>
+  </header>
+}

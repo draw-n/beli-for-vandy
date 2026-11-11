@@ -1,6 +1,6 @@
 import { CommonModule } from '@angular/common';
 import { ChangeDetectorRef, Component, inject } from '@angular/core';
-import { Router, RouterLink } from '@angular/router';
+import { RouterLink } from '@angular/router';
 import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
@@ -33,7 +33,6 @@ export class FriendFeed {
   private readonly accountApi = inject(AccountApi);
   private readonly reviewApi = inject(ReviewApi);
   private readonly http = inject(HttpClient);
-  private readonly router = inject(Router);
   private readonly cdr = inject(ChangeDetectorRef);
 
   constructor() {
@@ -114,7 +113,4 @@ export class FriendFeed {
     this.loadPage(page);
   }
 
-  goBack(): void {
-    void this.router.navigate(['/friends']);
-  }
 }

@@ -2,15 +2,6 @@
   <header>
     <div class="header-top">
       <p class="eyebrow">PROFILE</p>
-      <div class="header-actions">
-        <button mat-button type="button" routerLink="/favorite-dishes">
-          <mat-icon>favorite</mat-icon> Favorite dishes
-        </button>
-
-        <button mat-button type="button" [routerLink]="['/locations']">
-          <mat-icon>restaurant</mat-icon> Dining spots
-        </button>
-      </div>
     </div>
 
     <h1>{{ account ? account.first_name + ' ' + account.last_name : 'Profile' }}</h1>
@@ -78,7 +69,6 @@
         <mat-icon>account_circle</mat-icon>
         <h2>Profile unavailable</h2>
         <p>We couldn't find this user's profile.</p>
-        <a mat-flat-button routerLink="/locations">Back to dining spots</a>
       </div>
     </ng-template>
   </main>
