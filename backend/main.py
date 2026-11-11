@@ -14,6 +14,7 @@ from routes.moderation import router as moderation_router
 from routes.user import admin_router, router as user_router
 from controllers.user import UserController
 from controllers.favorite_dish import ensure_favorite_dish_indexes
+from controllers.login_rate_limit import LoginAttemptLimiter
 from controllers.moderation import ModerationController
 from database import client, db
 from settings import get_settings
@@ -25,6 +26,7 @@ async def lifespan(_: FastAPI):
     user_controller = UserController(db)
     await user_controller.ensure_indexes()
     await ModerationController(db).ensure_indexes()
+    await LoginAttemptLimiter(db.get_collection("login_attempts")).ensure_indexes()
     await ensure_favorite_dish_indexes()
     await user_controller.bootstrap_first_admin(
         get_settings().bootstrap_admin_identifier
