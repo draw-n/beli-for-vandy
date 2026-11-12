@@ -1,12 +1,67 @@
 # Security scan and remediation results
 
-## Latest main-branch verification
+## Latest local verification after integrating `origin/main` — 2026-11-11
 
-- Main commit: `d3e0d486f83dbbf7e3ea053b8e9aaadf4d2619c0` (`2026-11-11`).
+This verification was run on the merged working tree combining PR branch
+commit `86fd611` with `origin/main` at `913b93d`, before creating the merge
+commit. It is local evidence; hosted CI has not been claimed for this merge.
+
+| Check | Result |
+| --- | --- |
+| Backend pytest and coverage | 171 passed, 1 local MongoDB test skipped; 76.31% coverage with `--cov-fail-under=70`. |
+| Ruff | Passed. |
+| Semgrep 1.182.0 | Passed; 0 findings, 225 rules, 72 targets, 20 excluded. |
+| pip-audit 2.10.1 | Production and development requirements both report no known vulnerabilities. |
+| npm audit 11.7.0 | High-threshold command passed; 28 affected package records, all Moderate, grouped to GHSA-3g3m-2fjr-6pw4 (`glob`) and GHSA-g3hv-75wg-m249 (`minimatch`); 0 Low/High/Critical. |
+| Gitleaks 8.30.1 | Redacted full-history scan passed; 155 commits scanned, no leaks. |
+
+The frontend `npm ci`, unit, coverage, lint, typecheck, build, and Playwright
+results for the dependency update were run before merging `origin/main` and are
+recorded in the following branch snapshot. PR #84's hosted 76.21% run remains
+the latest recorded hosted verification of the 70% backend gate.
+
+## Dependency-update local verification — 2026-11-11 (pre-merge snapshot)
+
+This local verification was run on branch `sara/dependency-security-updates`,
+based on `origin/main` commit `d3e0d486f83dbbf7e3ea053b8e9aaadf4d2619c0`.
+This scan and test snapshot was recorded on commit `86fd611`, before the branch
+merged newer `origin/main`. It verifies the dependency updates; the later
+main-branch gate and hosted results are recorded below. No hosted result is
+claimed for this pre-merge snapshot.
+
+| Scanner | Result | Gate behavior |
+| --- | --- | --- |
+| Semgrep 1.182.0 (`p/python`, `p/typescript`) | Completed; 0 findings, 225 rules, 72 targets scanned, 20 excluded. | Pass; High/Critical or malformed/scanner-error results fail closed. |
+| pip-audit 2.10.1, production requirements | Completed; no known vulnerabilities. | Pass; any reported advisory fails. |
+| pip-audit 2.10.1, development requirements | Completed; no known vulnerabilities. | Pass; any reported advisory fails. |
+| npm audit 11.7.0 | Completed; 28 affected package entries, all Moderate; 0 High, 0 Critical, 0 Low. Entries group to two unique advisories: GHSA-3g3m-2fjr-6pw4 (`glob`) and GHSA-g3hv-75wg-m249 (`minimatch`). | `npm audit --audit-level=high` passed; the existing threshold is unchanged. |
+| Gitleaks 8.30.1 | Completed redacted full-history scan across 154 commits; no leaks found. | Pass; full-history scanning and the narrow documented fixture fingerprint remain enabled. |
+
+The targeted lockfile updates resolve seven unique advisory IDs: four for
+`fast-uri` (GHSA-w74x-v6f9-j3xg, GHSA-wjr9-j795-jxcr,
+GHSA-333x-w4r6-6crp, GHSA-xhq7-xmqj-769h), one for `ip-address`
+(GHSA-rxp7-6hxx-x8q5), and two for Vitest (`GHSA-qxg6-89mg-rqv8`,
+`GHSA-xp26-3454-mjgp`). The remaining Moderate npm advisories are documented
+with fix paths and deferral reasons in `findings.md`. These are dependency
+scanner advisories, not confirmed exploitable application vulnerabilities.
+
+Regression checks also completed locally: `npm ci`; 159 Angular unit tests;
+frontend coverage (68.33% statements, 61.36% branches, 61.84% functions,
+74.34% lines); ESLint; TypeScript typecheck; production build; and one Playwright
+cross-stack integration test. The build passed with existing bundle-size budget
+warnings. Backend pytest passed 163 tests with one local MongoDB integration
+test skipped and 69.87% total coverage (the pre-merge tree's gate was 65%); Ruff passed.
+Both production and development pip-audit checks reported no vulnerabilities.
+Workflow YAML parsing and `git diff --check` passed. These are local results,
+not a claim that hosted CI passed on this branch commit.
+
+## Main-branch scan baseline and PR #84 hosted gate
+
+- Main scan snapshot: commit `d3e0d486f83dbbf7e3ea053b8e9aaadf4d2619c0` (`2026-11-11`), before PR #84's coverage update.
 - Hosted workflow: [CI run 43106394877](https://github.com/draw-n/beli-for-vandy/actions/runs/43106394877); security gate, quality gate, and staging deployment completed successfully.
 - Semgrep 1.182.0: 225 rules on 72 files, 0 findings.
 - pip-audit 2.10.1: no known vulnerabilities in `backend/requirements-dev.txt`; direct Pillow pin remains 13.0.0.
-- npm audit 11.7.0: passed the High/Critical gate. A fresh JSON audit on the pinned lockfile reports 33 vulnerable package names across 9 unique advisories (7 Moderate, 2 Low; 0 High/Critical), grouped in `findings.md`.
+- npm audit 11.7.0: passed the High/Critical gate. The pre-update lockfile scan reported 33 affected package names across 9 unique advisories (7 Moderate, 2 Low; 0 High/Critical), grouped in `findings.md`.
 - Gitleaks 8.30.1: full-history scan completed with no unignored leaks. The single previously reviewed fingerprint remains narrowly listed in `.gitleaksignore`; no matched value is included in reports.
 - Semgrep test fixtures are excluded intentionally because the production-source SAST scope does not include tests. Gitleaks still scans test files and full history. Bandit is not configured, and no Bandit report was available in the repository to classify the reported fixture alerts by rule.
 
@@ -14,11 +69,12 @@ Current ruleset `main` requires both `Quality gate` and `Security gate`, along
 with one approving review. These are the ruleset API's exact job check
 contexts; GitHub may visually group them under the `CI` workflow.
 
-Current coverage from that hosted run was backend **69.77% combined** before
+Coverage from that earlier hosted run was backend **69.77% combined** before
 the new moderation tests; frontend **68.33% statements, 61.36% branches,
 61.84% functions, and 74.34% lines**. The isolated local run after adding the
-moderation tests is recorded under Regression verification below. The proposed
-70% backend threshold still needs a hosted run on this change.
+moderation tests is recorded below. PR #84 later raised the backend threshold
+to 70%; the hosted result below verifies the gate after moderation tests were
+added.
 
 ## Sprint 4 pipeline update local verification
 
@@ -30,20 +86,20 @@ Result: **171 passed, 1 skipped, 76.31% combined branch-aware coverage**; the
 skipped test requires a real MongoDB service. No shared Atlas connection was
 made. Ruff passed on the full backend tree. The hosted results follow.
 
-Latest hosted PR #84 run [43123530295](https://github.com/draw-n/beli-for-vandy/actions/runs/43123530295)
+The PR #84 hosted run [43123530295](https://github.com/draw-n/beli-for-vandy/actions/runs/43123530295)
 completed successfully: Security gate and Quality gate passed, and the
 semantic-title check passed. In CI, all **172 backend tests passed** with the
 disposable MongoDB service and measured **76.21% combined branch-aware
 coverage**, exceeding `--cov-fail-under=70`. The Security gate completed
 Semgrep, pip-audit, npm audit, and full-history Gitleaks successfully. Staging
 deployment was skipped as expected for a pull request. This hosted result
-confirms the gate on the PR commit. Recent hosted full-suite runs measured
-76.21–76.31%; both were above the enforced threshold.
+confirms the 70% gate on the PR #84 commit. Hosted coverage was 76.21%; the
+isolated local run measured 76.31%.
 
 ## PR #73 post-update results (2026-11-07)
 
-The following local results document the original remediation commit; the
-latest main-branch verification above is the current evidence.
+The PR #73 results document the original dependency remediation commit; the
+main and later branch snapshots above document subsequent verification.
 
 ## Scope and tooling
 
@@ -57,7 +113,7 @@ latest main-branch verification above is the current evidence.
 - npm audit 11.7.0; `frontend/package-lock.json`; gate threshold remains `--audit-level=high`.
 - Gitleaks 8.30.1; complete available history, `--log-opts=--all`, 100% redaction.
 
-## Post-update scan results
+## Post-update scan results from PR #73 (2026-11-07)
 
 | Scanner | Result | Gate behavior |
 | --- | --- | --- |
