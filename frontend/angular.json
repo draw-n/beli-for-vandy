@@ -19,9 +19,6 @@
           "options": {
             "browser": "src/main.ts",
             "tsConfig": "tsconfig.app.json",
-            "define": {
-              "API_BASE_URL": "\"http://localhost:8000\""
-            },
             "assets": [
               {
                 "glob": "**/*",
@@ -40,6 +37,9 @@
           },
           "configurations": {
             "production": {
+              "define": {
+                "API_BASE_URL": "\"https://beli-for-vandy-backend.vercel.app\""
+              },
               "budgets": [
                 {
                   "type": "initial",
@@ -55,6 +55,9 @@
               "outputHashing": "all"
             },
             "development": {
+              "define": {
+                "API_BASE_URL": "\"http://localhost:8000\""
+              },
               "optimization": false,
               "extractLicenses": false,
               "sourceMap": true
