@@ -10,7 +10,7 @@ class Settings(BaseSettings):
     mongodb_uri: str = "mongodb://localhost:27017/beli_db"
     host: str = "0.0.0.0"
     port: int = 8000
-    cors_origins: list[str] = ["http://localhost:4200"]
+    cors_origins: list[str] = ["http://localhost:4200", "https://beli-for-vandy-frontend.vercel.app"]
     auth_token_secret: SecretStr | None = None
     bootstrap_admin_identifier: str | None = None
 
