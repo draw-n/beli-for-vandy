@@ -169,7 +169,7 @@ jobs:
           --cov-config=.coveragerc
           --cov-report=term-missing
           --cov-report=xml:backend/coverage.xml
-          --cov-fail-under=65
+          --cov-fail-under=70
 
       - name: Enforce frontend coverage gate
         working-directory: frontend

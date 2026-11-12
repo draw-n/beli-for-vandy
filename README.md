@@ -260,12 +260,11 @@ invalidate the changed account's existing bearer tokens.
 
 ## Main branch protection
 
-The `main` ruleset must require pull requests, one approving review, and both the
-`CI / Quality gate` and `CI / Security gate` status checks. A repository administrator
-must add `CI / Security gate` to the required checks; this repository change does not
-update GitHub settings. The ruleset must block direct and force pushes, apply to repository
-administrators, and have no bypass actors. Beginning October 13, 2026, all Sprint 3 work
-must reach `main` through this reviewed pull-request path.
+The active `main` ruleset requires pull requests, one approving review, and both the
+`Quality gate` and `Security gate` status checks from the `CI` workflow. These are the
+exact job check contexts stored by the ruleset. It blocks direct and force pushes,
+applies to repository administrators, and has no bypass actors. Beginning October 13,
+2026, all Sprint 3 work must reach `main` through this reviewed pull-request path.
 
 For course evidence, retain the CI rollout pull request's failed run and its corrective
 commit. The first run exposed genuine pre-existing frontend type/test failures; the follow-up
