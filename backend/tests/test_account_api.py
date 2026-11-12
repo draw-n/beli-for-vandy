@@ -8,8 +8,9 @@ from fastapi import Depends, FastAPI
 from fastapi.testclient import TestClient
 
 import database
-from controllers.auth import get_current_user, get_current_user_id
-from routes.user import get_user_controller, router
+from controllers.auth import get_current_user, get_current_user_id, issue_access_token
+from controllers.login_rate_limit import LOGIN_ATTEMPT_LIMIT
+from routes.user import get_login_attempt_limiter, get_user_controller, router
 from controllers.user import InvalidCredentialsError, UserAlreadyExistsError
 from models.user import AccountStatus, StoredUser, UserCreate, UserRole, UserType
 from settings import Settings, get_settings
@@ -97,6 +98,20 @@ class FakeUserController:
         return user.model_dump(mode="python") if user is not None else None
 
 
+class FakeLoginAttemptLimiter:
+    def __init__(self) -> None:
+        self.failures: dict[str, int] = {}
+
+    async def retry_after(self, key: str) -> int | None:
+        return 900 if self.failures.get(key, 0) >= LOGIN_ATTEMPT_LIMIT else None
+
+    async def record_failure(self, key: str) -> None:
+        self.failures[key] = self.failures.get(key, 0) + 1
+
+    async def clear(self, key: str) -> None:
+        self.failures.pop(key, None)
+
+
 class AccountApiTestCase(unittest.TestCase):
     def setUp(self) -> None:
         self.original_token_secret = os.environ.get("AUTH_TOKEN_SECRET")
@@ -106,7 +121,11 @@ class AccountApiTestCase(unittest.TestCase):
         app.include_router(router)
         app.get("/test-auth")(self.protected_endpoint)
         self.controller = FakeUserController()
+        self.login_attempt_limiter = FakeLoginAttemptLimiter()
         app.dependency_overrides[get_user_controller] = lambda: self.controller
+        app.dependency_overrides[get_login_attempt_limiter] = (
+            lambda: self.login_attempt_limiter
+        )
         app.dependency_overrides[get_current_user] = lambda: self.controller.users[0]
         self.original_users_collection = database.users_collection
         database.users_collection = self.controller  # type: ignore[assignment]
@@ -172,6 +191,7 @@ class AccountApiTestCase(unittest.TestCase):
             response.json(),
             [{
                 "uuid": "d08f600f-d60e-49b1-b762-f05f42935796",
+                "username": "commodore",
                 "first_name": "Cornelius",
                 "last_name": "Vanderbilt",
             }],
@@ -346,6 +366,37 @@ class AccountApiTestCase(unittest.TestCase):
         self.assertEqual(response.json(), {"detail": "Invalid username or password"})
         self.assertNotIn("access_token", response.json())
 
+    def test_login_rate_limits_repeated_failed_attempts(self) -> None:
+        for _ in range(LOGIN_ATTEMPT_LIMIT):
+            response = self.client.post(
+                "/accounts/login",
+                json={"username": "commodore", "password": "wrong"},
+            )
+            self.assertEqual(response.status_code, 401)
+
+        limited = self.client.post(
+            "/accounts/login",
+            json={"username": "commodore", "password": "abc"},
+        )
+
+        self.assertEqual(limited.status_code, 429)
+        self.assertGreater(int(limited.headers["Retry-After"]), 0)
+
+    def test_successful_login_clears_failed_attempts(self) -> None:
+        for _ in range(LOGIN_ATTEMPT_LIMIT - 1):
+            self.client.post(
+                "/accounts/login",
+                json={"username": "commodore", "password": "wrong"},
+            )
+
+        success = self.client.post(
+            "/accounts/login",
+            json={"username": "commodore", "password": "abc"},
+        )
+
+        self.assertEqual(success.status_code, 200)
+        self.assertEqual(self.login_attempt_limiter.failures, {})
+
     def test_login_rejects_empty_or_whitespace_required_fields(self) -> None:
         for payload in (
             {"username": "", "password": "abc"},
@@ -441,6 +492,36 @@ class AccountApiTestCase(unittest.TestCase):
 
         self.assertEqual(response.status_code, 503)
         self.assertEqual(response.json(), {"detail": "Authentication is not configured"})
+
+    def test_authentication_rejects_stale_security_version(self) -> None:
+        # Remove the blanket override so the real get_current_user runs.
+        self.client.app.dependency_overrides.pop(get_current_user, None)
+
+        token, _ = issue_access_token(
+            "d08f600f-d60e-49b1-b762-f05f42935796",
+            TEST_TOKEN_SECRET,
+            security_version=0,
+        )
+
+        # Token is accepted while security_version matches the stored value.
+        self.assertEqual(
+            self.client.get(
+                "/accounts", headers={"Authorization": f"Bearer {token}"}
+            ).status_code,
+            200,
+        )
+
+        # Simulate a security event that increments security_version (e.g. suspension).
+        old = self.controller.users[0].model_dump()
+        self.controller.users[0] = StoredUser(**{**old, "security_version": 1})
+
+        # The same token is now rejected because its security_version is stale.
+        self.assertEqual(
+            self.client.get(
+                "/accounts", headers={"Authorization": f"Bearer {token}"}
+            ).status_code,
+            401,
+        )
 
 
 if __name__ == "__main__":

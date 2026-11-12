@@ -1,0 +1,52 @@
+<div class="page">
+  <header class="page-header">
+    <div class="header-top">
+      <p class="eyebrow">VANDERBILT DINING</p>
+    </div>
+    <h1>Friend Feed</h1>
+    <p class="subtitle">See what your friends are eating and reviewing.</p>
+  </header>
+
+  <main>
+    @if (loading) {
+      <div class="state"><mat-spinner diameter="42"></mat-spinner><p>Loading your feed...</p></div>
+    } @else if (errorMessage) {
+      <div class="state error" role="alert">
+        <p>{{ errorMessage }}</p>
+        <button mat-flat-button type="button" (click)="loadPage(page)">Retry</button>
+      </div>
+    } @else if (reviews.length === 0) {
+      <div class="state">
+        <mat-icon>dynamic_feed</mat-icon>
+        <h2>No friend reviews yet</h2>
+        <p>Reviews from your mutual friends will appear here.</p>
+      </div>
+    } @else {
+      <section class="reviews" aria-label="Friend reviews">
+        @for (review of reviews; track review.uuid) {
+          <p class="feed-location">
+            <mat-icon>restaurant</mat-icon>
+            <a [routerLink]="['/locations', review.locationId]">
+              {{ locationNames[review.locationId] || review.locationId }}
+            </a>
+          </p>
+          <app-review-item
+            [review]="review"
+            [authorName]="authorNames[review.userId] || review.userId"
+            [locationName]="locationNames[review.locationId] || review.locationId"
+            [showLocation]="false"
+          />
+        }
+      </section>
+      <nav class="pagination" aria-label="Friend feed pages">
+        <button mat-stroked-button type="button" [disabled]="page === 1 || loading" (click)="goToPage(page - 1)">
+          Previous
+        </button>
+        <span>Page {{ page }}</span>
+        <button mat-stroked-button type="button" [disabled]="!hasMore || loading" (click)="goToPage(page + 1)">
+          Next
+        </button>
+      </nav>
+    }
+  </main>
+</div>

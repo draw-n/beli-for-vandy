@@ -1,8 +1,10 @@
+from hashlib import sha256
 from typing import Annotated
 
-from fastapi import APIRouter, Body, Depends, HTTPException, status
+from fastapi import APIRouter, Body, Depends, HTTPException, Request, status
 from pydantic import EmailStr
 
+from controllers.login_rate_limit import LoginAttemptLimiter
 from controllers.user import (
     InvalidRoleChangeError,
     InvalidCredentialsError,
@@ -33,6 +35,10 @@ router = APIRouter(prefix="/accounts", tags=["Accounts"])
 
 def get_user_controller() -> UserController:
     return UserController(db, db.get_collection("account_blocks"))
+
+
+def get_login_attempt_limiter() -> LoginAttemptLimiter:
+    return LoginAttemptLimiter(db.get_collection("login_attempts"))
 
 
 def user_response(user: StoredUser) -> UserResponse:
@@ -79,6 +85,7 @@ async def get_public_accounts(
     return [
         PublicUserResponse(
             uuid=user.uuid,
+            username=user.username,
             first_name=user.first_name,
             last_name=user.last_name,
         )
@@ -110,7 +117,10 @@ async def get_accounts(
     "/login",
     response_model=LoginResponse,
     summary="Log in to an account",
-    description="Verify credentials and issue a signed bearer token valid for 15 minutes.",
+    description=(
+        "Verify credentials and issue a signed bearer token valid for 15 minutes. "
+        "Five failed attempts from a client are allowed per 15-minute window."
+    ),
     responses={
         status.HTTP_401_UNAUTHORIZED: {
             "description": "The supplied account credentials are incorrect."
@@ -118,19 +128,36 @@ async def get_accounts(
         status.HTTP_503_SERVICE_UNAVAILABLE: {
             "description": "Token signing is unavailable because the secret is not configured."
         },
+        status.HTTP_429_TOO_MANY_REQUESTS: {
+            "description": "Too many failed login attempts from this client."
+        },
     },
 )
 async def login(
     payload: UserLogin,
+    request: Request,
     controller: Annotated[UserController, Depends(get_user_controller)],
+    limiter: Annotated[LoginAttemptLimiter, Depends(get_login_attempt_limiter)],
 ) -> LoginResponse:
+    client_host = request.client.host if request.client is not None else "unknown"
+    limiter_key = sha256(client_host.encode("utf-8")).hexdigest()
+    retry_after = await limiter.retry_after(limiter_key)
+    if retry_after is not None:
+        raise HTTPException(
+            status_code=status.HTTP_429_TOO_MANY_REQUESTS,
+            detail="Too many failed login attempts. Try again later.",
+            headers={"Retry-After": str(retry_after)},
+        )
+
     try:
         user = await controller.authenticate_user(payload.username, payload.password)
     except InvalidCredentialsError as error:
+        await limiter.record_failure(limiter_key)
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Invalid username or password",
         ) from error
+    await limiter.clear(limiter_key)
 
     try:
         secret = get_signing_secret()

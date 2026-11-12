@@ -31,6 +31,12 @@ describe('Locations', () => {
     expect(component).toBeTruthy();
   });
 
+  it('does not render a duplicate friends navigation button', () => {
+    fixture.detectChanges();
+
+    expect(fixture.nativeElement.querySelector('[routerLink="/friends"]')).toBeNull();
+  });
+
   it('filters dining halls using the selected tag', () => {
     const hall = (uuid: string, tags: string[]): LocationDetails => ({
       uuid,

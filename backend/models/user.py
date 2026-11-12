@@ -80,6 +80,7 @@ class UserResponse(UserBase):
 
 class PublicUserResponse(BaseModel):
     uuid: str
+    username: str
     first_name: str
     last_name: str
 

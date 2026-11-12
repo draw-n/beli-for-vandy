@@ -1,30 +1,33 @@
 import { ChangeDetectorRef, Component, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { ActivatedRoute, RouterLink } from '@angular/router';
+import { ActivatedRoute } from '@angular/router';
 
 import { MatCardModule } from '@angular/material/card';
 import { MatIconModule } from '@angular/material/icon';
 import { MatButtonModule } from '@angular/material/button';
 import { MatDividerModule } from '@angular/material/divider';
+import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 
 import { AccountApi } from '../api/account.api';
+import { PersonalRankingApi } from '../api/personal-ranking.api';
 import { ReviewItem } from '../components/review-item/review-item';
 import { apiBaseUrl } from '../api/api-base-url';
 import { HttpClient } from '@angular/common/http';
 import type { Account, PublicAccount } from '../types/auth';
 import type { Review, ReviewResponse } from '../types/review';
 import type { LocationResponse } from '../types/location';
+import type { RankedEntry } from '../types/personal-ranking';
 
 @Component({
   selector: 'app-profile',
   standalone: true,
   imports: [
     CommonModule,
-    RouterLink,
     MatIconModule,
     MatButtonModule,
     MatCardModule,
     MatDividerModule,
+    MatProgressSpinnerModule,
     ReviewItem,
   ],
   templateUrl: './user-profile.html',
@@ -34,9 +37,13 @@ export class Profile {
   account: PublicAccount | null = null;
   reviews: Review[] = [];
   locationNames: Record<string, string> = {};
+  friendRankings: RankedEntry[] = [];
+  rankingsLoading = false;
+  rankingsError = false;
 
   private readonly route = inject(ActivatedRoute);
   private readonly accountApi = inject(AccountApi);
+  private readonly personalRankingApi = inject(PersonalRankingApi);
   private readonly http = inject(HttpClient);
   private readonly changeDetector = inject(ChangeDetectorRef);
 
@@ -46,12 +53,14 @@ export class Profile {
     if (userId) {
       this.loadUser(userId);
       this.loadReviews(userId);
+      this.loadRankings(userId);
     } else {
       this.account = this.loadAccount();
     }
 
     if (this.account) {
       this.loadReviews(this.account.uuid);
+      this.loadRankings(this.account.uuid);
     }
   }
 
@@ -117,6 +126,28 @@ export class Profile {
       sessionStorage.removeItem('currentAccount');
       return null;
     }
+  }
+
+  loadRankings(userId: string): void {
+    const token = sessionStorage.getItem('accessToken');
+    if (!token) {
+      return;
+    }
+    this.rankingsLoading = true;
+    this.rankingsError = false;
+    this.personalRankingApi.getFriendRankings(userId).subscribe({
+      next: (rankings) => {
+        this.friendRankings = rankings;
+        this.rankingsLoading = false;
+        this.changeDetector.markForCheck();
+      },
+      error: () => {
+        this.friendRankings = [];
+        this.rankingsLoading = false;
+        this.rankingsError = true;
+        this.changeDetector.markForCheck();
+      },
+    });
   }
 
   private loadLocationNames(): void {

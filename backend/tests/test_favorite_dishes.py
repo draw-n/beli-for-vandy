@@ -1,16 +1,36 @@
+from datetime import datetime, timezone
+
 import pytest
 
 import database
-from controllers.auth import get_current_user_id
+from controllers.auth import require_user
 from controllers.favorite_dish import ensure_favorite_dish_indexes
 from main import app
+from models.user import AccountStatus, StoredUser, UserRole, UserType
+
+
+def _make_stored_user(uuid: str) -> StoredUser:
+    return StoredUser(
+        uuid=uuid,
+        username=f"user_{uuid}",
+        first_name="Test",
+        last_name="User",
+        email=f"{uuid}@example.com",
+        type=UserType.STUDENT,
+        home_city="Nashville",
+        password_hash="hash",
+        created_at=datetime.now(timezone.utc),
+        role=UserRole.USER,
+        status=AccountStatus.ACTIVE,
+    )
 
 
 @pytest.fixture
 def authenticated_user():
-    app.dependency_overrides[get_current_user_id] = lambda: "user-123"
+    user = _make_stored_user("user-123")
+    app.dependency_overrides[require_user] = lambda: user
     yield
-    app.dependency_overrides.pop(get_current_user_id, None)
+    app.dependency_overrides.pop(require_user, None)
 
 
 @pytest.mark.asyncio
@@ -44,7 +64,8 @@ async def test_users_can_add_list_and_remove_their_favorite_dishes(client, authe
 
 @pytest.mark.asyncio
 async def test_favorite_dishes_are_private_to_each_authenticated_account(client):
-    app.dependency_overrides[get_current_user_id] = lambda: "user-123"
+    user_123 = _make_stored_user("user-123")
+    app.dependency_overrides[require_user] = lambda: user_123
     try:
         created = await client.post(
             "/favorite-dishes/",
@@ -52,11 +73,12 @@ async def test_favorite_dishes_are_private_to_each_authenticated_account(client)
         )
         dish_id = created.json()["uuid"]
 
-        app.dependency_overrides[get_current_user_id] = lambda: "user-456"
+        user_456 = _make_stored_user("user-456")
+        app.dependency_overrides[require_user] = lambda: user_456
         assert (await client.get("/favorite-dishes/")).json() == []
         assert (await client.delete(f"/favorite-dishes/{dish_id}")).status_code == 404
     finally:
-        app.dependency_overrides.pop(get_current_user_id, None)
+        app.dependency_overrides.pop(require_user, None)
 
 
 @pytest.mark.asyncio

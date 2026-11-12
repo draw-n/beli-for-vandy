@@ -15,6 +15,10 @@ User records are stored in the MongoDB `users` collection. Passwords are stored 
 
 `GET /reviews/` returns reviews and accepts optional `location_id` and `user_id` query parameters. When supplied together, both filters apply.
 
+`GET /reviews/friend-feed?page=1` requires a bearer token and returns up to ten
+visible reviews written by the authenticated user's mutual friends, sorted from
+newest to oldest. The response includes `has_more` for requesting the next page.
+
 Review creation and updates accept an optional `favorite_dishes` array of strings.
 Omitting it on creation stores an empty array; updates that omit it preserve the
 current list. Review responses include `favorite_dishes`.

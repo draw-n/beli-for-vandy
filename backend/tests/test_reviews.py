@@ -1,5 +1,6 @@
 import pytest
 
+import database
 
 REVIEW_DATA = {
     "user_id": "user-123",
@@ -104,6 +105,90 @@ async def test_get_reviews(client):
 
     assert data[1]["user_id"] == "user-123"
     assert data[1]["rating"] == 4
+
+
+@pytest.mark.asyncio
+async def test_friend_feed_returns_mutual_friend_reviews_in_pages_of_ten(client):
+    await client.post(
+        "/follows/",
+        json={
+            "from_user_id": "user-123",
+            "to_user_id": "user-456",
+            "is_mutual": True,
+            "created_at": "2026-09-23T18:30:00",
+        },
+    )
+
+    for index in range(11):
+        await database.reviews_collection.insert_one({
+                "uuid": f"friend-review-{index}",
+                **REVIEW_DATA,
+                "user_id": "user-456",
+                "created_at": f"2026-10-{index + 1:02d}T18:30:00",
+                "updated_at": f"2026-10-{index + 1:02d}T18:30:00",
+                "visibility": "public",
+            })
+
+    response = await client.get("/reviews/friend-feed?page=1")
+
+    assert response.status_code == 200
+    data = response.json()
+    assert len(data["reviews"]) == 10
+    assert data["has_more"] is True
+    assert data["reviews"][0]["created_at"] > data["reviews"][1]["created_at"]
+    assert all(review["user_id"] == "user-456" for review in data["reviews"])
+
+    second_page = await client.get("/reviews/friend-feed?page=2")
+    assert len(second_page.json()["reviews"]) == 1
+    assert second_page.json()["has_more"] is False
+
+
+@pytest.mark.asyncio
+async def test_friend_feed_excludes_non_friends(client):
+    await database.reviews_collection.insert_one({
+        "uuid": "not-a-friend-review",
+        **REVIEW_DATA,
+        "user_id": "user-456",
+        "visibility": "public",
+    })
+
+    response = await client.get("/reviews/friend-feed")
+
+    assert response.status_code == 200
+    assert response.json() == {"reviews": [], "has_more": False}
+
+
+@pytest.mark.asyncio
+async def test_friend_feed_uses_reciprocal_follows_not_stale_mutual_flag(client):
+    await database.follows_collection.insert_many([
+        {
+            "uuid": "outgoing-follow",
+            "from_user_id": "user-123",
+            "to_user_id": "user-456",
+            "is_mutual": False,
+            "created_at": "2026-09-23T18:30:00",
+        },
+        {
+            "uuid": "incoming-follow",
+            "from_user_id": "user-456",
+            "to_user_id": "user-123",
+            "is_mutual": False,
+            "created_at": "2026-09-23T18:30:00",
+        },
+    ])
+    await database.reviews_collection.insert_one({
+        "uuid": "reciprocal-review",
+        **REVIEW_DATA,
+        "user_id": "user-456",
+        "visibility": "public",
+    })
+
+    response = await client.get("/reviews/friend-feed")
+
+    assert response.status_code == 200
+    assert [review["uuid"] for review in response.json()["reviews"]] == [
+        "reciprocal-review"
+    ]
 
 @pytest.mark.asyncio
 async def test_get_review(client):

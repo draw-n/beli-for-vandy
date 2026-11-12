@@ -1,0 +1,45 @@
+<main class="page">
+  <header>
+    <nav><a mat-button routerLink="/locations"><mat-icon>restaurant</mat-icon> Dining</a></nav>
+    <h1>My rankings</h1>
+  </header>
+  <section aria-live="polite">
+    @if (store.loading()) { <mat-spinner diameter="40"></mat-spinner>
+    } @else {
+      @if (store.rated().length) {
+        <div class="rankings-list">
+          @for (entry of store.rated(); track entry.location_id) {
+            <mat-card appearance="outlined"><mat-card-content>
+              <div class="ranking-info"><span>#{{ entry.rank }}</span><span>{{ entry.location_name }}</span><strong>{{ entry.rating }}/10</strong></div>
+              @if (editingLocationId === entry.location_id) {
+                <div class="inline-editor">
+                  <mat-form-field appearance="outline" class="rating-input"><mat-label>Rating</mat-label><input matInput type="number" min="1" max="10" step="0.1" [(ngModel)]="editingRating" /><span matTextSuffix>/10</span></mat-form-field>
+                  <button mat-flat-button [disabled]="!validEditRating" (click)="save(entry.location_id)">Save</button>
+                  <button mat-button (click)="cancelEdit()">Cancel</button>
+                </div>
+              } @else { <button mat-button (click)="startEdit(entry.location_id, entry.rating)">Change</button> }
+            </mat-card-content></mat-card>
+          }
+        </div>
+      } @else if (store.loaded()) { <p>Rate a hall below to start your ranking.</p> }
+      @if (store.unrated().length) {
+        <h2>Not yet rated</h2>
+        <div class="rankings-list">
+          @for (entry of store.unrated(); track entry.location_id) {
+            <mat-card appearance="outlined"><mat-card-content>
+              <div class="ranking-info"><span>{{ entry.location_name }}</span><strong>—</strong></div>
+              @if (editingLocationId === entry.location_id) {
+                <div class="inline-editor">
+                  <mat-form-field appearance="outline" class="rating-input"><mat-label>Rating</mat-label><input matInput type="number" min="1" max="10" step="0.1" [(ngModel)]="editingRating" /><span matTextSuffix>/10</span></mat-form-field>
+                  <button mat-flat-button [disabled]="!validEditRating" (click)="save(entry.location_id)">Save</button>
+                  <button mat-button (click)="cancelEdit()">Cancel</button>
+                </div>
+              } @else { <button mat-button (click)="startEdit(entry.location_id)">Rate</button> }
+            </mat-card-content></mat-card>
+          }
+        </div>
+      }
+    }
+  </section>
+  @if (errorMessage) { <p role="alert">{{ errorMessage }}</p><button mat-button (click)="load()">Try again</button> }
+</main>

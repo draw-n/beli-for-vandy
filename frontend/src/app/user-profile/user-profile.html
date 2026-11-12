@@ -2,15 +2,6 @@
   <header>
     <div class="header-top">
       <p class="eyebrow">PROFILE</p>
-      <div class="header-actions">
-        <button mat-button type="button" routerLink="/favorite-dishes">
-          <mat-icon>favorite</mat-icon> Favorite dishes
-        </button>
-
-        <button mat-button type="button" [routerLink]="['/locations']">
-          <mat-icon>restaurant</mat-icon> Dining spots
-        </button>
-      </div>
     </div>
 
     <h1>{{ account ? account.first_name + ' ' + account.last_name : 'Profile' }}</h1>
@@ -45,6 +36,38 @@
       </mat-card-content>
     </mat-card>
 
+    <section class="rankings-section" *ngIf="account">
+      <div class="section-heading">
+        <h2>Dining rankings</h2>
+      </div>
+
+      <mat-divider></mat-divider>
+
+      <div *ngIf="rankingsLoading" class="rankings-loading">
+        <mat-spinner diameter="32"></mat-spinner>
+      </div>
+
+      <div *ngIf="!rankingsLoading && friendRankings.length > 0" class="rankings-list">
+        <div class="ranking-row" *ngFor="let entry of friendRankings">
+          <span class="rank-number">#{{ entry.rank }}</span>
+          <span class="location-name">{{ entry.location_name }}</span>
+          <strong class="rating-badge">{{ entry.rating }}/10</strong>
+        </div>
+      </div>
+
+      <div *ngIf="!rankingsLoading && !rankingsError && friendRankings.length === 0" class="empty-rankings">
+        <mat-icon>leaderboard</mat-icon>
+        <h3>No rankings yet</h3>
+        <p>This user hasn't ranked any dining spots yet.</p>
+      </div>
+
+      <div *ngIf="!rankingsLoading && rankingsError" class="empty-rankings">
+        <mat-icon>error_outline</mat-icon>
+        <h3>Could not load rankings</h3>
+        <p>Rankings are only visible to signed-in users.</p>
+      </div>
+    </section>
+
     <section class="reviews-section" *ngIf="account">
       <div class="reviews-heading">
         <div>
@@ -78,7 +101,6 @@
         <mat-icon>account_circle</mat-icon>
         <h2>Profile unavailable</h2>
         <p>We couldn't find this user's profile.</p>
-        <a mat-flat-button routerLink="/locations">Back to dining spots</a>
       </div>
     </ng-template>
   </main>

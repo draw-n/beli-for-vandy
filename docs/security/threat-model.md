@@ -56,18 +56,13 @@ flowchart LR
 ## 4. OWASP Top 10:2025 checklist -- owner per category
 | Category | Owner | What we checked (where) | Result: pass / finding (ID) / N/A + reason |
 |----------|-------|-------------------------|--------------------------------------------|
-| A01 Broken Access Control (try changing an ID as another user) | Ashley | | |
-| A02 Security Misconfiguration | Ashley | | |
-| A03 Software Supply Chain Failures | Helen | | |
-| A04 Cryptographic Failures | Sara | | |
-| A05 Injection (SQL, XSS, command) | Sara | | |
-| A06 Insecure Design | Sara | Terra | |
-| A07 Authentication Failures | Terra | | |
-| A08 Software or Data Integrity Failures | Helen | | |
-| A09 Security Logging & Alerting Failures | Terra | | |
-| A10 Mishandling of Exceptional Conditions | Helen | | |
-
-## 5. Top 3 risks and next actions
-1.
-2.
-3.
+| A01 Broken Access Control (try changing an ID as another user) | Ashley | [ownership checks; IDOR test — changed ID in URL/body, got (403/404/leak); admin routes] | Pass — mutation routes require an authenticated user and pass that identity into controller-level update/delete operations; admin account listing uses require_admin. Role enforcement returns 403 for non-admins. Public review/follow reads appear intentionally public rather than ownership-protected. |
+| A02 Security Misconfiguration | Ashley | [password hashing; HTTPS on staging; no sensitive data in URLs/logs] | Pass — passwords use pwdlib.PasswordHash.recommended() rather than plaintext/custom crypto. JWTs are HS256-signed, require a configured secret, and expire after 15 minutes. Staging URLs documented as HTTPS and secrets are environment/config values rather than hard-coded credentials. |
+| A03 Software Supply Chain Failures | Helen | [parameterized queries/ORM; output escaping; no eval/exec] | Pass — FastAPI/Pydantic typed inputs and MongoDB APIs are used rather than constructing SQL; no SQL layer exists. CI runs Semgrep against Python and TypeScript application source. Angular also provides normal template escaping. No eval/`exec` issue was identified in reviewed application paths. |
+| A04 Cryptographic Failures | Sara | [rate limits on login/sign-up/LLM; upload & list size limits] | Finding SEC-01 — photo uploads have an explicit MAX_UPLOAD_BYTES bound, but I found no application-level rate limiting on account creation or login. This permits automated login/password-guessing and account-creation abuse. |
+| A05 Injection (SQL, XSS, command) | Sara | [debug off; CORS; default accounts; security headers] | Finding SEC-02 — CORS is configurable and staging restricts it to the staging frontend, and admin bootstrap does not create a default-password account. However, I found no explicit security-header middleware (e.g. HSTS, X-Content-Type-Options, CSP where applicable). Also uvicorn.run(..., reload=True) is present when main.py is executed directly, although the normal Vercel deployment path does not appear to use that dev invocation. |
+| A06 Insecure Design | Sara | [dependency audit clean / triaged; lock file committed] | Pass — CI runs pip-audit, npm audit --audit-level=high, Semgrep and full-history Gitleaks. Frontend installs via npm ci from the lockfile. The security gate fails on relevant scanner failures/findings rather than silently continuing. |
+| A07 Authentication Failures | Terra |[session/JWT expiry; logout invalidates; reset abuse; no user enumeration]| Finding SEC-03 — tokens have a good 15-minute expiry and security_version supports immediate invalidation after security-sensitive account changes. Login also uses the same "Invalid username or password" error, reducing username enumeration. However, there is no logout endpoint/server-side token invalidation mechanism; a stolen/current bearer token remains usable until expiry unless another action changes security_version. |
+| A08 Software or Data Integrity Failures | Helen | [CI actions pinned; no secrets to fork PRs; deploy only from main] | Pass (with repo-setting caveat) — GitHub Actions such as checkout/setup actions are SHA-pinned, CI has contents: read, checkout credentials are not persisted in the security job, and staging deployment executes only for pushes to main after both gates pass. Caveat: the security docs say the repository ruleset currently does not require those checks, so branch protection still needs configuration outside the codebase. |
+| A09 Security Logging & Alerting Failures | Terra | [failed logins / authz failures logged without passwords/tokens] | Finding SEC-04 — I found no dedicated security/audit logging for failed authentication or authorization attempts. FastAPI/Vercel request logging may exist operationally, but the application code does not establish that failed logins/403s are recorded as security events. |
+| A10 Mishandling of Exceptional Conditions | Helen | [user-supplied URL fetching validated against allow-list / N/A + reason] | N/A — I found no application feature that accepts a user-supplied URL and has the backend fetch it. Photo handling uploads bytes directly rather than fetching remote URLs, so an SSRF allow-list is not currently applicable. |

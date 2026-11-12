@@ -1,6 +1,7 @@
 import { provideHttpClient } from '@angular/common/http';
 import { HttpTestingController, provideHttpClientTesting } from '@angular/common/http/testing';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
+import { provideRouter, Router } from '@angular/router';
 
 import { Register } from './register';
 
@@ -12,12 +13,13 @@ describe('Register', () => {
   beforeEach(async () => {
     await TestBed.configureTestingModule({
       imports: [Register],
-      providers: [provideHttpClient(), provideHttpClientTesting()],
+      providers: [provideHttpClient(), provideHttpClientTesting(), provideRouter([])],
     }).compileComponents();
 
     fixture = TestBed.createComponent(Register);
     component = fixture.componentInstance;
     http = TestBed.inject(HttpTestingController);
+    vi.spyOn(TestBed.inject(Router), 'navigate').mockResolvedValue(true);
     await fixture.whenStable();
   });
 
@@ -47,6 +49,7 @@ describe('Register', () => {
     expect(component.createMessage).toBe('Account created for commodore.');
     expect(component.creating).toBe(false);
     expect(component.createRequest.username).toBe('');
+    expect(TestBed.inject(Router).navigate).toHaveBeenCalledWith(['/locations']);
   });
 
   it('shows an API error when account creation fails', () => {

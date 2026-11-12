@@ -12,7 +12,20 @@ Have you ever felt like you wasted a meal swipe at a Vanderbilt dining hall? Wou
 - View list of Vanderbilt dining halls with pictures to explore
 - Add/remove new friends
 - Be able to check friends' ratings and reviews
-- Write own reviews on dining halls and filter by breakfast, lunch, and dinner
+- Write dining hall reviews with integer ratings from 1 (lowest) to 10 (highest), and filter by breakfast, lunch, and dinner
+
+### Rating scale
+
+As a diner, you can rate a dining experience on a whole-number scale from 1
+(lowest) to 10 (highest). The review form accepts only integer values in this
+range. Dining hall average ratings are calculated as the arithmetic mean of the
+available reviews, and the rating distribution groups reviews into 1–2, 3–4,
+5–6, 7–8, and 9–10 buckets, showing each bucket's count and share of reviews.
+
+**API validation note:** The backend currently requires ratings to be integers
+but does not enforce the 1–10 range. Direct API requests can therefore submit
+integer values outside the range enforced by the frontend; this README describes
+the user-facing rating requirement, not a backend validation guarantee.
 
 ## Technologies
 - MongoDB: uses a JSON format which is highly compatible with HTTP requests/responses
@@ -162,8 +175,14 @@ failure:
 4. Run backend and frontend unit tests as separately named steps.
 5. Run FastAPI route/database integration tests with `mongomock-motor`.
 6. Run the review API integration test against a disposable MongoDB service container.
-7. Generate backend and frontend coverage reports and enforce a 50% gate.
+7. Generate coverage reports, enforcing 65% backend coverage and the configured frontend thresholds.
 8. Build the production Angular application.
+
+The parallel `Security gate` runs Semgrep SAST, pip-audit, npm audit, and full-history
+Gitleaks scanning. It fails on scanner errors and High or Critical findings; pip-audit
+fails on any advisory because its CLI does not provide a severity threshold. See
+[`docs/security/README.md`](docs/security/README.md) for severity mapping, reproduction
+commands, the measured coverage gaps, and required status-check setup.
 
 The backend test layers are currently divided as follows:
 
@@ -193,15 +212,15 @@ backend/.venv/bin/python -m pytest \
 REAL_MONGODB_URI=mongodb://localhost:27017/beli_integration_test \
   backend/.venv/bin/python -m pytest backend/tests/test_review_real_database.py
 backend/.venv/bin/python -m pytest --cov=backend --cov-config=.coveragerc \
-  --cov-report=term-missing --cov-fail-under=50
+  --cov-report=term-missing --cov-fail-under=65
 cd frontend && npm run test:coverage && npm run build
 ```
 
 ## Continuous delivery to staging
 
-After the quality gate passes on a push to `main`, GitHub Actions automatically deploys
-the backend and frontend to two staging-only Vercel projects and smoke-tests both generated
-deployment URLs. The Vercel projects use their production targets as the stable staging
+After both the quality and security gates pass on a push to `main`, GitHub Actions
+automatically deploys the backend and frontend to two staging-only Vercel projects and
+smoke-tests both generated deployment URLs. The Vercel projects use their production targets as the stable staging
 environment; this repository does not automatically deploy the public production system.
 The deploy commands run from the repository root because Vercel applies each project's
 configured Root Directory.
@@ -241,11 +260,51 @@ invalidate the changed account's existing bearer tokens.
 
 ## Main branch protection
 
-The `main` ruleset must require pull requests, one approving review, and the
-`CI / Quality gate` status check. It must block direct and force pushes, apply to repository
-administrators, and have no bypass actors. Beginning October 13, 2026, all Sprint 3 work
-must reach `main` through this reviewed pull-request path.
+The active `main` ruleset requires pull requests, one approving review, and both the
+`Quality gate` and `Security gate` status checks from the `CI` workflow. These are the
+exact job check contexts stored by the ruleset. It blocks direct and force pushes,
+applies to repository administrators, and has no bypass actors. Beginning October 13,
+2026, all Sprint 3 work must reach `main` through this reviewed pull-request path.
 
 For course evidence, retain the CI rollout pull request's failed run and its corrective
 commit. The first run exposed genuine pre-existing frontend type/test failures; the follow-up
 fix demonstrates the pipeline blocking the change before it became mergeable.
+
+
+## Usability Testing
+
+Usability testing was conducted with two student testers to evaluate how easily users could navigate the app and complete three common tasks: submitting a dining hall meal review, finding and following another user, and browsing friends' reviews to save a favorite dish.
+
+### Testing Results
+
+Both testers successfully completed all three tasks without assistance. Overall, users were able to navigate the app quickly and found the core features easy to use.
+
+| Task | Tester A | Tester B | Target Time |
+|---|---|---|---|
+| T1: Submit a meal review | 30 seconds | 30 seconds | 3 minutes |
+| T2: Find and follow another user | 1 minute | 30 seconds | 2 minutes |
+| T3: Browse friends' reviews and favorite a dish | 30 seconds | 45 seconds | 4 minutes |
+
+All tasks were completed within their target times. Testers also rated the usability of each task between 8 and 10 on a 10-point scale, indicating a positive overall user experience.
+
+### User Feedback and Improvements
+
+Although the testers completed every task successfully, they identified a few areas where the interface could be improved:
+
+- **Following other users:** One tester suggested adding the ability to follow someone directly from their review. This would make connecting with other students more intuitive.
+- **Discover page clarity:** Another tester was confused when users they had already followed appeared alongside people they had not yet discovered. The Discover page could better distinguish between existing friends and new users.
+- **Favorite section visibility:** One tester suggested adding a border around the favorites section to make it stand out more clearly from regular reviews.
+
+### Planned Improvements
+
+Based on the feedback, we identified the following improvements:
+
+| Improvement | Priority | GitHub Issue |
+|---|---|---|
+| Improve the ability to follow users directly from their reviews | Low Priority | #78 |
+| Clarify the Discover page. | Low Priority | #79 |
+| Add a visual border around the favorites section to make it easier to identify. | Low Priority | #80 |
+
+### Conclusion
+
+Overall, usability testing showed that the app's primary features are easy to understand and use. Both testers completed every task significantly faster than the expected completion times, with no major usability issues or points where users gave up. The feedback highlighted a few small interface improvements that could make navigation more intuitive and improve the visibility of important features. These changes will help create a smoother experience for students using the app to discover meals, share reviews, and connect with friends.
