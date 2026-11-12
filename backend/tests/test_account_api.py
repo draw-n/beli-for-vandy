@@ -191,6 +191,7 @@ class AccountApiTestCase(unittest.TestCase):
             response.json(),
             [{
                 "uuid": "d08f600f-d60e-49b1-b762-f05f42935796",
+                "username": "commodore",
                 "first_name": "Cornelius",
                 "last_name": "Vanderbilt",
             }],
