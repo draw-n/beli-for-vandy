@@ -9,8 +9,13 @@ from fastapi.testclient import TestClient
 
 import database
 from controllers.auth import get_current_user, get_current_user_id, issue_access_token
-from controllers.login_rate_limit import LOGIN_ATTEMPT_LIMIT
-from routes.user import get_login_attempt_limiter, get_user_controller, router
+from controllers.login_rate_limit import ACCOUNT_CREATION_LIMIT, LOGIN_ATTEMPT_LIMIT
+from routes.user import (
+    get_account_creation_limiter,
+    get_login_attempt_limiter,
+    get_user_controller,
+    router,
+)
 from controllers.user import InvalidCredentialsError, UserAlreadyExistsError
 from models.user import AccountStatus, StoredUser, UserCreate, UserRole, UserType
 from settings import Settings, get_settings
@@ -67,6 +72,15 @@ class FakeUserController:
             raise InvalidCredentialsError
         self.deleted_credentials = (email, password)
 
+    async def revoke_access_tokens(self, user_uuid: str) -> bool:
+        for index, user in enumerate(self.users):
+            if user.uuid == user_uuid:
+                self.users[index] = user.model_copy(
+                    update={"security_version": user.security_version + 1}
+                )
+                return True
+        return False
+
     async def authenticate_user(self, username: str, password: str) -> StoredUser:
         if username != "commodore" or password != "abc":
             raise InvalidCredentialsError
@@ -112,6 +126,17 @@ class FakeLoginAttemptLimiter:
         self.failures.pop(key, None)
 
 
+class FakeAccountCreationLimiter:
+    def __init__(self) -> None:
+        self.requests: dict[str, int] = {}
+
+    async def record_request(self, key: str) -> int | None:
+        self.requests[key] = self.requests.get(key, 0) + 1
+        if self.requests[key] > ACCOUNT_CREATION_LIMIT:
+            return 900
+        return None
+
+
 class AccountApiTestCase(unittest.TestCase):
     def setUp(self) -> None:
         self.original_token_secret = os.environ.get("AUTH_TOKEN_SECRET")
@@ -122,7 +147,11 @@ class AccountApiTestCase(unittest.TestCase):
         app.get("/test-auth")(self.protected_endpoint)
         self.controller = FakeUserController()
         self.login_attempt_limiter = FakeLoginAttemptLimiter()
+        self.account_creation_limiter = FakeAccountCreationLimiter()
         app.dependency_overrides[get_user_controller] = lambda: self.controller
+        app.dependency_overrides[get_account_creation_limiter] = (
+            lambda: self.account_creation_limiter
+        )
         app.dependency_overrides[get_login_attempt_limiter] = (
             lambda: self.login_attempt_limiter
         )
@@ -157,7 +186,6 @@ class AccountApiTestCase(unittest.TestCase):
                 "home_city": "Nashville",
             },
         )
-
         self.assertEqual(response.status_code, 201)
         self.assertEqual(
             response.json(),
@@ -175,6 +203,33 @@ class AccountApiTestCase(unittest.TestCase):
                 "status": AccountStatus.ACTIVE.value,
             },
         )
+
+    def test_account_creation_rate_limits_requests_from_same_client(self) -> None:
+        payload = {
+            "username": "commodore",
+            "first_name": "Cornelius",
+            "last_name": "Vanderbilt",
+            "email": "person@example.com",
+            "password": "abc",
+            "type": "student",
+            "home_city": "Nashville",
+        }
+
+        for attempt in range(ACCOUNT_CREATION_LIMIT):
+            response = self.client.post(
+                "/accounts",
+                json={
+                    **payload,
+                    "username": f"commodore-{attempt}",
+                    "email": f"person-{attempt}@example.com",
+                },
+            )
+            self.assertEqual(response.status_code, 201)
+
+        limited = self.client.post("/accounts", json=payload)
+
+        self.assertEqual(limited.status_code, 429)
+        self.assertGreater(int(limited.headers["Retry-After"]), 0)
 
     def test_administrator_can_load_accounts(self) -> None:
         response = self.client.get("/accounts")
@@ -355,6 +410,23 @@ class AccountApiTestCase(unittest.TestCase):
             {"user_id": "d08f600f-d60e-49b1-b762-f05f42935796"},
         )
 
+    def test_logout_revokes_existing_token(self) -> None:
+        self.client.app.dependency_overrides.pop(get_current_user, None)
+        login = self.client.post(
+            "/accounts/login",
+            json={"username": "commodore", "password": "abc"},
+        )
+        token = login.json()["access_token"]
+        headers = {"Authorization": f"Bearer {token}"}
+
+        before_logout = self.client.get("/test-auth", headers=headers)
+        logout = self.client.post("/accounts/logout", headers=headers)
+        after_logout = self.client.get("/test-auth", headers=headers)
+
+        self.assertEqual(before_logout.status_code, 200)
+        self.assertEqual(logout.status_code, 204)
+        self.assertEqual(after_logout.status_code, 401)
+
     def test_login_rejects_invalid_credentials(self) -> None:
         response = self.client.post(
             "/accounts/login",
@@ -427,7 +499,7 @@ class AccountApiTestCase(unittest.TestCase):
         expires_at = datetime(2026, 10, 18, 12, 0, tzinfo=timezone.utc)
         token = jwt.encode(
             {
-                "sub": "user-123",
+                "sub": self.controller.users[0].uuid,
                 "iat": int((expires_at - timedelta(minutes=1)).timestamp()),
                 "exp": int(expires_at.timestamp()),
             },

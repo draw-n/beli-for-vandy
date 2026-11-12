@@ -4,7 +4,7 @@ from typing import Annotated
 from fastapi import APIRouter, Body, Depends, HTTPException, Request, status
 from pydantic import EmailStr
 
-from controllers.login_rate_limit import LoginAttemptLimiter
+from controllers.login_rate_limit import AccountCreationLimiter, LoginAttemptLimiter
 from controllers.user import (
     InvalidRoleChangeError,
     InvalidCredentialsError,
@@ -41,6 +41,10 @@ def get_login_attempt_limiter() -> LoginAttemptLimiter:
     return LoginAttemptLimiter(db.get_collection("login_attempts"))
 
 
+def get_account_creation_limiter() -> AccountCreationLimiter:
+    return AccountCreationLimiter(db.get_collection("account_creation_attempts"))
+
+
 def user_response(user: StoredUser) -> UserResponse:
     return UserResponse.model_validate(user, from_attributes=True)
 
@@ -52,6 +56,9 @@ def user_response(user: StoredUser) -> UserResponse:
     summary="Create an account",
     description="Create a user profile with server-generated UUID and creation time.",
     responses={
+        status.HTTP_429_TOO_MANY_REQUESTS: {
+            "description": "Too many account creation requests from this client."
+        },
         status.HTTP_409_CONFLICT: {
             "description": "An account already uses the supplied username or email address."
         },
@@ -59,8 +66,23 @@ def user_response(user: StoredUser) -> UserResponse:
 )
 async def create_account(
     payload: UserCreate,
+    request: Request,
     controller: Annotated[UserController, Depends(get_user_controller)],
+    limiter: Annotated[
+        AccountCreationLimiter,
+        Depends(get_account_creation_limiter),
+    ],
 ) -> UserResponse:
+    client_host = request.client.host if request.client is not None else "unknown"
+    limiter_key = sha256(client_host.encode("utf-8")).hexdigest()
+    retry_after = await limiter.record_request(limiter_key)
+    if retry_after is not None:
+        raise HTTPException(
+            status_code=status.HTTP_429_TOO_MANY_REQUESTS,
+            detail="Too many account creation requests. Try again later.",
+            headers={"Retry-After": str(retry_after)},
+        )
+
     try:
         user = await controller.create_user(payload)
     except UserAlreadyExistsError as error:
@@ -177,6 +199,28 @@ async def login(
         token_type="bearer",
         expires_at=expires_at,
     )
+
+
+@router.post(
+    "/logout",
+    status_code=status.HTTP_204_NO_CONTENT,
+    summary="Log out of the current account",
+    description="Immediately revoke all access tokens issued to the authenticated account.",
+    responses={
+        status.HTTP_404_NOT_FOUND: {
+            "description": "The authenticated account no longer exists."
+        },
+    },
+)
+async def logout(
+    controller: Annotated[UserController, Depends(get_user_controller)],
+    current_user: Annotated[StoredUser, Depends(get_current_user)],
+) -> None:
+    if not await controller.revoke_access_tokens(current_user.uuid):
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Account no longer exists",
+        )
 
 
 @router.delete(
