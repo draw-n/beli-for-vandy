@@ -98,9 +98,9 @@ the disposable MongoDB test). A local rerun without a MongoDB service measured
 exercise role authorization, report creation/queue/duplicate handling,
 resolution/audit history, review hiding, and admin suspension/unsuspension. The
 full local backend suite then measured 76.31% (171 passed, one MongoDB-dependent
-test skipped). The latest hosted PR #84 run 43122997310 passed the backend
-70% gate with 76.31% coverage and 172 passing tests using CI's disposable
-MongoDB service.
+test skipped). Recent hosted PR #84 runs passed the backend 70% gate with
+172 passing tests using CI's disposable MongoDB service; coverage ranged from
+76.21% to 76.31%. The latest run, 43123530295, measured 76.21%.
 
 The latest hosted frontend coverage on the same main commit was 68.33%
 statements, 61.36% branches, 61.84% functions, and 74.34% lines. A clean local
@@ -110,7 +110,7 @@ version configured in the workflow.
 
 | Suite / metric | Current measured | Gate | Gap to 70% | Meaningful next test targets |
 | --- | ---: | ---: | ---: | --- |
-| Backend combined, after new tests | 76.31% local; 76.31% hosted PR #84 | 70% | 0 pp (6.31 pp above hosted) | Keep adding authorization and failure-path tests with behavior changes. |
+| Backend combined, after new tests | 76.31% local; 76.21% latest hosted PR #84 (76.21–76.31% across runs) | 70% | 0 pp (6.21 pp above latest hosted) | Keep adding authorization and failure-path tests with behavior changes. |
 | Frontend statements | 68.33% hosted | 50% | 1.67 pp | `frontend/src/app/api/moderation.api.ts`; moderation dashboard actions and load/error states. |
 | Frontend branches | 61.36% hosted | 50% | 8.64 pp | Moderator/admin paths, failed moderation actions, empty/loaded/error states. |
 | Frontend functions | 61.84% hosted | 50% | 8.16 pp | `frontend/src/app/moderation/moderation.ts` and `frontend/src/app/rankings/rankings.ts` have little direct spec coverage. |
