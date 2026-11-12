@@ -6,6 +6,11 @@ Deployment configuration is read from environment variables. `MONGODB_URI` selec
 database and `CORS_ORIGINS` is a JSON array of allowed frontend origins, for example
 `["https://staging.example.com"]`. Safe local placeholders are documented in
 `backend/.env.example`; secrets must be supplied by the deployment environment.
+Responses include `X-Content-Type-Options`, frame-protection, CSP framing, and
+`Referrer-Policy` headers. HTTPS responses also include HSTS; the deployment proxy
+must pass the original HTTPS scheme to the ASGI app for that header to be emitted.
+Authentication and authorization failures are written to application logs as
+sanitized JSON security events; request credentials and tokens are excluded.
 
 `AUTH_TOKEN_SECRET` is required to issue or verify access tokens. Set a strong random secret in the ignored `backend/.env` and in the deployment environment. The API does not provide refresh tokens or server-side sessions. State-changing review, follow, photo, and account-deletion routes require a bearer token. The token subject is resolved against the current account record, including role, status, and security version.
 
@@ -144,6 +149,7 @@ Request:
 | --- | --- |
 | `201 Created` | The account was created. Returns the account representation. |
 | `409 Conflict` | An account already uses that username or email address. |
+| `429 Too Many Requests` | The client exceeded five account-creation requests in 15 minutes. Includes a `Retry-After` header. |
 | `422 Unprocessable Entity` | One or more request fields are invalid. |
 
 ```bash
@@ -181,12 +187,21 @@ curl -X DELETE http://localhost:8000/accounts \
   -d '{"email":"person@example.com","password":"example-password"}'
 ```
 
+## Log out
+
+`POST /accounts/logout` requires the current bearer token and immediately
+invalidates all access tokens issued to that account, including the token used
+for this request. It returns `204 No Content`; subsequent requests with a
+revoked token return `401 Unauthorized`.
+
 ## Log in
 
 `POST /accounts/login` verifies the username and password and returns the existing
 public account fields plus a signed bearer token. The token contains the account UUID
 and expires 15 minutes after issuance. The response adds `access_token`, `token_type`
 (`bearer`), and `expires_at`; all existing account fields keep their current names.
+Five failed login attempts from a client are allowed per 15-minute window; further
+attempts return `429 Too Many Requests` with a `Retry-After` header.
 
 If `AUTH_TOKEN_SECRET` is missing or blank, successful credential verification returns
 `503 Service Unavailable` without issuing a token. Invalid credentials continue to

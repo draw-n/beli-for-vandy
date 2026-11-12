@@ -1,7 +1,10 @@
 from contextlib import asynccontextmanager
 
-from fastapi import FastAPI
+from fastapi import FastAPI, Request, Response
+from fastapi.exception_handlers import http_exception_handler
 from fastapi.middleware.cors import CORSMiddleware
+from starlette.middleware.base import RequestResponseEndpoint
+from starlette.exceptions import HTTPException as StarletteHTTPException
 import uvicorn
 
 from routes.review import router as review_router
@@ -15,9 +18,10 @@ from routes.personal_ranking import router as personal_ranking_router
 from routes.user import admin_router, router as user_router
 from controllers.user import UserController
 from controllers.favorite_dish import ensure_favorite_dish_indexes
-from controllers.login_rate_limit import LoginAttemptLimiter
+from controllers.login_rate_limit import AccountCreationLimiter, LoginAttemptLimiter
 from controllers.moderation import ModerationController
 from controllers.personal_ranking import ensure_personal_ranking_indexes
+from controllers.security_logging import log_security_failure
 from database import client, db
 from settings import get_settings
 
@@ -29,6 +33,9 @@ async def lifespan(_: FastAPI):
     await user_controller.ensure_indexes()
     await ModerationController(db).ensure_indexes()
     await LoginAttemptLimiter(db.get_collection("login_attempts")).ensure_indexes()
+    await AccountCreationLimiter(
+        db.get_collection("account_creation_attempts")
+    ).ensure_indexes()
     await ensure_favorite_dish_indexes()
     await ensure_personal_ranking_indexes()
     await user_controller.bootstrap_first_admin(
@@ -46,6 +53,18 @@ app = FastAPI(
     version="0.1.0",
     lifespan=lifespan,
 )
+
+
+@app.exception_handler(StarletteHTTPException)
+async def log_security_http_exception(
+    request: Request,
+    error: StarletteHTTPException,
+) -> Response:
+    if error.status_code in {401, 403}:
+        log_security_failure(request, error.status_code)
+    return await http_exception_handler(request, error)
+
+
 app.add_middleware(
     CORSMiddleware,
     allow_origins=get_settings().cors_origins,
@@ -53,6 +72,23 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+
+@app.middleware("http")
+async def add_security_headers(
+    request: Request,
+    call_next: RequestResponseEndpoint,
+) -> Response:
+    response = await call_next(request)
+    response.headers["X-Content-Type-Options"] = "nosniff"
+    response.headers["X-Frame-Options"] = "DENY"
+    response.headers["Content-Security-Policy"] = "frame-ancestors 'none'"
+    response.headers["Referrer-Policy"] = "no-referrer"
+    if request.url.scheme == "https":
+        response.headers["Strict-Transport-Security"] = "max-age=31536000"
+    return response
+
+
 app.include_router(user_router)
 app.include_router(admin_router)
 app.include_router(moderation_router)
