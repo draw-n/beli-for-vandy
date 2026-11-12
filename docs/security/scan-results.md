@@ -1,5 +1,38 @@
 # Security scan and remediation results
 
+## Targeted dependency update verification — 2026-11-11
+
+This local verification was run on branch `sara/dependency-security-updates`,
+based on `origin/main` commit `d3e0d486f83dbbf7e3ea053b8e9aaadf4d2619c0`.
+Functional changes are limited to the frontend npm dependency resolution and
+the CI Node runtime; hosted GitHub Actions have not run for this branch yet.
+
+| Scanner | Result | Gate behavior |
+| --- | --- | --- |
+| Semgrep 1.182.0 (`p/python`, `p/typescript`) | Completed; 0 findings, 225 rules, 72 targets scanned, 20 excluded. | Pass; High/Critical or malformed/scanner-error results fail closed. |
+| pip-audit 2.10.1, production requirements | Completed; no known vulnerabilities. | Pass; any reported advisory fails. |
+| pip-audit 2.10.1, development requirements | Completed; no known vulnerabilities. | Pass; any reported advisory fails. |
+| npm audit 11.7.0 | Completed; 28 affected package entries, all Moderate; 0 High, 0 Critical, 0 Low. Entries group to two unique advisories: GHSA-3g3m-2fjr-6pw4 (`glob`) and GHSA-g3hv-75wg-m249 (`minimatch`). | `npm audit --audit-level=high` passed; the existing threshold is unchanged. |
+| Gitleaks 8.30.1 | Completed redacted full-history scan across 154 commits; no leaks found. | Pass; full-history scanning and the narrow documented fixture fingerprint remain enabled. |
+
+The targeted lockfile updates resolve seven unique advisory IDs: four for
+`fast-uri` (GHSA-w74x-v6f9-j3xg, GHSA-wjr9-j795-jxcr,
+GHSA-333x-w4r6-6crp, GHSA-xhq7-xmqj-769h), one for `ip-address`
+(GHSA-rxp7-6hxx-x8q5), and two for Vitest (`GHSA-qxg6-89mg-rqv8`,
+`GHSA-xp26-3454-mjgp`). The remaining Moderate npm advisories are documented
+with fix paths and deferral reasons in `findings.md`. These are dependency
+scanner advisories, not confirmed exploitable application vulnerabilities.
+
+Regression checks also completed locally: `npm ci`; 159 Angular unit tests;
+frontend coverage (68.33% statements, 61.36% branches, 61.84% functions,
+74.34% lines); ESLint; TypeScript typecheck; production build; and one Playwright
+cross-stack integration test. The build passed with existing bundle-size budget
+warnings. Backend pytest passed 163 tests with one local MongoDB integration
+test skipped and 69.87% total coverage (the current gate is 65%); Ruff passed.
+Both production and development pip-audit checks reported no vulnerabilities.
+Workflow YAML parsing and `git diff --check` passed. These are local results,
+not a claim that hosted CI has passed.
+
 ## Scope and tooling
 
 - Repository base: `origin/main` at `eedec371c63f81f49be3c06a54897f7d9670dd59`.
@@ -12,7 +45,7 @@
 - npm audit 11.7.0; `frontend/package-lock.json`; gate threshold remains `--audit-level=high`.
 - Gitleaks 8.30.1; complete available history, `--log-opts=--all`, 100% redaction.
 
-## Post-update scan results
+## Post-update scan results from PR #73 (2026-11-07)
 
 | Scanner | Result | Gate behavior |
 | --- | --- | --- |
