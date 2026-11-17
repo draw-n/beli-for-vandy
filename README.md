@@ -92,11 +92,11 @@ npm ci
 npm start
 ```
 
-The frontend uses `http://localhost:8000` by default. A deployment can supply another
-absolute URL at build time:
+The frontend uses `http://localhost:8000` in development. A deployment can supply
+another absolute or root-relative URL at build time:
 
 ```bash
-API_BASE_URL=https://api.example.com npm run build
+API_BASE_URL=/api npm run build
 ```
 
 ### Vercel CLI
@@ -110,44 +110,22 @@ vercel --version
 vercel login
 ```
 
-Create the applications as separate Vercel projects with these settings:
-
-| Project | Root Directory | Framework Preset | Stable staging URL |
-| --- | --- | --- | --- |
-| `beli-for-vandy-frontend` | `frontend` | Angular | `https://beli-for-vandy-frontend.vercel.app` |
-| `beli-for-vandy-backend` | `backend` | FastAPI | `https://beli-for-vandy-backend.vercel.app` |
-
-Keep the framework defaults for dependency installation and the build command. The
-frontend's `vercel.json` selects its Angular browser output and supplies the single-page
-application fallback. Its build script reads `API_BASE_URL`; set it to the stable backend
-URL at build time. The backend reads `MONGODB_URI` and `CORS_ORIGINS` at runtime. For
-staging, set `CORS_ORIGINS` to a JSON array containing the stable frontend URL.
-
-The Angular build uses static output mode. Data-independent routes are prerendered, while
-routes that fetch FastAPI data are rendered in the browser. This keeps the frontend a
-static Vercel deployment and avoids making database-backed API requests during the build.
-
-Because each Vercel project already has a Root Directory, run Vercel CLI commands from
-the repository root. Running them from `frontend/` or `backend/` makes Vercel resolve the
-configured root twice. Select the intended project with `VERCEL_PROJECT_ID`:
+Configure the root `vercel.json` as one multi-service Vercel project. It deploys the
+`frontend` and `backend` services together and routes `/api/*` to FastAPI before routing
+other paths to Angular. Run Vercel CLI commands from the repository root:
 
 ```bash
-export VERCEL_ORG_ID="your-team-id"
-export VERCEL_TOKEN="your-access-token"
-
-VERCEL_PROJECT_ID="your-backend-project-id" vercel pull --yes --environment=production --token="$VERCEL_TOKEN"
-VERCEL_PROJECT_ID="your-backend-project-id" vercel build --prod --token="$VERCEL_TOKEN"
-VERCEL_PROJECT_ID="your-backend-project-id" vercel deploy --prebuilt --prod --token="$VERCEL_TOKEN"
-
-VERCEL_PROJECT_ID="your-frontend-project-id" vercel pull --yes --environment=production --token="$VERCEL_TOKEN"
-API_BASE_URL="https://beli-for-vandy-backend.vercel.app" \
-  VERCEL_PROJECT_ID="your-frontend-project-id" \
-  vercel build --prod --token="$VERCEL_TOKEN"
-VERCEL_PROJECT_ID="your-frontend-project-id" vercel deploy --prebuilt --prod --token="$VERCEL_TOKEN"
+npm install --global vercel@63.1.2
+vercel login
+vercel dev
+vercel build --prod
+vercel deploy --prebuilt --prod
 ```
 
-`vercel pull` stores project metadata under the ignored root `.vercel/` directory and may
-create an ignored `.env.local` containing credentials. Copy `.env.example` to the ignored
+The backend reads `MONGODB_URI` and `CORS_ORIGINS` at runtime. Set `CORS_ORIGINS` to a
+JSON array containing the shared deployment origin. The Angular production build defaults
+to the root-relative `/api` base URL, so it uses the shared public rewrite without a
+separate backend hostname.
 root `.env`, then fill in these repository-level values; never commit or print them:
 
 ```dotenv

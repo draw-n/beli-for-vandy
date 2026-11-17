@@ -1,6 +1,6 @@
 from contextlib import asynccontextmanager
 
-from fastapi import FastAPI
+from fastapi import APIRouter, FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 import uvicorn
 
@@ -63,6 +63,19 @@ app.include_router(follow_router)
 app.include_router(photo_router)
 app.include_router(favorite_dish_router)
 app.include_router(personal_ranking_router)
+
+# /api mirrors the public rewrite path used by the shared Vercel deployment.
+api_router = APIRouter(prefix="/api")
+api_router.include_router(user_router)
+api_router.include_router(admin_router)
+api_router.include_router(moderation_router)
+api_router.include_router(review_router)
+api_router.include_router(location_router)
+api_router.include_router(follow_router)
+api_router.include_router(photo_router)
+api_router.include_router(favorite_dish_router)
+api_router.include_router(personal_ranking_router)
+app.include_router(api_router)
 
 
 @app.get("/", tags=["System"], summary="Check API health")
