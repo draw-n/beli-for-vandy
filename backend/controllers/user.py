@@ -99,6 +99,13 @@ class UserController:
         )
         return result.modified_count == 1
 
+    async def revoke_access_tokens(self, user_uuid: str) -> bool:
+        result = await self._users.update_one(
+            {"uuid": user_uuid},
+            {"$inc": {"security_version": 1}},
+        )
+        return result.modified_count == 1
+
     async def change_role(
         self,
         target_uuid: str,

@@ -82,52 +82,11 @@ def _claims_from_credentials(
     return claims
 
 
-def _user_id_from_credentials(
-    credentials: HTTPAuthorizationCredentials | None,
-) -> str | None:
-    claims = _claims_from_credentials(credentials)
-    if claims is None:
-        return None
-    user_id = claims.get("sub")
-    if not isinstance(user_id, str) or not user_id:
-        raise _unauthorized()
-    return user_id
-
-
-def get_optional_current_user_id(
-    credentials: Annotated[
-        HTTPAuthorizationCredentials | None, Depends(_bearer_scheme)
-    ],
-) -> str | None:
-    """Return a verified bearer identity when supplied, otherwise None."""
-    return _user_id_from_credentials(credentials)
-
-
-async def get_current_user_id(
-    credentials: Annotated[
-        HTTPAuthorizationCredentials | None, Depends(_bearer_scheme)
-    ],
-) -> str:
-    """Verify a bearer token and return its authenticated account UUID."""
-    claims = _claims_from_credentials(credentials)
-    if claims is None:
-        raise _unauthorized()
-    user_id = claims.get("sub")
-    if not isinstance(user_id, str) or not user_id:
-        raise _unauthorized()
-    return user_id
-
-
-async def get_current_user(
+async def _user_from_credentials(
     credentials: Annotated[
         HTTPAuthorizationCredentials | None, Depends(_bearer_scheme)
     ],
 ) -> StoredUser:
-    """Resolve the token subject against current account state.
-
-    Also validates the token's security_version claim against the stored value
-    so that suspension and privilege revocations take effect immediately.
-    """
     claims = _claims_from_credentials(credentials)
     if claims is None:
         raise _unauthorized()
@@ -149,6 +108,37 @@ async def get_current_user(
     if user.security_version != token_security_version:
         raise _unauthorized()
     return user
+
+
+async def get_current_user(
+    credentials: Annotated[
+        HTTPAuthorizationCredentials | None, Depends(_bearer_scheme)
+    ],
+) -> StoredUser:
+    """Resolve the token subject against current account and security state."""
+    return await _user_from_credentials(credentials)
+
+
+async def get_current_user_id(
+    credentials: Annotated[
+        HTTPAuthorizationCredentials | None, Depends(_bearer_scheme)
+    ],
+) -> str:
+    """Return the UUID of an active account with a current bearer token."""
+    user = await _user_from_credentials(credentials)
+    return user.uuid
+
+
+async def get_optional_current_user_id(
+    credentials: Annotated[
+        HTTPAuthorizationCredentials | None, Depends(_bearer_scheme)
+    ],
+) -> str | None:
+    """Return a current bearer identity when supplied, otherwise None."""
+    if credentials is None:
+        return None
+    user = await _user_from_credentials(credentials)
+    return user.uuid
 
 
 async def require_user(

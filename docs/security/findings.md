@@ -5,6 +5,27 @@ claim that every advisory is exploitable in Beli. The package audit results
 were checked against the current dependency paths and application calls. The
 secret alert is documented without its matched value.
 
+## Targeted npm dependency update on `sara/dependency-security-updates`
+
+The current lockfile audit after the approved patch updates completed with 28
+affected package entries, all Moderate, no Low/High/Critical entries, and two
+unique advisory IDs. All are development/build/lint dependencies. They remain
+scanner advisories; no application exploitability is confirmed.
+
+| Advisory | Affected dependency / path | Severity | Evidence and applicability | Fix and decision | Regression verification |
+| --- | --- | --- | --- | --- | --- |
+| GHSA-w74x-v6f9-j3xg; GHSA-wjr9-j795-jxcr | Angular CLI/devkit → AJV → `fast-uri` 3.1.8 | Moderate | Transitive build tooling; no direct application import. | Updated lockfile to 3.1.9, the compatible patched release. Resolved on this branch. | Clean `npm ci`, audit and frontend test/build checks. |
+| GHSA-333x-w4r6-6crp; GHSA-xhq7-xmqj-769h | Angular CLI/devkit → AJV → `fast-uri` 3.1.8 | Low | Same transitive build tooling path; no direct application import. | Updated lockfile to 3.1.9. Resolved on this branch. | Clean `npm ci`, audit and frontend test/build checks. |
+| GHSA-rxp7-6hxx-x8q5 | Angular CLI → `@modelcontextprotocol/sdk` → `ip-address` 10.7.2 | Moderate | Transitive CLI tooling; no application runtime use found. | Updated lockfile to 10.7.4, the approved compatible fix. Resolved on this branch. | Clean `npm ci`, audit and frontend test/build checks. |
+| GHSA-qxg6-89mg-rqv8; GHSA-xp26-3454-mjgp | Vitest → `@vitest/mocker` 4.1.11; coverage provider was also pinned at 4.1.11 | Moderate | Development test tooling. | Updated `vitest` resolution and exact `@vitest/coverage-v8` pin to 4.1.12. Resolved on this branch. | 159 unit tests and coverage run passed. |
+| GHSA-3g3m-2fjr-6pw4 | Angular CLI/npm tooling → `glob` 13.0.6 | Moderate | Build/CLI file-matching dependency; runtime reachability not found. | Patched in glob 14.0.2; npm's compatible path proposes Angular CLI 22.2.6, a major Angular toolchain upgrade. Deferred to coordinated Angular upgrade review. | Current `npm audit --audit-level=high` passes; moderate advisory remains. |
+| GHSA-g3hv-75wg-m249 | ESLint/TypeScript-ESLint and npm tooling → `minimatch` 10.2.6 | Moderate | Lint/build tooling; runtime reachability not found. | Patched in minimatch 11.0.1. npm proposes ESLint 9.39.5, a major downgrade from ESLint 10; defer until compatible parent ranges are available or a toolchain review is approved. | Current `npm audit --audit-level=high` passes; moderate advisory remains. |
+
+Current audit totals are 28 affected package entries but only two unique
+advisory IDs; the entries are not 28 distinct vulnerabilities. No Critical or
+High npm advisories remain in this audit. The seven fixed IDs above are absent
+from the post-update audit. No application code or behavior changed.
+
 ## Pillow 12.3.0 records
 
 `pip-audit` 2.10.1 reported 39 records on the direct dependency
@@ -53,7 +74,7 @@ byte-size boundaries and pixel-count boundaries. The complete backend suite
 passed 147 tests with one local MongoDB integration test skipped. These tests
 are regression checks, not vulnerability-specific proof of exploitability.
 
-## npm audit findings
+## npm audit findings from PR #73 (historical snapshot, 2026-11-07)
 
 The pre-remediation audit counted 42 affected-package entries (6 High, 36
 Moderate, 0 Critical), but those were not unique vulnerabilities. After the

@@ -84,7 +84,7 @@ commit `.env` files or credentials.
 
 ### Frontend
 
-Angular 21 requires a supported Node.js release; CI uses Node 22.12.0.
+Angular 21 requires a supported Node.js release; CI uses Node 22.23.5.
 
 ```bash
 cd frontend

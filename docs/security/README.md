@@ -45,6 +45,16 @@ reviewed synthetic mock-cookie fixture, recorded in `.gitleaksignore`; this
 does not exclude the file, rule, or commit from scanning, and other findings
 still fail. Scanner logs and artifacts must never contain matched secret values.
 
+The dependency update verification run on 2026-11-11 found no Python advisories
+in either production or development requirements. npm audit reported 28
+affected package entries, all Moderate, with no High/Critical results. Those
+entries group to two unique advisories: GHSA-3g3m-2fjr-6pw4 (`glob`) and
+GHSA-g3hv-75wg-m249 (`minimatch`). Both remain in frontend build/lint tooling;
+their published fixes require broader toolchain changes (Angular CLI 22 or an
+ESLint major downgrade), so they are recorded for follow-up rather than forced
+into this targeted patch. The fixed fast-uri, ip-address, and Vitest advisories
+are listed in `findings.md`.
+
 No scanner uses `continue-on-error` or ignored exit codes. Scanner installation
 and execution failures fail the job. The PR job has `contents: read` permission
 and no deployment secrets.

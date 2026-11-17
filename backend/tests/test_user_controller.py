@@ -39,6 +39,18 @@ class FakeCollection:
                 return SimpleNamespace(deleted_count=1)
         return SimpleNamespace(deleted_count=0)
 
+    async def update_one(
+        self,
+        query: dict[str, Any],
+        update: dict[str, dict[str, int]],
+    ) -> SimpleNamespace:
+        for document in self.documents:
+            if self._matches(document, query):
+                for key, amount in update.get("$inc", {}).items():
+                    document[key] = document.get(key, 0) + amount
+                return SimpleNamespace(modified_count=1)
+        return SimpleNamespace(modified_count=0)
+
     @staticmethod
     def _matches(document: dict[str, Any], query: dict[str, Any]) -> bool:
         return all(document.get(key) == value for key, value in query.items())
@@ -131,6 +143,16 @@ class UserControllerTestCase(unittest.IsolatedAsyncioTestCase):
 
         self.assertEqual(user.username, "commodore")
         self.assertEqual(user.email, "person@example.com")
+
+    async def test_revoke_access_tokens_increments_security_version(self) -> None:
+        user = await self.controller.create_user(self.user_payload())
+
+        self.assertTrue(await self.controller.revoke_access_tokens(user.uuid))
+        self.assertEqual(
+            self.database.users.documents[0]["security_version"],
+            user.security_version + 1,
+        )
+        self.assertFalse(await self.controller.revoke_access_tokens("missing-user"))
 
     async def test_authentication_rejects_invalid_credentials(self) -> None:
         await self.controller.create_user(self.user_payload())
