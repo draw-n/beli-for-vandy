@@ -3,6 +3,7 @@ import { inject, Injectable } from '@angular/core';
 import { Observable } from 'rxjs';
 
 import { FollowCreateRequest, FollowResponse, FollowUpdateRequest } from '../types/follow';
+import { apiBaseUrl } from './api-base-url';
 
 @Injectable({
   providedIn: 'root',
@@ -10,7 +11,7 @@ import { FollowCreateRequest, FollowResponse, FollowUpdateRequest } from '../typ
 export class FollowApi {
   private readonly http = inject(HttpClient);
 
-  private readonly followsUrl = 'http://localhost:8000/follows';
+  private readonly followsUrl = `${apiBaseUrl}/follows`;
 
   getAll(): Observable<FollowResponse[]> {
     return this.http.get<FollowResponse[]>(`${this.followsUrl}/`);
