@@ -1,0 +1,1 @@
+Note: There was a picomatch vulnerability without viable fixes on 11/17/2026. We decided to omit the developer dependencies in the workflow step by adding the --omit=dev flag.

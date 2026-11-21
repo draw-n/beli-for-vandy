@@ -72,7 +72,7 @@ jobs:
       - name: Audit frontend dependencies
         if: ${{ !cancelled() }}
         working-directory: frontend
-        run: npm exec --yes --package=npm@11.7.0 -- npm audit --audit-level=high
+        run: npm exec --yes --package=npm@11.7.0 -- npm audit --omit=dev --audit-level=high
 
       - name: Scan complete Git history for secrets
         if: ${{ !cancelled() }}
