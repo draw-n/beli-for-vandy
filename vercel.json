@@ -3,12 +3,13 @@
   "services": {
     "backend": {
       "root": "backend",
-      "framework": "fastapi",
-      "entrypoint": "main:app"
+      "framework": "container",
+      "entrypoint": "Dockerfile"
     },
     "frontend": {
       "root": "frontend",
-      "framework": "angular"
+      "framework": "container",
+      "entrypoint": "Dockerfile"
     }
   },
   "rewrites": [
@@ -24,5 +25,11 @@
         "service": "frontend"
       }
     }
-  ]
+  ],
+  "git": {
+    "deploymentEnabled": {
+      "main": true,
+      "*": false
+    }
+  }
 }
