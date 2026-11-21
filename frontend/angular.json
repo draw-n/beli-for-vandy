@@ -38,7 +38,7 @@
           "configurations": {
             "production": {
               "define": {
-                "API_BASE_URL": "\"https://beli-for-vandy-backend.vercel.app\""
+                "API_BASE_URL": "\"/api\""
               },
               "budgets": [
                 {
