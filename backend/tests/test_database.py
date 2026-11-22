@@ -4,10 +4,10 @@ from database import database_from_uri
 
 
 def test_database_name_comes_from_connection_uri():
-    client = AsyncIOMotorClient("mongodb://localhost:27017/beli_staging")
+    client = AsyncIOMotorClient("mongodb://localhost:27017/beli_test")
 
     try:
-        assert database_from_uri(client).name == "beli_staging"
+        assert database_from_uri(client).name == "beli_test"
     finally:
         client.close()
 

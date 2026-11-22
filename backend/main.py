@@ -100,7 +100,7 @@ app.include_router(photo_router)
 app.include_router(favorite_dish_router)
 app.include_router(personal_ranking_router)
 
-# /api mirrors the public rewrite path used by the shared Vercel deployment.
+# /api mirrors the reverse-proxy path used by the Docker Compose frontend proxy.
 api_router = APIRouter(prefix="/api")
 api_router.include_router(user_router)
 api_router.include_router(admin_router)

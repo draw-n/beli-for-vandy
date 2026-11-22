@@ -4,7 +4,7 @@ The backend is a FastAPI service. When running locally with the default settings
 
 Deployment configuration is read from environment variables. `MONGODB_URI` selects the
 database and `CORS_ORIGINS` is a JSON array of allowed frontend origins, for example
-`["https://staging.example.com"]`. Safe local placeholders are documented in
+`["https://app.example.com"]`. Safe local placeholders are documented in
 `backend/.env.example`; secrets must be supplied by the deployment environment.
 Responses include `X-Content-Type-Options`, frame-protection, CSP framing, and
 `Referrer-Policy` headers. HTTPS responses also include HSTS; the deployment proxy
