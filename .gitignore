@@ -2,3 +2,4 @@
 !.env.example
 .coverage
 .vercel/
+.vercel
