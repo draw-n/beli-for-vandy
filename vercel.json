@@ -25,11 +25,5 @@
         "service": "frontend"
       }
     }
-  ],
-  "git": {
-    "deploymentEnabled": {
-      "main": true,
-      "*": false
-    }
-  }
+  ]
 }

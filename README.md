@@ -34,7 +34,7 @@ the user-facing rating requirement, not a backend validation guarantee.
 - Motor: asynchronous MongoDB access for the FastAPI backend; PyMongo is installed as a Motor dependency and supplies shared exceptions.
 - Angular.js: This is a framework none of the members have tried previously
 - TypeScript: great for ensuring we stick to consistent types, so there’s no unexpected field behavior
-- Vercel: We will be deploying the project in Vercel since it provides a free hosting service for servers as long as they remain hobbyist projects (low traffic)
+- Docker: frontend and backend images are built and published to GitHub Container Registry
 - (MongoDB) Atlas: database since it is also free with hobbyist projects
 
 ## Project Structure
@@ -99,47 +99,18 @@ another absolute or root-relative URL at build time:
 API_BASE_URL=/api npm run build
 ```
 
-### Vercel CLI
+### Docker
 
-Vercel is repository-wide deployment tooling for both applications, so install its CLI
-globally rather than adding it to the frontend's runtime or development dependencies:
-
-```bash
-npm install --global vercel@63.1.2
-vercel --version
-vercel login
-```
-
-Configure the root `vercel.json` as one multi-service Vercel project. It deploys the
-`frontend` and `backend` services together and routes `/api/*` to FastAPI before routing
-other paths to Angular. Run Vercel CLI commands from the repository root:
+The Docker deployment runs the Angular frontend through Nginx and the FastAPI backend
+as separate containers. Build and run the local stack from the repository root:
 
 ```bash
-npm install --global vercel@63.1.2
-vercel login
-vercel dev
-vercel build --prod
-vercel deploy --prebuilt --prod
+docker compose up --build
 ```
 
-The backend reads `MONGODB_URI` and `CORS_ORIGINS` at runtime. Set `CORS_ORIGINS` to a
-JSON array containing the shared deployment origin. The Angular production build defaults
-to the root-relative `/api` base URL, so it uses the shared public rewrite without a
-separate backend hostname.
-root `.env`, then fill in these repository-level values; never commit or print them:
-
-```dotenv
-VERCEL_TOKEN=
-VERCEL_ORG_ID=
-VERCEL_FRONTEND_PROJECT_ID=
-VERCEL_BACKEND_PROJECT_ID=
-STAGING_MONGODB_URI=
-```
-
-If Vercel Authentication protects a deployment, use `vercel curl <url>` for an
-authenticated smoke test. The command uses `VERCEL_TOKEN` from the environment and
-creates the required protection bypass without exposing it. Put ordinary curl flags after
-the URL; Vercel CLI flags placed there are forwarded to curl.
+The Docker Images GitHub Actions workflow builds both images for pull requests and
+publishes `frontend` and `backend` images to GHCR on pushes to `main`. Published images
+include the commit SHA and `latest` tags.
 
 ## Continuous integration
 
@@ -193,38 +164,6 @@ backend/.venv/bin/python -m pytest --cov=backend --cov-config=.coveragerc \
   --cov-report=term-missing --cov-fail-under=65
 cd frontend && npm run test:coverage && npm run build
 ```
-
-## Continuous delivery to staging
-
-After both the quality and security gates pass on a push to `main`, GitHub Actions
-automatically deploys the backend and frontend to two staging-only Vercel projects and
-smoke-tests both generated deployment URLs. The Vercel projects use their production targets as the stable staging
-environment; this repository does not automatically deploy the public production system.
-The deploy commands run from the repository root because Vercel applies each project's
-configured Root Directory.
-
-Configure a GitHub environment named `staging` without required reviewers so delivery has
-no manual step. Add these environment secrets:
-
-- `VERCEL_TOKEN`
-- `VERCEL_ORG_ID`
-- `VERCEL_BACKEND_PROJECT_ID`
-- `VERCEL_FRONTEND_PROJECT_ID`
-- `STAGING_MONGODB_URI`
-
-Add these non-secret environment variables:
-
-- `STAGING_API_URL`: stable URL of the staging backend Vercel project.
-- `STAGING_WEB_URL`: stable URL of the staging frontend Vercel project.
-
-The workflow passes the MongoDB URI and allowed frontend origin to the backend deployment
-at runtime. Secret values remain in GitHub Actions and are never committed.
-
-The staging Atlas URI must name the `beli_staging` database in its path. The backend selects
-the database from `MONGODB_URI`, while a URI without a database path falls back to `beli_db`
-for local development. The staging database uses the existing `users`, `locations`,
-`reviews`, and `follows` collections and the application models documented in
-`backend/routes/README.md`; do not create a separate staging schema.
 
 ### Administrator bootstrap
 

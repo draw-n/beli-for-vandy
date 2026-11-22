@@ -8,7 +8,7 @@ backend and Angular application source, `pip-audit` against the pinned Python
 requirements, `npm audit --audit-level=high` against the frontend lockfile, and
 Gitleaks across all fetched Git history. Scanner steps use `if: !cancelled()` so
 one scanner finding does not skip later scanners; their nonzero exits still fail
-the job. Staging depends on both jobs and remains limited to pushes to `main`.
+the job. Docker deployment waits for both gates and remains limited to pushes to `main`.
 
 The SAST scanner uses Semgrep CLI 1.182.0 and the maintained `p/python` and
 `p/typescript` rulesets. It scans application source and excludes test files,
